@@ -1,16 +1,14 @@
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\bin\Release\raw2cdng_v2.exe.config
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\bin\Release\raw2cdng_v2.exe
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\bin\Release\raw2cdng_v2.pdb
-C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\ResolveAssemblyReference.cache
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\MainWindow.baml
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\MainWindow.g.cs
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\App.g.cs
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2_MarkupCompile.cache
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2.g.resources
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2.Properties.Resources.resources
-C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\GenerateResource.read.1.tlog
-C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\GenerateResource.write.1.tlog
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2.exe
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2.pdb
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\infoWindow.baml
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\infoWindow.g.cs
+C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\raw2cdng_v2.csproj.GenerateResource.Cache

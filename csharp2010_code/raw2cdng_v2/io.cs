@@ -111,7 +111,7 @@ namespace raw2cdng_v2
 
         public static raw createRAWBlockList(string filename, raw raw)
         {
-            Blocks.rawBlockList.Clear();
+            List<Blocks.rawBlock> tmpList = new List<Blocks.rawBlock>();
 
             int fno = 0;
             bool isSplitted = false;
@@ -130,7 +130,7 @@ namespace raw2cdng_v2
                     isSplitted = true;
                 }
                 
-                Blocks.rawBlockList.Add(new Blocks.rawBlock() { 
+                tmpList.Add(new Blocks.rawBlock() { 
                     fileNo = fno,
                     fileOffset = offset,
                     splitted = isSplitted
@@ -151,6 +151,7 @@ namespace raw2cdng_v2
                 
                 offset += raw.metaData.stripByteCount;
             }
+            raw.metaData.RAWBlocks = tmpList;
             return raw;
         }
 
@@ -495,6 +496,7 @@ namespace raw2cdng_v2
 
             if (rawFile.metaData.isMLV)
             {
+                
                 rawFile.fileData.VIDFBlock = rawFile.metaData.VIDFBlocks[rawFile.threadData.frame];
                 imageArray = io.readMLV(rawFile);
             }

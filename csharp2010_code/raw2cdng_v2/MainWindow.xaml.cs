@@ -120,6 +120,8 @@ namespace raw2cdng_v2
             {
                 // --- list of dropped files
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                Array.Sort(files);
+
                 foreach (string file in files)
                 {
                     if (io.isMLV(file) || io.isRAW(file))
@@ -130,6 +132,7 @@ namespace raw2cdng_v2
                         importRaw.threadData = new threaddata();
                         importRaw.lensData = new lensdata();
                         // write versionstring into author-tag
+                        // not done yet.
                         importRaw.metaData.version = version;
 
                         if (io.isMLV(file))
@@ -156,10 +159,10 @@ namespace raw2cdng_v2
                         {
                             importRaw.metaData.isMLV = false;
                             importRaw.metaData.hasAudio = false;
+                            importRaw.metaData.RAWBlocks = null;
                             io.setFileinfoData(file, importRaw.fileData);
                             io.getRAWAttributes(file, importRaw);
                             io.createRAWBlockList(file, importRaw);
-                            importRaw.metaData.RAWBlocks = Blocks.rawBlockList;
                             // then Framelist
 
                             importRaw.fileData.convertIt = true;
@@ -187,7 +190,8 @@ namespace raw2cdng_v2
 
                         debugging._saveDebug(" Item " + importRaw.fileData.fileNameOnly + " imported | "+ (importRaw.metaData.isMLV? "MLV":"RAW"));
                         debugging._saveDebug(" ---- res " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px | " + importRaw.metaData.fpsString + "fps | " + importRaw.metaData.frames + " frames | BL" + importRaw.metaData.blackLevelOld + " | WL" + importRaw.metaData.whiteLevelOld);
-                        debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio?"":"no") + "audio");
+                        if(importRaw.metaData.isMLV) debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio?"":"no") + "audio");
+                        else debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | rawblocks " + importRaw.metaData.RAWBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
 
                     }
                 }
@@ -208,7 +212,7 @@ namespace raw2cdng_v2
 
         private void doWork(object state)
         {
-            debugging._saveDebug("start converting to DNG");
+            debugging._saveDebug("** start converting to DNG");
 
             allFramesCount = 0;
             // -- count all frames for progressbarAll --
@@ -365,6 +369,7 @@ namespace raw2cdng_v2
                 // init for multithreading
                 int frameCount;
                 frameCount = file.metaData.frames;
+                
                 int taskCount = frameCount;
                 var cde = new CountdownEvent(taskCount);
 
