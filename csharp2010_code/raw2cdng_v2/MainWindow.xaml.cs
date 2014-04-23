@@ -59,7 +59,7 @@ namespace raw2cdng_v2
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0BETA2";
+        string version = "1.5.0.BETA3";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
