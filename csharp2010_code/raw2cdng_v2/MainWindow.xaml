@@ -119,10 +119,12 @@
                         <TextBlock FontWeight="Bold">naming variables</TextBlock>
                         <TextBlock></TextBlock>
                         <TextBlock>[D] - date yymmdd of creation</TextBlock>
+                        <TextBlock>[D2] - datetime yyyy-MM-dd_HHmm</TextBlock>
                         <TextBlock>[T] - time hhmmss of creation</TextBlock>
                         <TextBlock>[F] - filename without ending</TextBlock>
                         <TextBlock>[S] - shortened filename [0-9a-z]</TextBlock>
-                        <TextBlock>[P] - source pathname</TextBlock>
+                        <TextBlock>[C] - shortened filename only [0-9]</TextBlock>
+                       <TextBlock>[P] - source pathname</TextBlock>
                         <TextBlock>[B] - destination bitdepth</TextBlock>
                         <TextBlock>(..) - filesequence substring (on the end)</TextBlock>
                         <TextBlock>Sequencenumber is static on the end. length 5 digits</TextBlock>

@@ -14,7 +14,8 @@ namespace raw2cdng_v2
         public static string[] RAWFileEnding = new string[] { "RAW", "R00", "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20" };
         public static string[] MLVFileEnding = new string[] { "MLV", "M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18", "M19", "M20" };
         
-        public static byte[] RIFFheader = Properties.Resources.RIFFtemplate;
+        // old classic short header : public static byte[] RIFFheader = Properties.Resources.RIFFtemplate;
+        public static byte[] riffHeader = Properties.Resources.riffbwf_Template;
 
         public static bool isMLV(string f)
         {
@@ -33,6 +34,7 @@ namespace raw2cdng_v2
             fd.fileNameOnly = Path.GetFileNameWithoutExtension(fn);
             fd.sourcePath = Path.GetDirectoryName(fn);
             fd.fileNameShort = calc.setFilenameShort(fd.fileNameOnly);
+            fd.fileNameNum = calc.setFilenameNum(fd.fileNameOnly);
             fd.outputFilename = ""; 
             return true;
         }
@@ -505,6 +507,7 @@ namespace raw2cdng_v2
             return calc.doBitmap(calc.to16(imageArray, rawFile), rawFile);
         }
 
+        /* old. new one with bext references
         public static bool saveAudio(string filename, raw mData)
         {
             bool success = false;
@@ -573,6 +576,126 @@ namespace raw2cdng_v2
             }
             return success;
         }
+        */
+
+        public static bool saveAudio(string filename, raw mData)
+        {
+            bool success = false;
+            // manage all Audiodata first as list of bytearrays
+            // first entry wavFile[0] is header
+
+            List<byte[]> wavFile = new List<byte[]>();
+            wavFile.Add(riffHeader);
+
+            // ebu bext references
+            // https://tech.ebu.ch/docs/tech/tech3285.pdf
+            // and https://tech.ebu.ch/docs/r/r099.pdf
+
+            // set Name 
+            string bextName = mData.fileData.outputFilename;
+            byte[] byteBextName = Enumerable.Repeat((byte)0x00, 32).ToArray();
+
+            Array.Copy(byteBextName, 0, wavFile[0], 0x138, 32);
+
+            if (bextName.Length > 32)
+            {
+               bextName = bextName.Substring(0, 32);
+            }
+            byteBextName = System.Text.Encoding.ASCII.GetBytes(bextName);
+
+            Array.Copy(byteBextName, 0, wavFile[0], 0x138, byteBextName.Length);
+
+            // set UDI
+            // CCOOO NNNNNNNNNNNN HHMMSS RRRRRRRRR
+            Random rnd = new Random();
+            int RRR= rnd.Next(100000000, 999999999);
+            string UDI = "DEMLA" + "MAGICLANTERN" + String.Format("{0:HHmmss}", mData.fileData.creationTime) + RRR.ToString();
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(UDI), 0, wavFile[0], 0x158, 32);
+            
+            // set timedate
+            string dateTime = String.Format("{0:yyyy-MM-ddHH-mm-ss}", mData.fileData.creationTime);
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(dateTime), 0, wavFile[0], 0x178, 18);
+            
+            //have to adjust samples if dropped frames
+            double timeRefMultiplier = Math.Round((double)mData.metaData.fpsNom / 1000) / ((double)mData.metaData.fpsNom / 1000);
+               
+            // set TimeRef (long)
+            long timeRef = (long)(mData.metaData.audioSamplingRate * calc.creationTime2Frame(mData.fileData.creationTime,timeRefMultiplier));
+            Array.Copy(BitConverter.GetBytes(timeRef), 0, wavFile[0], 0x18a, 8);
+
+            //change xml-framerate
+            string fpsString = mData.metaData.fpsNom.ToString() + "/" + mData.metaData.fpsDen.ToString();
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x4ce, fpsString.Length); // for example 25/1
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x4f7, fpsString.Length); // for example 25/1
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x521, fpsString.Length); // for example 25/1
+
+            // mark in xml its ndf (nondropframe) or not
+            string DF = "DF ";
+            if(!mData.metaData.dropFrame) DF ="NDF";
+            Array.Copy(System.Text.Encoding.ASCII.GetBytes(DF), 0, wavFile[0], 0x54B, 3);
+
+            // set chunksize fmt to 0x28
+            Array.Copy(BitConverter.GetBytes(0x28), 0, wavFile[0], 0x29c, 4);
+
+            //fmt area
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioFormat), 0, wavFile[0], 0x2a0, 2); // 01 00
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioChannels), 0, wavFile[0], 0x2a2, 2); // 02 00
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioSamplingRate), 0, wavFile[0], 0x2a4, 4); // 80 bb 00 00
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBytesPerSecond), 0, wavFile[0], 0x2a8, 4); // 00 ee 02 00
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBlockAlign), 0, wavFile[0], 0x2ac, 2); // 00 04
+            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBitsPerSample), 0, wavFile[0], 0x2ae, 2); // 00 10
+
+            // set XMLdata
+            // read out audio chunks
+            for (var i = 0; i < mData.metaData.AUDFBlocks.Count; i++)
+            {
+                Blocks.mlvBlock audioBlock = mData.metaData.AUDFBlocks[i];
+                int usedFile = audioBlock.fileNo;
+                byte[] audioBlockArray = new byte[audioBlock.blockLength];
+                FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);
+                FileStream fs = fi.OpenRead();
+
+                fs.Position = (long)((long)audioBlock.fileOffset);
+                fs.Read(audioBlockArray, 0, audioBlock.blockLength);
+
+                int chunkLength = audioBlock.blockLength - 24 - BitConverter.ToInt32(audioBlockArray, 20);
+                byte[] audioChunk = new byte[chunkLength];
+
+                Array.Copy(audioBlockArray, audioBlock.blockLength - chunkLength, audioChunk, 0, chunkLength);
+
+                wavFile.Add(audioChunk);
+
+                fs.Close();
+            }
+
+            int subChunkSize = 0;
+            
+            // now calc SubChunkSize
+            for (var i = 1; i < wavFile.Count(); i++)
+            {
+                subChunkSize += wavFile[i].Length;
+            }
+
+            // put complete datalength into header
+            Array.Copy(BitConverter.GetBytes(subChunkSize + 8192), 0, wavFile[0], 4, 4);
+            
+            // put subchunk-length into data-chunk-header
+            Array.Copy(BitConverter.GetBytes(subChunkSize), 0, wavFile[0], 8188, 4);
+
+            // now save all byte-arrays into file
+            File.Delete(filename);
+
+            FileStream _WAVFile = new FileStream(filename, System.IO.FileMode.Append);
+            for (var i = 0; i < wavFile.Count; i++)
+            {
+               _WAVFile.Write(wavFile[i], 0, wavFile[i].Length);
+            }
+            _WAVFile.Close();
+            success = true;
+
+            return success;
+        }
+
 
     }
 }

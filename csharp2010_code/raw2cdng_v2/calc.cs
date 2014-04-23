@@ -25,6 +25,16 @@ namespace raw2cdng_v2
         {
             for (var i = 0; i < 16384; i++) calc.raw2ev[i] = (int)(Math.Log(Math.Max(1, i - black))/Math.Log(2) * EV_RESOLUTION) ;
             // need to do inverse. ev2raw, cause i didnt understood the pointerthing with 24x/10xEV_RESOLUTION
+            // what happends here?
+            /*
+             static int _ev2raw[24*EV_RESOLUTION];
+                int* ev2raw = _ev2raw + 10*EV_RESOLUTION;
+    
+             for (i = -10*EV_RESOLUTION; i < 14*EV_RESOLUTION; i++)
+                {
+                ev2raw[i] = black + pow(2, (float)i / EV_RESOLUTION);
+                }
+             */
         }
 
         // --- bitdepth conversion ---
@@ -709,6 +719,11 @@ namespace raw2cdng_v2
             return t.ToUpper();
         }
 
+        public static string setFilenameNum(string t)
+        {
+            return Regex.Replace(t, @"[^0-9]+", "");
+        }
+
         public static int[] getRGGBValues(string filename)
         {
             // read the Data from the CR2
@@ -830,10 +845,13 @@ namespace raw2cdng_v2
 
         public static byte[] frameToTC_b(int frame, double framerate)
         {
-            int frames = frame % (int)Math.Round(framerate);
-            int seconds = (int)Math.Floor((double)frame / framerate) % 60;
+            int hours = (int)Math.Floor((double)frame / framerate / 3600);
+            frame = frame - (hours * 60 * 60 * (int)framerate);
             int minutes = (int)Math.Floor((double)frame / framerate / 60);
-            int hours = (int)Math.Floor((double)frame / framerate / 1440);
+            frame = frame - (minutes*60*(int)framerate);
+            int seconds = (int)Math.Floor((double)frame / framerate) % 60;
+            frame = frame - (seconds*(int)framerate);
+            int frames = frame % (int)Math.Round(framerate);
             return new byte[] { (byte)hours, (byte)minutes, (byte)seconds, (byte)frames };
         }
 
@@ -864,6 +882,12 @@ namespace raw2cdng_v2
             header[offset] = setConvertedTC(tmp_bytes[0],dropFrame);
            
             return header;
+        }
+
+        public static double creationTime2Frame(DateTime dt, double framerate)
+        {
+            TimeSpan ts = new TimeSpan(dt.Hour,dt.Minute,dt.Second);
+            return ts.TotalSeconds* framerate;
         }
 
         // --- Helper ---

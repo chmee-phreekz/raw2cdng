@@ -130,6 +130,8 @@
     </None>
     <AppDesigner Include="Properties\" />
     <EmbeddedResource Include="RIFFtemplate.byte" />
+    <EmbeddedResource Include="rifftemplate02.byte" />
+    <EmbeddedResource Include="riffbwf_Template.byte" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">

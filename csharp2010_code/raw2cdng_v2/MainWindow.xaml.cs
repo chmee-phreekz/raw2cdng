@@ -185,8 +185,10 @@ namespace raw2cdng_v2
                         rawFiles.Add(importRaw);
                         _convert.IsEnabled = true;
 
-                        debugging._saveDebug(" Item " + importRaw.fileData.fileNameOnly + " imported."+ (importRaw.metaData.isMLV? "MLV":"RAW"));
-                        debugging._saveDebug(" ---- " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px " + importRaw.metaData.fpsString + "fps " + importRaw.metaData.frames + " frames BL" + importRaw.metaData.blackLevelOld + " WL" + importRaw.metaData.whiteLevelOld);
+                        debugging._saveDebug(" Item " + importRaw.fileData.fileNameOnly + " imported | "+ (importRaw.metaData.isMLV? "MLV":"RAW"));
+                        debugging._saveDebug(" ---- res " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px | " + importRaw.metaData.fpsString + "fps | " + importRaw.metaData.frames + " frames | BL" + importRaw.metaData.blackLevelOld + " | WL" + importRaw.metaData.whiteLevelOld);
+                        debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio?"":"no") + "audio");
+
                     }
                 }
             }
@@ -223,6 +225,15 @@ namespace raw2cdng_v2
                    _progressAll.Maximum = allFramesCount;
                    _progressAll.Value = 0;
                    _convert.Content = "converting";
+                   _batchList.IsEnabled = false;
+                   _convert.IsEnabled = false;
+                   _format12.IsEnabled = false;
+                   _format12max.IsEnabled = false;
+                   _format16.IsEnabled = false;
+                   _format16max.IsEnabled = false;
+                   _highlights.IsEnabled = false;
+                   _takePath.IsEnabled = false;
+                   _noPath.IsEnabled = false;
                }));
             allFramesCount = 0;
             
@@ -297,8 +308,11 @@ namespace raw2cdng_v2
                         break;
                 }
 
+                debugging._saveDebug(" * settings format " + settings.format+" with BL"+file.metaData.blackLevelNew+" WL"+file.metaData.whiteLevelNew+" with+"+(file.metaData.maximize?"":"out")+" maximizingvalue "+file.metaData.maximizer);
+
                 // prepare prefix variables
                 string date = string.Format("{0:yyMMdd}", file.fileData.creationTime);
+                string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.fileData.creationTime);
                 string time = string.Format("{0:HHmmss}", file.fileData.creationTime);
                 string parentSourcePath = file.fileData.sourcePath.Split(winIO.Path.DirectorySeparatorChar).Last();
                 string bitdepth = file.metaData.bitsperSampleChanged.ToString();
@@ -306,8 +320,10 @@ namespace raw2cdng_v2
                 // set filename from prefix-generator
                 file.fileData.outputFilename = settings.prefix.
                     Replace("[D]", date).
+                    Replace("[D2]", datetime).
                     Replace("[T]", time).
                     Replace("[S]", file.fileData.fileNameShort).
+                    Replace("[C]", file.fileData.fileNameNum).
                     Replace("[P]", parentSourcePath).
                     Replace("[B]", bitdepth).
                     Replace("[F]", file.fileData.fileNameOnly);
@@ -332,6 +348,9 @@ namespace raw2cdng_v2
                 {
                     file.fileData.basePath = settings.outputPath;
                 }
+                debugging._saveDebug(" * filename generator " + settings.prefix);
+                debugging._saveDebug(" * path -> " + file.fileData.destinationPath);
+                debugging._saveDebug(" * file -> " + file.fileData.outputFilename);
 
                 // check/make destination path
                 winIO.Directory.CreateDirectory(file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath);
@@ -371,7 +390,7 @@ namespace raw2cdng_v2
                     para.threadData.CDEvent = cde;
 
                     ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
-                    para = null;                    
+                    para = null;
                 }
                 // wait till all threads has ended
                 cde.Wait();
@@ -379,6 +398,7 @@ namespace raw2cdng_v2
                 // now finally audio if existent
                 if (file.metaData.hasAudio)
                 {
+                    debugging._saveDebug(" * wave -> " + file.fileData.destinationPath+".wav");
                     io.saveAudio(file.fileData._changedPath + file.fileData.destinationPath + ".wav", file);
                 }
                 this.Dispatcher.Invoke((Action)(() =>
@@ -389,6 +409,7 @@ namespace raw2cdng_v2
                 }));
             }
             // clear GUI and some variables
+            // re enable buttons
             this.Dispatcher.Invoke((Action)(() =>
                 {
                     _batchList.Items.Clear();
@@ -398,6 +419,15 @@ namespace raw2cdng_v2
                     _progressAll.Value = 0;
                     _convert.IsEnabled = false;
                     _convert.Content = "convert";
+
+                    _batchList.IsEnabled = true;
+                    _format12.IsEnabled = true;
+                    _format12max.IsEnabled = true;
+                    _format16.IsEnabled = true;
+                    _format16max.IsEnabled = true;
+                    _highlights.IsEnabled = true;
+                    _takePath.IsEnabled = true;
+                    _noPath.IsEnabled = true;
                 }));
         }
 
@@ -417,7 +447,8 @@ namespace raw2cdng_v2
             string finalOutputFilename = justFilename + ".dng";
 
             // write Timecode into dng
-            param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, param.threadData.frame, 0x1db8, (int)(param.metaData.fpsNom / param.metaData.fpsDen), param.metaData.dropFrame);
+            int timestamp = param.threadData.frame + (int)calc.creationTime2Frame( param.fileData.creationTime, (double)(param.metaData.fpsNom/param.metaData.fpsDen) );
+            param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1db8, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
 
             byte[] fillUp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             byte[] tempRaw = new byte[fillUp.Length + param.rawData.Length];

@@ -80,6 +80,7 @@ namespace raw2cdng_v2
         public string fileName { get; set; }
         public string fileNameOnly { get; set; }
         public string fileNameShort { get; set; }
+        public string fileNameNum { get; set; }
         public string sourcePath { get; set; }
         public string basePath { get; set; }
         public string destinationPath { get; set; }
