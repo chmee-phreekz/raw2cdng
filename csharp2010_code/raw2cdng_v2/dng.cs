@@ -21,8 +21,8 @@ namespace raw2cdng_v2
             DNGtemplate[0x1b6a] = tmp_bytes[0];
             DNGtemplate[0x1b6b] = tmp_bytes[1];
             // -- xres to ActiveArea
-            DNGtemplate[0x1d1a] = tmp_bytes[0];
-            DNGtemplate[0x1d1b] = tmp_bytes[1];
+            DNGtemplate[0x1d1c] = tmp_bytes[0];
+            DNGtemplate[0x1d1d] = tmp_bytes[1];
 
             // -- yres --
             tmp_bytes = BitConverter.GetBytes(Data.metaData.yResolution);
@@ -35,8 +35,8 @@ namespace raw2cdng_v2
             DNGtemplate[0x1b72] = tmp_bytes[0];
             DNGtemplate[0x1b73] = tmp_bytes[1];
             // -- yres to ActiveArea
-            DNGtemplate[0x1d16] = tmp_bytes[0];
-            DNGtemplate[0x1d17] = tmp_bytes[1];
+            DNGtemplate[0x1d18] = tmp_bytes[0];
+            DNGtemplate[0x1d19] = tmp_bytes[1];
 
             // -- stripByteCounts --
             tmp_bytes = BitConverter.GetBytes(Data.metaData.stripByteCountReal / Data.metaData.bitsperSample * Data.metaData.bitsperSampleChanged);
@@ -115,7 +115,7 @@ namespace raw2cdng_v2
 
             // REELNAME
             byte[] reelNameArray = System.Text.Encoding.UTF8.GetBytes(Data.fileData.fileNameShort);
-            reelNameArray.CopyTo(DNGtemplate, 0x1dae);
+            reelNameArray.CopyTo(DNGtemplate, 0x1db0);
 
             //UniqueName length
             if (Data.metaData.modell.Length > 36) Data.metaData.modell = Data.metaData.modell.Substring(0, 36);
@@ -126,17 +126,23 @@ namespace raw2cdng_v2
             byte[] modellNameA = new Byte[36];
             for (var i = 0; i < modellNameA.Length; i++) modellNameA[i] = 0;
             System.Text.Encoding.UTF8.GetBytes(Data.metaData.modell).CopyTo(modellNameA, 0);
-            modellNameA.CopyTo(DNGtemplate, 0x1dca);
-            modellNameA.CopyTo(DNGtemplate, 0x1dfa);
+            modellNameA.CopyTo(DNGtemplate, 0x1dcc);
+            modellNameA.CopyTo(DNGtemplate, 0x1dfc);
 
             // framerate
             DNGtemplate[0x270] = 0x0a; //instead 05 -> 0a
             tmp_bytes = BitConverter.GetBytes(Data.metaData.fpsNom);
-            Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1dc0, 4);
+            Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1dc2, 4);
 
             tmp_bytes = BitConverter.GetBytes(Data.metaData.fpsDen);
-            Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1dc4, 4);
+            Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1dc6, 4);
 
+            //camID as serialNumber
+            byte[] serial = new Byte[13];
+            for (var i = 0; i < serial.Length; i++) serial[i] = 0;
+            System.Text.Encoding.ASCII.GetBytes(Data.metaData.camId).CopyTo(serial, 0);
+            serial.CopyTo(DNGtemplate, 0x1cea);
+            
             return DNGtemplate;
         }
 

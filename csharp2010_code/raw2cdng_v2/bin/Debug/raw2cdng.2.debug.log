@@ -1,0 +1,680 @@
+ - 
+ ------------- 1.5.0.BETA4 started at 14.05.11 21:58:14 -- 
+[drop] started
+[drop] Files dropped:
+[drop] ------
+[drop] C:\_raw\M09-1655.MLV
+[drop] ------
+[drop] -- file C:\_raw\M09-1655.MLV will be analyzed now.
+[drop] is MLV 
+[setFileinfoData] set/changed Filedata
+[drop] FileinfoData set
+[createMLVBlocklist] started
+[createMLVBlocklist] splitFiles counted (1)
+[createMLVBlocklist] indexing Blocks in C:\_raw\M09-1655.MLV
+[getMLVAttrib] started
+[getMLVAttrib] reading RAWI-Block
+[getMLVAttrib] reading MLVI-Block
+[getMLVAttrib] reading IDNT-Block
+[getMLVAttrib] reading EXPO-Block
+[getMLVAttrib] reading LENS-Block
+[getMLVAttrib] reading WAVI-Block
+[drop] MLV Attributes and Blocklist created and sorted. Blocks: 608
+[drop] hasAudio. AUDF-List created. Blocks: 46
+[drop] VIDF-List created. Blocks: 212
+[readVIDFBlockData] started
+[readVIDFBlockData] read VIDFBlock-Data Frame #0 in File #0 on offset 1036
+[readVIDFBlockData] read VIDFBlock-Data Frame #1 in File #0 on offset 1618528
+[readVIDFBlockData] read VIDFBlock-Data Frame #2 in File #0 on offset 3236448
+[readVIDFBlockData] read VIDFBlock-Data Frame #3 in File #0 on offset 4854368
+[readVIDFBlockData] read VIDFBlock-Data Frame #4 in File #0 on offset 6472288
+[readVIDFBlockData] read VIDFBlock-Data Frame #5 in File #0 on offset 8090208
+[readVIDFBlockData] read VIDFBlock-Data Frame #6 in File #0 on offset 9708128
+[readVIDFBlockData] read VIDFBlock-Data Frame #7 in File #0 on offset 11326048
+[readVIDFBlockData] read VIDFBlock-Data Frame #8 in File #0 on offset 12943968
+[readVIDFBlockData] read VIDFBlock-Data Frame #9 in File #0 on offset 14561888
+[readVIDFBlockData] read VIDFBlock-Data Frame #10 in File #0 on offset 16179808
+[readVIDFBlockData] read VIDFBlock-Data Frame #11 in File #0 on offset 17797728
+[readVIDFBlockData] read VIDFBlock-Data Frame #12 in File #0 on offset 19415648
+[readVIDFBlockData] read VIDFBlock-Data Frame #13 in File #0 on offset 21033568
+[readVIDFBlockData] read VIDFBlock-Data Frame #14 in File #0 on offset 22651488
+[readVIDFBlockData] read VIDFBlock-Data Frame #15 in File #0 on offset 24269408
+[readVIDFBlockData] read VIDFBlock-Data Frame #16 in File #0 on offset 25887328
+[readVIDFBlockData] read VIDFBlock-Data Frame #17 in File #0 on offset 27505248
+[readVIDFBlockData] read VIDFBlock-Data Frame #18 in File #0 on offset 29123168
+[readVIDFBlockData] read VIDFBlock-Data Frame #19 in File #0 on offset 30741088
+[readVIDFBlockData] read VIDFBlock-Data Frame #20 in File #0 on offset 32359008
+[readVIDFBlockData] read VIDFBlock-Data Frame #21 in File #0 on offset 33976928
+[readVIDFBlockData] read VIDFBlock-Data Frame #22 in File #0 on offset 35594848
+[readVIDFBlockData] read VIDFBlock-Data Frame #23 in File #0 on offset 37212768
+[readVIDFBlockData] read VIDFBlock-Data Frame #24 in File #0 on offset 38830688
+[readVIDFBlockData] read VIDFBlock-Data Frame #25 in File #0 on offset 40448608
+[readVIDFBlockData] read VIDFBlock-Data Frame #26 in File #0 on offset 42066528
+[readVIDFBlockData] read VIDFBlock-Data Frame #27 in File #0 on offset 43684448
+[readVIDFBlockData] read VIDFBlock-Data Frame #28 in File #0 on offset 45302368
+[readVIDFBlockData] read VIDFBlock-Data Frame #29 in File #0 on offset 46920288
+[readVIDFBlockData] read VIDFBlock-Data Frame #30 in File #0 on offset 48538208
+[readVIDFBlockData] read VIDFBlock-Data Frame #31 in File #0 on offset 50156260
+[readVIDFBlockData] read VIDFBlock-Data Frame #32 in File #0 on offset 51774048
+[readVIDFBlockData] read VIDFBlock-Data Frame #33 in File #0 on offset 53391968
+[readVIDFBlockData] read VIDFBlock-Data Frame #34 in File #0 on offset 55009888
+[readVIDFBlockData] read VIDFBlock-Data Frame #35 in File #0 on offset 56627808
+[readVIDFBlockData] read VIDFBlock-Data Frame #36 in File #0 on offset 58245728
+[readVIDFBlockData] read VIDFBlock-Data Frame #37 in File #0 on offset 59863648
+[readVIDFBlockData] read VIDFBlock-Data Frame #38 in File #0 on offset 61481568
+[readVIDFBlockData] read VIDFBlock-Data Frame #39 in File #0 on offset 63099488
+[readVIDFBlockData] read VIDFBlock-Data Frame #40 in File #0 on offset 64717408
+[readVIDFBlockData] read VIDFBlock-Data Frame #41 in File #0 on offset 66335328
+[readVIDFBlockData] read VIDFBlock-Data Frame #42 in File #0 on offset 67953248
+[readVIDFBlockData] read VIDFBlock-Data Frame #43 in File #0 on offset 69571168
+[readVIDFBlockData] read VIDFBlock-Data Frame #44 in File #0 on offset 71189088
+[readVIDFBlockData] read VIDFBlock-Data Frame #45 in File #0 on offset 72807008
+[readVIDFBlockData] read VIDFBlock-Data Frame #46 in File #0 on offset 74424928
+[readVIDFBlockData] read VIDFBlock-Data Frame #47 in File #0 on offset 76042928
+[readVIDFBlockData] read VIDFBlock-Data Frame #48 in File #0 on offset 77660900
+[readVIDFBlockData] read VIDFBlock-Data Frame #49 in File #0 on offset 79278688
+[readVIDFBlockData] read VIDFBlock-Data Frame #50 in File #0 on offset 80896608
+[readVIDFBlockData] read VIDFBlock-Data Frame #51 in File #0 on offset 82514528
+[readVIDFBlockData] read VIDFBlock-Data Frame #52 in File #0 on offset 84132448
+[readVIDFBlockData] read VIDFBlock-Data Frame #53 in File #0 on offset 85750368
+[readVIDFBlockData] read VIDFBlock-Data Frame #54 in File #0 on offset 87368288
+[readVIDFBlockData] read VIDFBlock-Data Frame #55 in File #0 on offset 88986208
+[readVIDFBlockData] read VIDFBlock-Data Frame #56 in File #0 on offset 90604128
+[readVIDFBlockData] read VIDFBlock-Data Frame #57 in File #0 on offset 92222048
+[readVIDFBlockData] read VIDFBlock-Data Frame #58 in File #0 on offset 93839968
+[readVIDFBlockData] read VIDFBlock-Data Frame #59 in File #0 on offset 95457888
+[readVIDFBlockData] read VIDFBlock-Data Frame #60 in File #0 on offset 97075808
+[readVIDFBlockData] read VIDFBlock-Data Frame #61 in File #0 on offset 98693728
+[readVIDFBlockData] read VIDFBlock-Data Frame #62 in File #0 on offset 100311648
+[readVIDFBlockData] read VIDFBlock-Data Frame #63 in File #0 on offset 101929568
+[readVIDFBlockData] read VIDFBlock-Data Frame #64 in File #0 on offset 103547488
+[readVIDFBlockData] read VIDFBlock-Data Frame #65 in File #0 on offset 105165408
+[readVIDFBlockData] read VIDFBlock-Data Frame #66 in File #0 on offset 106783460
+[readVIDFBlockData] read VIDFBlock-Data Frame #67 in File #0 on offset 108401248
+[readVIDFBlockData] read VIDFBlock-Data Frame #68 in File #0 on offset 110019168
+[readVIDFBlockData] read VIDFBlock-Data Frame #69 in File #0 on offset 111637088
+[readVIDFBlockData] read VIDFBlock-Data Frame #70 in File #0 on offset 113255008
+[readVIDFBlockData] read VIDFBlock-Data Frame #71 in File #0 on offset 114872928
+[readVIDFBlockData] read VIDFBlock-Data Frame #72 in File #0 on offset 116490848
+[readVIDFBlockData] read VIDFBlock-Data Frame #73 in File #0 on offset 118108768
+[readVIDFBlockData] read VIDFBlock-Data Frame #74 in File #0 on offset 119726688
+[readVIDFBlockData] read VIDFBlock-Data Frame #75 in File #0 on offset 121344608
+[readVIDFBlockData] read VIDFBlock-Data Frame #76 in File #0 on offset 122962528
+[readVIDFBlockData] read VIDFBlock-Data Frame #77 in File #0 on offset 124580448
+[readVIDFBlockData] read VIDFBlock-Data Frame #78 in File #0 on offset 126198368
+[readVIDFBlockData] read VIDFBlock-Data Frame #79 in File #0 on offset 127816420
+[readVIDFBlockData] read VIDFBlock-Data Frame #80 in File #0 on offset 129434208
+[readVIDFBlockData] read VIDFBlock-Data Frame #81 in File #0 on offset 131052128
+[readVIDFBlockData] read VIDFBlock-Data Frame #82 in File #0 on offset 132670048
+[readVIDFBlockData] read VIDFBlock-Data Frame #83 in File #0 on offset 134287968
+[readVIDFBlockData] read VIDFBlock-Data Frame #84 in File #0 on offset 135905888
+[readVIDFBlockData] read VIDFBlock-Data Frame #85 in File #0 on offset 137523940
+[readVIDFBlockData] read VIDFBlock-Data Frame #86 in File #0 on offset 139141728
+[readVIDFBlockData] read VIDFBlock-Data Frame #87 in File #0 on offset 140759648
+[readVIDFBlockData] read VIDFBlock-Data Frame #88 in File #0 on offset 142377568
+[readVIDFBlockData] read VIDFBlock-Data Frame #89 in File #0 on offset 143995488
+[readVIDFBlockData] read VIDFBlock-Data Frame #90 in File #0 on offset 145613408
+[readVIDFBlockData] read VIDFBlock-Data Frame #91 in File #0 on offset 147231328
+[readVIDFBlockData] read VIDFBlock-Data Frame #92 in File #0 on offset 148849248
+[readVIDFBlockData] read VIDFBlock-Data Frame #93 in File #0 on offset 150467168
+[readVIDFBlockData] read VIDFBlock-Data Frame #94 in File #0 on offset 152085088
+[readVIDFBlockData] read VIDFBlock-Data Frame #95 in File #0 on offset 153703088
+[readVIDFBlockData] read VIDFBlock-Data Frame #96 in File #0 on offset 155321060
+[readVIDFBlockData] read VIDFBlock-Data Frame #97 in File #0 on offset 156938848
+[readVIDFBlockData] read VIDFBlock-Data Frame #98 in File #0 on offset 158556768
+[readVIDFBlockData] read VIDFBlock-Data Frame #99 in File #0 on offset 160174688
+[readVIDFBlockData] read VIDFBlock-Data Frame #100 in File #0 on offset 161792608
+[readVIDFBlockData] read VIDFBlock-Data Frame #101 in File #0 on offset 163410528
+[readVIDFBlockData] read VIDFBlock-Data Frame #102 in File #0 on offset 165028580
+[readVIDFBlockData] read VIDFBlock-Data Frame #103 in File #0 on offset 166646368
+[readVIDFBlockData] read VIDFBlock-Data Frame #104 in File #0 on offset 168264288
+[readVIDFBlockData] read VIDFBlock-Data Frame #105 in File #0 on offset 169882208
+[readVIDFBlockData] read VIDFBlock-Data Frame #106 in File #0 on offset 171500128
+[readVIDFBlockData] read VIDFBlock-Data Frame #107 in File #0 on offset 173118048
+[readVIDFBlockData] read VIDFBlock-Data Frame #108 in File #0 on offset 174735968
+[readVIDFBlockData] read VIDFBlock-Data Frame #109 in File #0 on offset 176354020
+[readVIDFBlockData] read VIDFBlock-Data Frame #110 in File #0 on offset 177971808
+[readVIDFBlockData] read VIDFBlock-Data Frame #111 in File #0 on offset 179589728
+[readVIDFBlockData] read VIDFBlock-Data Frame #112 in File #0 on offset 181207648
+[readVIDFBlockData] read VIDFBlock-Data Frame #113 in File #0 on offset 182825568
+[readVIDFBlockData] read VIDFBlock-Data Frame #114 in File #0 on offset 184443488
+[readVIDFBlockData] read VIDFBlock-Data Frame #115 in File #0 on offset 186061408
+[readVIDFBlockData] read VIDFBlock-Data Frame #116 in File #0 on offset 187679328
+[readVIDFBlockData] read VIDFBlock-Data Frame #117 in File #0 on offset 189297248
+[readVIDFBlockData] read VIDFBlock-Data Frame #118 in File #0 on offset 190915168
+[readVIDFBlockData] read VIDFBlock-Data Frame #119 in File #0 on offset 192533088
+[readVIDFBlockData] read VIDFBlock-Data Frame #120 in File #0 on offset 194151008
+[readVIDFBlockData] read VIDFBlock-Data Frame #121 in File #0 on offset 195769060
+[readVIDFBlockData] read VIDFBlock-Data Frame #122 in File #0 on offset 197386848
+[readVIDFBlockData] read VIDFBlock-Data Frame #123 in File #0 on offset 199004768
+[readVIDFBlockData] read VIDFBlock-Data Frame #124 in File #0 on offset 200622688
+[readVIDFBlockData] read VIDFBlock-Data Frame #125 in File #0 on offset 202240608
+[readVIDFBlockData] read VIDFBlock-Data Frame #126 in File #0 on offset 203858528
+[readVIDFBlockData] read VIDFBlock-Data Frame #127 in File #0 on offset 205476580
+[readVIDFBlockData] read VIDFBlock-Data Frame #128 in File #0 on offset 207094368
+[readVIDFBlockData] read VIDFBlock-Data Frame #129 in File #0 on offset 208712288
+[readVIDFBlockData] read VIDFBlock-Data Frame #130 in File #0 on offset 210330208
+[readVIDFBlockData] read VIDFBlock-Data Frame #131 in File #0 on offset 211948128
+[readVIDFBlockData] read VIDFBlock-Data Frame #132 in File #0 on offset 213566048
+[readVIDFBlockData] read VIDFBlock-Data Frame #133 in File #0 on offset 215183968
+[readVIDFBlockData] read VIDFBlock-Data Frame #134 in File #0 on offset 216801888
+[readVIDFBlockData] read VIDFBlock-Data Frame #135 in File #0 on offset 218419808
+[readVIDFBlockData] read VIDFBlock-Data Frame #136 in File #0 on offset 220037728
+[readVIDFBlockData] read VIDFBlock-Data Frame #137 in File #0 on offset 221655648
+[readVIDFBlockData] read VIDFBlock-Data Frame #138 in File #0 on offset 223273700
+[readVIDFBlockData] read VIDFBlock-Data Frame #139 in File #0 on offset 224891488
+[readVIDFBlockData] read VIDFBlock-Data Frame #140 in File #0 on offset 226509408
+[readVIDFBlockData] read VIDFBlock-Data Frame #141 in File #0 on offset 228127328
+[readVIDFBlockData] read VIDFBlock-Data Frame #142 in File #0 on offset 229745248
+[readVIDFBlockData] read VIDFBlock-Data Frame #143 in File #0 on offset 231363168
+[readVIDFBlockData] read VIDFBlock-Data Frame #144 in File #0 on offset 232981168
+[readVIDFBlockData] read VIDFBlock-Data Frame #145 in File #0 on offset 234599008
+[readVIDFBlockData] read VIDFBlock-Data Frame #146 in File #0 on offset 236216928
+[readVIDFBlockData] read VIDFBlock-Data Frame #147 in File #0 on offset 237834848
+[readVIDFBlockData] read VIDFBlock-Data Frame #148 in File #0 on offset 239452768
+[readVIDFBlockData] read VIDFBlock-Data Frame #149 in File #0 on offset 241070688
+[readVIDFBlockData] read VIDFBlock-Data Frame #150 in File #0 on offset 242688740
+[readVIDFBlockData] read VIDFBlock-Data Frame #151 in File #0 on offset 244306528
+[readVIDFBlockData] read VIDFBlock-Data Frame #152 in File #0 on offset 245924448
+[readVIDFBlockData] read VIDFBlock-Data Frame #153 in File #0 on offset 247542368
+[readVIDFBlockData] read VIDFBlock-Data Frame #154 in File #0 on offset 249160288
+[readVIDFBlockData] read VIDFBlock-Data Frame #155 in File #0 on offset 250778208
+[readVIDFBlockData] read VIDFBlock-Data Frame #156 in File #0 on offset 252396128
+[readVIDFBlockData] read VIDFBlock-Data Frame #157 in File #0 on offset 254014048
+[readVIDFBlockData] read VIDFBlock-Data Frame #158 in File #0 on offset 255631968
+[readVIDFBlockData] read VIDFBlock-Data Frame #159 in File #0 on offset 257249888
+[readVIDFBlockData] read VIDFBlock-Data Frame #160 in File #0 on offset 258867808
+[readVIDFBlockData] read VIDFBlock-Data Frame #161 in File #0 on offset 260485728
+[readVIDFBlockData] read VIDFBlock-Data Frame #162 in File #0 on offset 262103648
+[readVIDFBlockData] read VIDFBlock-Data Frame #163 in File #0 on offset 263721568
+[readVIDFBlockData] read VIDFBlock-Data Frame #164 in File #0 on offset 265339488
+[readVIDFBlockData] read VIDFBlock-Data Frame #165 in File #0 on offset 266957408
+[readVIDFBlockData] read VIDFBlock-Data Frame #166 in File #0 on offset 268575328
+[readVIDFBlockData] read VIDFBlock-Data Frame #167 in File #0 on offset 270193248
+[readVIDFBlockData] read VIDFBlock-Data Frame #168 in File #0 on offset 271811168
+[readVIDFBlockData] read VIDFBlock-Data Frame #169 in File #0 on offset 273429220
+[readVIDFBlockData] read VIDFBlock-Data Frame #170 in File #0 on offset 275047008
+[readVIDFBlockData] read VIDFBlock-Data Frame #171 in File #0 on offset 276664928
+[readVIDFBlockData] read VIDFBlock-Data Frame #172 in File #0 on offset 278282848
+[readVIDFBlockData] read VIDFBlock-Data Frame #173 in File #0 on offset 279900768
+[readVIDFBlockData] read VIDFBlock-Data Frame #174 in File #0 on offset 281518688
+[readVIDFBlockData] read VIDFBlock-Data Frame #175 in File #0 on offset 283136608
+[readVIDFBlockData] read VIDFBlock-Data Frame #176 in File #0 on offset 284754528
+[readVIDFBlockData] read VIDFBlock-Data Frame #177 in File #0 on offset 286372448
+[readVIDFBlockData] read VIDFBlock-Data Frame #178 in File #0 on offset 287990368
+[readVIDFBlockData] read VIDFBlock-Data Frame #179 in File #0 on offset 289608288
+[readVIDFBlockData] read VIDFBlock-Data Frame #180 in File #0 on offset 291226208
+[readVIDFBlockData] read VIDFBlock-Data Frame #181 in File #0 on offset 292844128
+[readVIDFBlockData] read VIDFBlock-Data Frame #182 in File #0 on offset 294462048
+[readVIDFBlockData] read VIDFBlock-Data Frame #183 in File #0 on offset 296079968
+[readVIDFBlockData] read VIDFBlock-Data Frame #184 in File #0 on offset 297697888
+[readVIDFBlockData] read VIDFBlock-Data Frame #185 in File #0 on offset 299315808
+[readVIDFBlockData] read VIDFBlock-Data Frame #186 in File #0 on offset 300933860
+[readVIDFBlockData] read VIDFBlock-Data Frame #187 in File #0 on offset 302551648
+[readVIDFBlockData] read VIDFBlock-Data Frame #188 in File #0 on offset 304169568
+[readVIDFBlockData] read VIDFBlock-Data Frame #189 in File #0 on offset 305787488
+[readVIDFBlockData] read VIDFBlock-Data Frame #190 in File #0 on offset 307405408
+[readVIDFBlockData] read VIDFBlock-Data Frame #191 in File #0 on offset 309023328
+[readVIDFBlockData] read VIDFBlock-Data Frame #192 in File #0 on offset 310641328
+[readVIDFBlockData] read VIDFBlock-Data Frame #193 in File #0 on offset 312259168
+[readVIDFBlockData] read VIDFBlock-Data Frame #194 in File #0 on offset 313877088
+[readVIDFBlockData] read VIDFBlock-Data Frame #195 in File #0 on offset 315495008
+[readVIDFBlockData] read VIDFBlock-Data Frame #196 in File #0 on offset 318730848
+[readVIDFBlockData] read VIDFBlock-Data Frame #197 in File #0 on offset 320348768
+[readVIDFBlockData] read VIDFBlock-Data Frame #198 in File #0 on offset 321966688
+[readVIDFBlockData] read VIDFBlock-Data Frame #199 in File #0 on offset 323584608
+[readVIDFBlockData] read VIDFBlock-Data Frame #200 in File #0 on offset 325202528
+[readVIDFBlockData] read VIDFBlock-Data Frame #201 in File #0 on offset 326820448
+[readVIDFBlockData] read VIDFBlock-Data Frame #202 in File #0 on offset 328438368
+[readVIDFBlockData] read VIDFBlock-Data Frame #203 in File #0 on offset 330056288
+[readVIDFBlockData] read VIDFBlock-Data Frame #204 in File #0 on offset 331674208
+[readVIDFBlockData] read VIDFBlock-Data Frame #205 in File #0 on offset 333292128
+[readVIDFBlockData] read VIDFBlock-Data Frame #206 in File #0 on offset 334910048
+[readVIDFBlockData] read VIDFBlock-Data Frame #207 in File #0 on offset 336527968
+[readVIDFBlockData] read VIDFBlock-Data Frame #208 in File #0 on offset 338145888
+[readVIDFBlockData] read VIDFBlock-Data Frame #209 in File #0 on offset 339763808
+[readVIDFBlockData] read VIDFBlock-Data Frame #210 in File #0 on offset 341381728
+[readVIDFBlockData] read VIDFBlock-Data Frame #211 in File #0 on offset 342999704
+[drop] VIDF-Blockdata created.
+[drop] adding M09-1655 to batchList
+[drop] ** Item M09-1655 imported | MLV
+[drop] * res 1280x720px | 23,98fps | 212 frames | BL2047 | WL15000
+[drop] * modell Canon EOS 5D Mark III | vidfblocks 212 | has audio
+[doWork] started
+[doWork] all in all there are 212 frames to convert
+[doWork] 4 Cores used
+[doWork] -> converting item M09-1655
+[doWork] settings format 2 with BL0 WL65535 with+ maximizingvalue 5
+[doWork] prefix - filename generator [C]_1_[D2]_C0000(_)
+[doWork] destinationPath -> 091655_1_2014-04-23_1713_C0000
+[doWork] outputFilename  -> 091655_1_2014-04-23_1713_C0000_
+[doWork] Directory C:\_raw\091655_1_2014-04-23_1713_C0000 created
+[doWork] took DNGtemplate and changed values
+[doWork] * init frameCount for multithreaded Convert
+[doWork][for] throw sequential frame 0 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 0
+[doWork][for] throw sequential frame 1 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 1
+[doWork][for] throw sequential frame 2 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 2
+[doWork][for] throw sequential frame 3 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 3
+[doWork][for] throw sequential frame 4 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 4
+[doWork][for] throw sequential frame 5 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 5
+[doWork][for] throw sequential frame 6 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 6
+[doWork][for] throw sequential frame 7 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 7
+[doWork][for] throw sequential frame 8 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 8
+[doWork][for] throw sequential frame 9 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 9
+[doWork][for] throw sequential frame 10 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 10
+[doWork][for] throw sequential frame 11 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 11
+[doWork][for] throw sequential frame 12 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 12
+[doWork][for] throw sequential frame 13 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 13
+[doWork][for] throw sequential frame 14 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 14
+[doWork][for] throw sequential frame 15 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 15
+[doWork][for] throw sequential frame 16 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 16
+[doWork][for] throw sequential frame 17 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 17
+[doWork][for] throw sequential frame 18 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 18
+[doWork][for] throw sequential frame 19 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 19
+[doWork][for] throw sequential frame 20 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 20
+[doWork][for] throw sequential frame 21 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 21
+[doWork][for] throw sequential frame 22 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 22
+[doWork][for] throw sequential frame 23 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 23
+[doWork][for] throw sequential frame 24 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 24
+[doWork][for] throw sequential frame 25 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 25
+[doWork][for] throw sequential frame 26 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 26
+[doWork][for] throw sequential frame 27 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 27
+[doWork][for] throw sequential frame 28 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 28
+[doWork][for] throw sequential frame 29 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 29
+[doWork][for] throw sequential frame 30 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 30
+[doWork][for] throw sequential frame 31 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 31
+[doWork][for] throw sequential frame 32 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 32
+[doWork][for] throw sequential frame 33 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 33
+[doWork][for] throw sequential frame 34 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 34
+[doWork][for] throw sequential frame 35 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 35
+[doWork][for] throw sequential frame 36 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 36
+[doWork][for] throw sequential frame 37 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 37
+[doWork][for] throw sequential frame 38 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 38
+[doWork][for] throw sequential frame 39 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 39
+[doWork][for] throw sequential frame 40 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 40
+[doWork][for] throw sequential frame 41 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 41
+[doWork][for] throw sequential frame 42 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 42
+[doWork][for] throw sequential frame 43 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 43
+[doWork][for] throw sequential frame 44 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 44
+[doWork][for] throw sequential frame 45 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 45
+[doWork][for] throw sequential frame 46 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 46
+[doWork][for] throw sequential frame 47 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 47
+[doWork][for] throw sequential frame 48 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 48
+[doWork][for] throw sequential frame 49 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 49
+[doWork][for] throw sequential frame 50 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 50
+[doWork][for] throw sequential frame 51 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 51
+[doWork][for] throw sequential frame 52 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 52
+[doWork][for] throw sequential frame 53 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 53
+[doWork][for] throw sequential frame 54 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 54
+[doWork][for] throw sequential frame 55 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 55
+[doWork][for] throw sequential frame 56 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 56
+[doWork][for] throw sequential frame 57 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 57
+[doWork][for] throw sequential frame 58 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 58
+[doWork][for] throw sequential frame 59 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 59
+[doWork][for] throw sequential frame 60 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 60
+[doWork][for] throw sequential frame 61 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 61
+[doWork][for] throw sequential frame 62 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 62
+[doWork][for] throw sequential frame 63 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 63
+[doWork][for] throw sequential frame 64 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 64
+[doWork][for] throw sequential frame 65 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 65
+[doWork][for] throw sequential frame 66 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 66
+[doWork][for] throw sequential frame 67 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 67
+[doWork][for] throw sequential frame 68 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 68
+[doWork][for] throw sequential frame 69 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 69
+[doWork][for] throw sequential frame 70 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 70
+[doWork][for] throw sequential frame 71 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 71
+[doWork][for] throw sequential frame 72 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 72
+[doWork][for] throw sequential frame 73 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 73
+[doWork][for] throw sequential frame 74 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 74
+[doWork][for] throw sequential frame 75 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 75
+[doWork][for] throw sequential frame 76 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 76
+[doWork][for] throw sequential frame 77 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 77
+[doWork][for] throw sequential frame 78 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 78
+[doWork][for] throw sequential frame 79 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 79
+[doWork][for] throw sequential frame 80 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 80
+[doWork][for] throw sequential frame 81 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 81
+[doWork][for] throw sequential frame 82 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 82
+[doWork][for] throw sequential frame 83 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 83
+[doWork][for] throw sequential frame 84 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 84
+[doWork][for] throw sequential frame 85 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 85
+[doWork][for] throw sequential frame 86 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 86
+[doWork][for] throw sequential frame 87 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 87
+[doWork][for] throw sequential frame 88 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 88
+[doWork][for] throw sequential frame 89 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 89
+[doWork][for] throw sequential frame 90 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 90
+[doWork][for] throw sequential frame 91 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 91
+[doWork][for] throw sequential frame 92 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 92
+[doWork][for] throw sequential frame 93 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 93
+[doWork][for] throw sequential frame 94 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 94
+[doWork][for] throw sequential frame 95 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 95
+[doWork][for] throw sequential frame 96 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 96
+[doWork][for] throw sequential frame 97 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 97
+[doWork][for] throw sequential frame 98 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 98
+[doWork][for] throw sequential frame 99 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 99
+[doWork][for] throw sequential frame 100 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 100
+[doWork][for] throw sequential frame 101 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 101
+[doWork][for] throw sequential frame 102 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 102
+[doWork][for] throw sequential frame 103 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 103
+[doWork][for] throw sequential frame 104 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 104
+[doWork][for] throw sequential frame 105 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 105
+[doWork][for] throw sequential frame 106 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 106
+[doWork][for] throw sequential frame 107 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 107
+[doWork][for] throw sequential frame 108 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 108
+[doWork][for] throw sequential frame 109 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 109
+[doWork][for] throw sequential frame 110 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 110
+[doWork][for] throw sequential frame 111 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 111
+[doWork][for] throw sequential frame 112 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 112
+[doWork][for] throw sequential frame 113 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 113
+[doWork][for] throw sequential frame 114 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 114
+[doWork][for] throw sequential frame 115 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 115
+[doWork][for] throw sequential frame 116 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 116
+[doWork][for] throw sequential frame 117 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 117
+[doWork][for] throw sequential frame 118 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 118
+[doWork][for] throw sequential frame 119 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 119
+[doWork][for] throw sequential frame 120 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 120
+[doWork][for] throw sequential frame 121 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 121
+[doWork][for] throw sequential frame 122 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 122
+[doWork][for] throw sequential frame 123 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 123
+[doWork][for] throw sequential frame 124 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 124
+[doWork][for] throw sequential frame 125 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 125
+[doWork][for] throw sequential frame 126 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 126
+[doWork][for] throw sequential frame 127 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 127
+[doWork][for] throw sequential frame 128 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 128
+[doWork][for] throw sequential frame 129 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 129
+[doWork][for] throw sequential frame 130 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 130
+[doWork][for] throw sequential frame 131 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 131
+[doWork][for] throw sequential frame 132 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 132
+[doWork][for] throw sequential frame 133 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 133
+[doWork][for] throw sequential frame 134 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 134
+[doWork][for] throw sequential frame 135 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 135
+[doWork][for] throw sequential frame 136 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 136
+[doWork][for] throw sequential frame 137 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 137
+[doWork][for] throw sequential frame 138 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 138
+[doWork][for] throw sequential frame 139 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 139
+[doWork][for] throw sequential frame 140 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 140
+[doWork][for] throw sequential frame 141 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 141
+[doWork][for] throw sequential frame 142 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 142
+[doWork][for] throw sequential frame 143 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 143
+[doWork][for] throw sequential frame 144 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 144
+[doWork][for] throw sequential frame 145 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 145
+[doWork][for] throw sequential frame 146 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 146
+[doWork][for] throw sequential frame 147 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 147
+[doWork][for] throw sequential frame 148 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 148
+[doWork][for] throw sequential frame 149 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 149
+[doWork][for] throw sequential frame 150 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 150
+[doWork][for] throw sequential frame 151 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 151
+[doWork][for] throw sequential frame 152 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 152
+[doWork][for] throw sequential frame 153 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 153
+[doWork][for] throw sequential frame 154 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 154
+[doWork][for] throw sequential frame 155 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 155
+[doWork][for] throw sequential frame 156 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 156
+[doWork][for] throw sequential frame 157 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 157
+[doWork][for] throw sequential frame 158 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 158
+[doWork][for] throw sequential frame 159 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 159
+[doWork][for] throw sequential frame 160 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 160
+[doWork][for] throw sequential frame 161 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 161
+[doWork][for] throw sequential frame 162 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 162
+[doWork][for] throw sequential frame 163 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 163
+[doWork][for] throw sequential frame 164 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 164
+[doWork][for] throw sequential frame 165 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 165
+[doWork][for] throw sequential frame 166 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 166
+[doWork][for] throw sequential frame 167 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 167
+[doWork][for] throw sequential frame 168 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 168
+[doWork][for] throw sequential frame 169 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 169
+[doWork][for] throw sequential frame 170 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 170
+[doWork][for] throw sequential frame 171 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 171
+[doWork][for] throw sequential frame 172 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 172
+[doWork][for] throw sequential frame 173 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 173
+[doWork][for] throw sequential frame 174 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 174
+[doWork][for] throw sequential frame 175 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 175
+[doWork][for] throw sequential frame 176 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 176
+[doWork][for] throw sequential frame 177 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 177
+[doWork][for] throw sequential frame 178 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 178
+[doWork][for] throw sequential frame 179 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 179
+[doWork][for] throw sequential frame 180 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 180
+[doWork][for] throw sequential frame 181 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 181
+[doWork][for] throw sequential frame 182 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 182
+[doWork][for] throw sequential frame 183 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 183
+[doWork][for] throw sequential frame 184 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 184
+[doWork][for] throw sequential frame 185 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 185
+[doWork][for] throw sequential frame 186 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 186
+[doWork][for] throw sequential frame 187 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 187
+[doWork][for] throw sequential frame 188 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 188
+[doWork][for] throw sequential frame 189 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 189
+[doWork][for] throw sequential frame 190 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 190
+[doWork][for] throw sequential frame 191 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 191
+[doWork][for] throw sequential frame 192 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 192
+[doWork][for] throw sequential frame 193 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 193
+[doWork][for] throw sequential frame 194 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 194
+[doWork][for] throw sequential frame 195 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 195
+[doWork][for] throw sequential frame 196 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 196
+[doWork][for] throw sequential frame 197 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 197
+[doWork][for] throw sequential frame 198 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 198
+[doWork][for] throw sequential frame 199 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 199
+[doWork][for] throw sequential frame 200 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 200
+[doWork][for] throw sequential frame 201 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 201
+[doWork][for] throw sequential frame 202 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 202
+[doWork][for] throw sequential frame 203 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 203
+[doWork][for] throw sequential frame 204 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 204
+[doWork][for] throw sequential frame 205 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 205
+[doWork][for] throw sequential frame 206 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 206
+[doWork][for] throw sequential frame 207 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 207
+[doWork][for] throw sequential frame 208 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 208
+[doWork][for] throw sequential frame 209 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 209
+[doWork][for] throw sequential frame 210 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 210
+[doWork][for] throw sequential frame 211 into doFrame thread
+[doWork][for] read MLV VIDF Block frameNo 211
+[doWork] convert Done
+[doWork] hasAudio file -> 091655_1_2014-04-23_1713_C0000.wav
+[saveAudio] started

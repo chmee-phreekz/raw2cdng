@@ -55,6 +55,7 @@
 
     <Grid Width="894" HorizontalAlignment="Left" VerticalAlignment="Top" Height="515">
         <TextBlock Height="23" HorizontalAlignment="Left" Margin="10,7,0,0" Name="_title" Text="raw2cdng 1.5.0" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Foreground="#FF666666" />
+        <ToggleButton Content="debug" Height="23" HorizontalAlignment="Left" Margin="695,8,0,0" Name="_logDebug" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="51" Unchecked="_logDebug_Unchecked" Checked="_logDebug_Checked" />
         <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="exit" Height="23" HorizontalAlignment="Left" Margin="833,8,0,0" Name="_exit" VerticalAlignment="Top" Width="51" Click="_exit_Click" />
         <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="info" Height="23" HorizontalAlignment="Left" Margin="764,8,0,0" Name="_info" VerticalAlignment="Top" Width="51" Click="_info_Click" />
 
@@ -120,7 +121,10 @@
                         <TextBlock></TextBlock>
                         <TextBlock>[D] - date yymmdd of creation</TextBlock>
                         <TextBlock>[D2] - datetime yyyy-MM-dd_HHmm</TextBlock>
+                        <TextBlock>[M] - date yymmdd of modification/last write</TextBlock>
+                        <TextBlock>[M2] - datetime yyyy-MM-dd_HHmm</TextBlock>
                         <TextBlock>[T] - time hhmmss of creation</TextBlock>
+                        <TextBlock>[T2] - time hhmmss of modification/last write</TextBlock>
                         <TextBlock>[F] - filename without ending</TextBlock>
                         <TextBlock>[S] - shortened filename [0-9a-z]</TextBlock>
                         <TextBlock>[C] - shortened filename only [0-9]</TextBlock>
@@ -139,7 +143,7 @@
         </TextBox>
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="vertical banding" Height="23" HorizontalAlignment="Left" Margin="564,421,0,0" Name="_banding" VerticalAlignment="Top" Width="156" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" />
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="chroma smoothing 2x2" Height="23" HorizontalAlignment="Left" Margin="728,421,0,0" Name="_smoothing" VerticalAlignment="Top" Width="156" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy jpegs" Height="23" HorizontalAlignment="Left" Margin="564,448,0,0" Name="_jpegs" VerticalAlignment="Top" Width="156" Unchecked="_jpegs_Unchecked" Checked="_jpegs_Checked" IsEnabled="False" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy jpegs" Height="23" HorizontalAlignment="Left" Margin="564,448,0,0" Name="_jpegs" VerticalAlignment="Top" Width="156" Unchecked="_jpegs_Unchecked" Checked="_jpegs_Checked" IsEnabled="True" />
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="delta pink highlights" Height="23" HorizontalAlignment="Left" Margin="728,448,0,0" Name="_highlights" VerticalAlignment="Top" Width="156" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" />
         <Button Template="{StaticResource chmeeButton}" Content="convert" Height="28" HorizontalAlignment="Left" Margin="564,477,0,0" Name="_convert" VerticalAlignment="Top" Width="320" FontSize="14" FontWeight="Bold" HorizontalContentAlignment="Center" Padding="2" Click="_convert_Click" IsEnabled="False" />
 

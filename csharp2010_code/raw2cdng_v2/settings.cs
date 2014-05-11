@@ -50,13 +50,14 @@ namespace raw2cdng_v2
     class debugging
     {
         public static string debugLogFilename { get; set; }
+        public static bool debugLogEnabled { get; set; }
 
         public static void _saveDebug(string input)
         {
             if (!File.Exists(debugLogFilename)) File.Create(debugLogFilename);
             using (StreamWriter w = File.AppendText(debugLogFilename))
             {
-                w.WriteLine(String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now) + input);
+                w.WriteLine(input);
             }
         }
     }

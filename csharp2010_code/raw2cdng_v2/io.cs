@@ -35,12 +35,16 @@ namespace raw2cdng_v2
             fd.sourcePath = Path.GetDirectoryName(fn);
             fd.fileNameShort = calc.setFilenameShort(fd.fileNameOnly);
             fd.fileNameNum = calc.setFilenameNum(fd.fileNameOnly);
-            fd.outputFilename = ""; 
+            fd.outputFilename = "";
+            if (debugging.debugLogEnabled) debugging._saveDebug("[setFileinfoData] set/changed Filedata");
+
             return true;
         }
 
         public static raw createMLVBlockList(string filename, raw raw)
         {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] started");
+            
             Blocks.mlvBlockList.Clear();
             // -- count stripFiles
             raw.metaData.splitCount = 0;
@@ -59,6 +63,7 @@ namespace raw2cdng_v2
             // iterate thru all files
             // and
             // put into list
+            if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] splitFiles counted ("+raw.metaData.splitCount+")");
 
             long offset;
             int bl;
@@ -68,6 +73,9 @@ namespace raw2cdng_v2
                 offset = 0;
                 bl = 0;
                 string fn = raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + MLVFileEnding[j];
+
+                if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] indexing Blocks in "+fn);
+                
                 FileInfo fi = new FileInfo(fn);
                 FileStream fs = fi.OpenRead();
                 long fl = fs.Length;
@@ -95,6 +103,8 @@ namespace raw2cdng_v2
 
         public static void readVIDFBlockData(raw raw)
         {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[readVIDFBlockData] started");
+
             foreach (Blocks.mlvBlock VIDFBlock in raw.metaData.VIDFBlocks)
             {
                 FileInfo fi = new FileInfo(raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + MLVFileEnding[VIDFBlock.fileNo]);
@@ -106,11 +116,15 @@ namespace raw2cdng_v2
                 VIDFBlock.EDMACoffset = BitConverter.ToInt32(new byte[4] { vidfProp[28], vidfProp[29], vidfProp[30], vidfProp[31] }, 0); 
                             
                 fs.Close();
+
+                if (debugging.debugLogEnabled) debugging._saveDebug("[readVIDFBlockData] read VIDFBlock-Data Frame #" + VIDFBlock.MLVFrameNo + " in File #" + VIDFBlock.fileNo + " on offset " + VIDFBlock.fileOffset);
             }
         }
 
         public static raw createRAWBlockList(string filename, raw raw)
         {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[createRAWBlocklist] started");
+
             List<Blocks.rawBlock> tmpList = new List<Blocks.rawBlock>();
 
             int fno = 0;
@@ -157,6 +171,8 @@ namespace raw2cdng_v2
 
         public static void getMLVAttributes(string filename, List<Blocks.mlvBlock> bList, raw mData)
         {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] started");
+
             string PhotoRAWFile = mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + ".CR2";
             string allRAWFile = mData.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
             if (File.Exists(PhotoRAWFile) == true)
@@ -164,20 +180,25 @@ namespace raw2cdng_v2
                 mData.metaData.photoRAW = true;
                 mData.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
                 mData.metaData.RGBfraction = calc.convertToFraction(mData.metaData.RGGBValues);
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a CR2");
             }
             if ((mData.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
             {
                 mData.metaData.photoRAW = true;
                 mData.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
                 mData.metaData.RGBfraction = calc.convertToFraction(mData.metaData.RGGBValues);
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a ALL.CR2");
             }
 
             // get Data from RAWI Block
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading RAWI-Block");
             var RAWI = bList.FirstOrDefault(x => x.blockTag == "RAWI");
 
             FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[RAWI.fileNo]);
             string readPath = fi.DirectoryName;
             mData.fileData.creationTime = fi.CreationTime;
+            mData.fileData.modificationTime = fi.LastWriteTime;
+
             string fn = fi.Name;
             FileStream fs = fi.OpenRead();
 
@@ -207,6 +228,7 @@ namespace raw2cdng_v2
             mData.metaData.stripByteCountReal = mData.metaData.stripByteCount;
 
             // from fileheader MLVI
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading MLVI-Block");
             var MLVI = bList.FirstOrDefault(x => x.blockTag == "MLVI");
 
             fs.Position = MLVI.fileOffset;
@@ -223,6 +245,7 @@ namespace raw2cdng_v2
             mData.metaData.fpsString = string.Format("{0:0.00}", fps_out);
 
             // modellname from IDNT
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading IDNT-Block");
             var IDNT = bList.FirstOrDefault(x => x.blockTag == "IDNT");
 
             fs.Position = IDNT.fileOffset;
@@ -237,9 +260,12 @@ namespace raw2cdng_v2
             Array.Copy(IDNTArray, 16, modelid, 0, 32);
             mData.metaData.modell = Encoding.ASCII.GetString(modelid).Replace("\0", "");
 
+            mData.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
+
             modelName = null;
 
             // exposure data from EXPO
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading EXPO-Block");
             var EXPO = bList.FirstOrDefault(x => x.blockTag == "EXPO");
 
             fs.Position = EXPO.fileOffset;
@@ -255,6 +281,7 @@ namespace raw2cdng_v2
 
 
             // exposure data from EXPO
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading LENS-Block");
             var LENS = bList.FirstOrDefault(x => x.blockTag == "LENS");
 
             fs.Position = LENS.fileOffset;
@@ -273,6 +300,7 @@ namespace raw2cdng_v2
             mData.lensData.lens = Encoding.ASCII.GetString(lensName).Replace("\0", "");
 
             // audioproperties from WAVI
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading WAVI-Block");
             var WAVI = bList.FirstOrDefault(x => x.blockTag == "WAVI");
 
             if (WAVI != null)
@@ -305,9 +333,9 @@ namespace raw2cdng_v2
 
         public static void getRAWAttributes(string filename, raw rData)
         {
-            //if (dLog) { sd._saveDebug("* started getRAWAttributes"); }
-            // fegatex, roundup, brommethane, bayer, basf, 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] started");
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] counting Splitfiles");
             rData.metaData.splitCount = 0;
             for (var i = 0; i < RAWFileEnding.Length; i++)
             {
@@ -321,6 +349,8 @@ namespace raw2cdng_v2
                     break;
                 }
             }
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] found "+rData.metaData.splitCount+" Files");
+
             string PhotoRAWFile = rData.fileData.sourcePath + Path.DirectorySeparatorChar + rData.fileData.fileNameOnly + ".CR2";
             string allRAWFile = rData.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
             if (File.Exists(PhotoRAWFile) == true)
@@ -331,26 +361,27 @@ namespace raw2cdng_v2
                 // -------------------
                 //MessageBox.Show("CR2 is existent");
                 rData.metaData.photoRAW = true;
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] there is a CR2. reading RGGBValues");
                 // -------------------------------
                 rData.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
                 rData.metaData.RGBfraction = calc.convertToFraction(rData.metaData.RGGBValues);
-                //if (dLog) { sd._saveDebug("- found according CR2 and using RGGB Whitebalance-Values."); }
             }
             if ((rData.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
             {
                 rData.metaData.photoRAW = true;
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] there is a ALL.CR2. reading RGGBValues");
                 // -------------------------------
                 rData.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
                 rData.metaData.RGBfraction = calc.convertToFraction(rData.metaData.RGGBValues);
-                //if (dLog) { sd._saveDebug("- found ALL.CR2 and using Whitebalance values RGGB"); }
             }
             FileInfo fi = new FileInfo(rData.fileData.sourcePath + Path.DirectorySeparatorChar + rData.fileData.fileNameOnly + "." + RAWFileEnding[rData.metaData.splitCount - 1]);
             string readPath = fi.DirectoryName;
             rData.fileData.creationTime = fi.CreationTime;
+            rData.fileData.modificationTime = fi.LastWriteTime;
             string fn = fi.Name;
             FileStream fs = fi.OpenRead();
 
-            //if (dLog) { sd._saveDebug("- reading 192 Bytes Footer of RAW-File "); }
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] reading RAW Footer and Attribs");
 
             // -- Read 192 Bytes at EOF and values
             int nBytes = 192;
@@ -394,6 +425,8 @@ namespace raw2cdng_v2
             colorMatrix = null;
             fs.Close();
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] deciding model on first colorMatrix-Value");
+
             int tmpMod = BitConverter.ToInt32(rData.metaData.colorMatrix, 0);
             switch (tmpMod)
             {
@@ -422,6 +455,7 @@ namespace raw2cdng_v2
                     rData.metaData.modell = "Canon EOS 7D";
                     break;
             }
+            rData.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
         }
 
         public static byte[] readMLV(raw param)
@@ -490,7 +524,7 @@ namespace raw2cdng_v2
 
         public static WriteableBitmap showPicture(raw rawFile)
         {
-            //debugging._saveDebug("show Frame "+rawFile.threadData.frame+" from "+rawFile.fileData.fileNameOnly);
+            if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");
 
             byte[] imageArray = new byte[rawFile.metaData.stripByteCountReal];
 
@@ -509,79 +543,37 @@ namespace raw2cdng_v2
             return calc.doBitmap(calc.to16(imageArray, rawFile), rawFile);
         }
 
-        /* old. new one with bext references
-        public static bool saveAudio(string filename, raw mData)
+        public static void saveBitmap(BitmapImage pic, raw r)
         {
-            bool success = false;
-            if (mData.metaData.hasAudio)
-            {
-                List<byte[]> wavFile = new List<byte[]>();
-                wavFile.Add(RIFFheader);
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveBitmap] started");
 
-                // copy Audiovalues to wavHeader (wavFile[0])
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioFormat), 0, wavFile[0], 20, 2);
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioChannels), 0, wavFile[0], 22, 2);
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioSamplingRate), 0, wavFile[0], 24, 4);
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioBytesPerSecond), 0, wavFile[0], 28, 4);
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioBlockAlign), 0, wavFile[0], 32, 2);
-                Array.Copy(BitConverter.GetBytes(mData.metaData.audioBitsPerSample), 0, wavFile[0], 34, 2);
+            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
+            String photolocation = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
 
-                // forgot to set subchunk1size to 16
-                Array.Copy(BitConverter.GetBytes(16), 0, wavFile[0], 16, 4);
+            encoder.Frames.Add(BitmapFrame.Create(pic));
 
-                // read out audio chunks
-                for (var i = 0; i < mData.metaData.AUDFBlocks.Count; i++)
-                {
-                    Blocks.mlvBlock audioBlock = mData.metaData.AUDFBlocks[i];
-                    int usedFile = audioBlock.fileNo;
-                    byte[] audioBlockArray = new byte[audioBlock.blockLength];
-                    FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);
-                    FileStream fs = fi.OpenRead();
-
-                    fs.Position = (long)((long)audioBlock.fileOffset);
-                    fs.Read(audioBlockArray, 0, audioBlock.blockLength);
-                    
-                    int chunkLength = audioBlock.blockLength - 24 - BitConverter.ToInt32(audioBlockArray, 20);
-                    byte[] audioChunk = new byte[chunkLength];
-                    
-                    Array.Copy(audioBlockArray, audioBlock.blockLength - chunkLength, audioChunk, 0, chunkLength);
-                    
-                    wavFile.Add(audioChunk);
-                    
-                    fs.Close();
-                }
-
-                int subChunkSize = 0;
-                // now calc SubChunkSize
-                for (var i = 1; i < wavFile.Count(); i++)
-                {
-                    subChunkSize += wavFile[i].Length;
-                }
-
-                // put subchunk-data into header
-                Array.Copy(BitConverter.GetBytes(subChunkSize + 44), 0, wavFile[0], 4, 4);
-                Array.Copy(BitConverter.GetBytes(subChunkSize), 0, wavFile[0], 40, 4);
-
-                // now save all byte-arrays into file
-                File.Delete(filename);
-
-                FileStream _WAVFile = new FileStream(filename, System.IO.FileMode.Append);
-                for (var i = 0; i < wavFile.Count; i++)
-                {
-                    _WAVFile.Write(wavFile[i], 0, wavFile[i].Length);
-                }
-                _WAVFile.Close();
-                success = true;
-            }
-            else
-            {
-            }
-            return success;
+            using (var filestream = new FileStream(photolocation, FileMode.Create))
+                encoder.Save(filestream);
         }
-        */
+
+        public static void saveProxy(raw r, BitmapSource pic)
+        {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
+
+            String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
+            using (FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create))
+                {
+                    JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
+                    jpgEncoder.Frames.Add(BitmapFrame.Create(pic));
+                    jpgEncoder.Save(jpgStream);
+                    jpgStream.Close();
+                }
+        }
 
         public static bool saveAudio(string filename, raw mData)
         {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] started");
+
             bool success = false;
             // manage all Audiodata first as list of bytearrays
             // first entry wavFile[0] is header
@@ -593,10 +585,11 @@ namespace raw2cdng_v2
             // https://tech.ebu.ch/docs/tech/tech3285.pdf
             // and https://tech.ebu.ch/docs/r/r099.pdf
 
-            // set Name 
-            string bextName = mData.fileData.outputFilename;
+            // set Name (originator)
+            string bextName = mData.metaData.modell;
             byte[] byteBextName = Enumerable.Repeat((byte)0x00, 32).ToArray();
 
+            // first fill with zeros
             Array.Copy(byteBextName, 0, wavFile[0], 0x138, 32);
 
             if (bextName.Length > 32)
@@ -607,15 +600,16 @@ namespace raw2cdng_v2
 
             Array.Copy(byteBextName, 0, wavFile[0], 0x138, byteBextName.Length);
 
-            // set UDI
+            // set USID/UDI
             // CCOOO NNNNNNNNNNNN HHMMSS RRRRRRRRR
             Random rnd = new Random();
             int RRR= rnd.Next(100000000, 999999999);
-            string UDI = "DEMLA" + "MAGICLANTERN" + String.Format("{0:HHmmss}", mData.fileData.creationTime) + RRR.ToString();
+
+            string UDI = "DECan" + mData.metaData.camId.ToUpper() + String.Format("{0:HHmmss}", mData.fileData.modificationTime) + RRR.ToString();
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(UDI), 0, wavFile[0], 0x158, 32);
             
             // set timedate
-            string dateTime = String.Format("{0:yyyy-MM-ddHH-mm-ss}", mData.fileData.creationTime);
+            string dateTime = String.Format("{0:yyyy:MM:ddHH:mm:ss}", mData.fileData.modificationTime);
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(dateTime), 0, wavFile[0], 0x178, 18);
             
             //have to adjust samples if dropped frames
@@ -652,6 +646,7 @@ namespace raw2cdng_v2
             for (var i = 0; i < mData.metaData.AUDFBlocks.Count; i++)
             {
                 Blocks.mlvBlock audioBlock = mData.metaData.AUDFBlocks[i];
+                
                 int usedFile = audioBlock.fileNo;
                 byte[] audioBlockArray = new byte[audioBlock.blockLength];
                 FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);

@@ -88,6 +88,7 @@ namespace raw2cdng_v2
         public string _changedPath { get; set; }
         public string outputFilename { get; set; }
         public DateTime creationTime { get; set; }
+        public DateTime modificationTime { get; set; }
         
         public Blocks.mlvBlock VIDFBlock {get;set;}
         public Blocks.rawBlock RAWBlock { get; set; }

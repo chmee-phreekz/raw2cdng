@@ -16,25 +16,32 @@ namespace raw2cdng_v2
     class calc
     {
         // helper arrays
-        private const int EV_RESOLUTION = 32768;
+        private const int EV_RESOLUTION = 65536;
 
         public static int[] ev2raw = new int[24 * EV_RESOLUTION];
         public static int[] raw2ev = new int[EV_RESOLUTION];
+        public static int zero = 0;
+        public static int full = 65535;
 
-        public static void reinitRAWEVArrays(int black)
+        public static void reinitRAWEVArrays(int black, int white)
         {
-            for (var i = 0; i < 16384; i++) calc.raw2ev[i] = (int)(Math.Log(Math.Max(1, i - black))/Math.Log(2) * EV_RESOLUTION) ;
-            // need to do inverse. ev2raw, cause i didnt understood the pointerthing with 24x/10xEV_RESOLUTION
-            // what happends here?
-            /*
-             static int _ev2raw[24*EV_RESOLUTION];
-                int* ev2raw = _ev2raw + 10*EV_RESOLUTION;
-    
-             for (i = -10*EV_RESOLUTION; i < 14*EV_RESOLUTION; i++)
+            for (var i = 0; i < 65536; i++) calc.raw2ev[i] = (int)(Math.Log(Math.Max(1, i - black))/Math.Log(2) * EV_RESOLUTION) ;
+            for (var i = -10*EV_RESOLUTION; i < 0; i++)
+            {
+                int val = (int)(black + 4 - Math.Round(4 * Math.Pow(2, ((double)(-i / EV_RESOLUTION)))));
+                ev2raw[i+(10*EV_RESOLUTION)] = COERCE(ref val, ref zero,ref black);
+            }
+
+            for (var i = 0; i < 14*EV_RESOLUTION; i++)
+            {
+                int val = (int)(black - 4 + Math.Round(4 * Math.Pow(2, ((double)i / EV_RESOLUTION))));
+                ev2raw[i+(10*EV_RESOLUTION)] = COERCE(ref val, ref black,ref full);
+                if (i >= raw2ev[white])
                 {
-                ev2raw[i] = black + pow(2, (float)i / EV_RESOLUTION);
+                    ev2raw[i] = Math.Max(ev2raw[i], white);
                 }
-             */
+            }
+            
         }
 
         // --- bitdepth conversion ---
@@ -485,7 +492,7 @@ namespace raw2cdng_v2
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
             int whitelevel = (int)(param.metaData.whiteLevelOld * 2.8);
-            int lowWL = whitelevel;
+            //int lowWL = whitelevel;
 
             for (var y = 0; y < halfResy; y++)
             {
@@ -541,61 +548,74 @@ namespace raw2cdng_v2
             
             // is half recoded and put into sourcecode - but not ready yet.
             //please look into calc.cs as well, there is ev2raw and raw2ev
-
+            
             int CHROMA_SMOOTH_MAX_IJ = 2;
             int CHROMA_SMOOTH_FILTER_SIZE = 5;
 
             int xres = param.metaData.xResolution;
             int yres = param.metaData.yResolution;
+            int xresHalf = xres / 2;
+            int yresHalf = yres / 2;
 
             byte[] picOut = new byte[picIn.Length];
 
-            for (int y = 4; y < yres - 5; y += 2)
-            {
-                for (int x = 4; x < xres - 4; x += 2)
-                {
-                 /*   int g1 = picIn[x+1 +     y * xres];
-                    int g2 = picIn[x   + (y+1) * yres];
-                    int ge = (raw2ev[g1] + raw2ev[g2]) / 2;
-            
-                    // looks ugly in darkness
-                    if (ge < 2*EV_RESOLUTION) continue;
-
-                    int i,j;
-                    int k = 0;
-                    int[] med_r = new int[CHROMA_SMOOTH_FILTER_SIZE];
-                    int[] med_b = new int[CHROMA_SMOOTH_FILTER_SIZE];
-                    for (i = -CHROMA_SMOOTH_MAX_IJ; i <= CHROMA_SMOOTH_MAX_IJ; i += 2)
-                    {
-                        for (j = -CHROMA_SMOOTH_MAX_IJ; j <= CHROMA_SMOOTH_MAX_IJ; j += 2)
+            /*
+                        for (int y = 4; y < yres - 5; y += 2)
                         {
-                            //#ifdef CHROMA_SMOOTH_2X2
-                            if (Math.Abs(i) + Math.Abs(j) == 4) continue;
-                    
-                            int ar  = picIn[x+i   +   (y+j) * xres];
-                            int ag1 = picIn[x+i+1 +   (y+j) * xres];
-                            int ag2 = picIn[x+i   + (y+j+1) * xres];
-                            int ab  = picIn[x+i+1 + (y+j+1) * xres];
-                    
-                            int ge = (raw2ev[ag1] + raw2ev[ag2]) / 2;
-                            med_r[k] = raw2ev[ar] - ge;
-                            med_b[k] = raw2ev[ab] - ge;
-                            k++;
-                         }
-                    }
-                    int dr = opt_med5(ref med_r);
-                    int db = opt_med5(ref med_b);
+                            for (int x = 4; x < xres - 4; x += 2)
+                            {
+                                int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                                int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                                
+                                int g1 = picIn[x+1 +     y * xres];
+                                int g2 = picIn[x   + (y+1) * yres];
+                                int ge = (raw2ev[g1] + raw2ev[g2]) / 2;
+            
+                                // looks ugly in darkness
+                                if (ge < 2*EV_RESOLUTION) continue;
 
-                    if (ge + dr <= EV_RESOLUTION) continue;
-                    if (ge + db <= EV_RESOLUTION) continue;
+                                int i,j;
+                                int k = 0;
+                                int[] med_r = new int[CHROMA_SMOOTH_FILTER_SIZE];
+                                int[] med_b = new int[CHROMA_SMOOTH_FILTER_SIZE];
+                                for (i = -CHROMA_SMOOTH_MAX_IJ; i <= CHROMA_SMOOTH_MAX_IJ; i += 2)
+                                {
+                                    for (j = -CHROMA_SMOOTH_MAX_IJ; j <= CHROMA_SMOOTH_MAX_IJ; j += 2)
+                                    {
+                                        //#ifdef CHROMA_SMOOTH_2X2
+                                        if (Math.Abs(i) + Math.Abs(j) == 4) continue;
+                    
+                                        int ar  = picIn[x+i   +   (y+j) * xres];
+                                        int ag1 = picIn[x+i+1 +   (y+j) * xres];
+                                        int ag2 = picIn[x+i   + (y+j+1) * xres];
+                                        int ab  = picIn[x+i+1 + (y+j+1) * xres];
+                    
+                                        int age = (raw2ev[ag1] + raw2ev[ag2]) / 2;
+                                        med_r[k] = raw2ev[ar] - age;
+                                        med_b[k] = raw2ev[ab] - age;
+                                        k++;
+                                     }
+                                }
+                                int dr = opt_med5(ref med_r);
+                                int db = opt_med5(ref med_b);
 
-                    picOut[x   +     y * w] = ev2raw[COERCE(ge + dr, 0, 14*EV_RESOLUTION-1)];
-                    picOut[x+1 + (y+1) * w] = ev2raw[COERCE(ge + db, 0, 14*EV_RESOLUTION-1)];
-        */
-                }
-            }
+                                if (ge + dr <= EV_RESOLUTION) continue;
+                                if (ge + db <= EV_RESOLUTION) continue;
+
+                                int gedr = ge + dr;
+                                int gedb = ge + db;
+                                int fullArray = 14 * full;
+
+                                picOut[x   +     y * xres] = ev2raw[COERCE(ref gedr, ref zero, ref fullArray)];
+                                picOut[x+1 + (y+1) * yres] = ev2raw[COERCE(ge + db, 0, 14*EV_RESOLUTION-1)];
+     
+                            }
+                        }
+                         */
             return picOut;
+    
         }
+
         // --- preview helper ---
 
         public static WriteableBitmap doBitmap(byte[] imageData, raw param)

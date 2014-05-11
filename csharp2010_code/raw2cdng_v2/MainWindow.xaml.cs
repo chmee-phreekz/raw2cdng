@@ -59,7 +59,7 @@ namespace raw2cdng_v2
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0.BETA3";
+        string version = "1.5.0.BETA4";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
@@ -92,7 +92,7 @@ namespace raw2cdng_v2
 
             // -- init _preview Tick and small frameProgressLine
             previewTimer.Tick += new EventHandler(previewTimer_Tick);
-            previewTimer.Interval = new TimeSpan(0,0,0,0,40);
+            previewTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
             _previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
 
             // ui init
@@ -101,10 +101,14 @@ namespace raw2cdng_v2
 
             // ---- load settings from file ----
             loadSettings();
+            debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
 
             // debug log
-            debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
-            debugging._saveDebug (" ------------- "+version+" started");
+            if (settings.debugLogEnabled)
+            {
+                debugging._saveDebug(" - ");
+                debugging._saveDebug(" ------------- " + version + " started at " + String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now));
+            }
         }
 
         // --- the important three events ---------------------
@@ -122,8 +126,19 @@ namespace raw2cdng_v2
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 Array.Sort(files);
 
+                if (settings.debugLogEnabled)
+                {
+                    debugging._saveDebug("[drop] started");
+                    debugging._saveDebug("[drop] Files dropped:");
+                    debugging._saveDebug("[drop] ------");
+                    foreach(string file in files) debugging._saveDebug("[drop] "+file);
+                    debugging._saveDebug("[drop] ------");
+                }         
+
                 foreach (string file in files)
                 {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file "+file+" will be analyzed now.");
+
                     if (io.isMLV(file) || io.isRAW(file))
                     {
                         raw importRaw = new raw();
@@ -137,19 +152,25 @@ namespace raw2cdng_v2
 
                         if (io.isMLV(file))
                         {
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] is MLV ");
                             importRaw.metaData.isMLV = true;
                             io.setFileinfoData(file, importRaw.fileData);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
                             io.createMLVBlockList(file, importRaw);
                             Blocks.mlvBlockList = Blocks.mlvBlockList.OrderBy(x => x.timestamp).ToList();
                             io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: "+Blocks.mlvBlockList.Count);
                             importRaw.metaData.AUDFBlocks = null;
                             if (importRaw.metaData.hasAudio)
                             {
                                 importRaw.metaData.AUDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "AUDF").ToList();
+                                if (settings.debugLogEnabled) debugging._saveDebug("[drop] hasAudio. AUDF-List created. Blocks: " + importRaw.metaData.AUDFBlocks.Count);
                             }
                             importRaw.metaData.VIDFBlocks = null;
                             importRaw.metaData.VIDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "VIDF").ToList();
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-List created. Blocks: " + importRaw.metaData.VIDFBlocks.Count);
                             io.readVIDFBlockData(importRaw);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blockdata created.");
                             // correct frameCount
                             importRaw.metaData.frames = importRaw.metaData.VIDFBlocks.Count;
 
@@ -157,12 +178,17 @@ namespace raw2cdng_v2
                         }
                         if (io.isRAW(file))
                         {
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] is RAW ");
                             importRaw.metaData.isMLV = false;
                             importRaw.metaData.hasAudio = false;
                             importRaw.metaData.RAWBlocks = null;
                             io.setFileinfoData(file, importRaw.fileData);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
                             io.getRAWAttributes(file, importRaw);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Attributes read and set.");
                             io.createRAWBlockList(file, importRaw);
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.metaData.RAWBlocks.Count);
+                            
                             // then Framelist
 
                             importRaw.fileData.convertIt = true;
@@ -171,6 +197,8 @@ namespace raw2cdng_v2
                         // ..to be done..
 
                         // now set item
+                        if (settings.debugLogEnabled) debugging._saveDebug("[drop] adding " + importRaw.fileData.fileNameOnly+" to batchList");
+                            
                         _batchList.Items.Add(new lvItem
                         {
                             //convert = true,
@@ -188,11 +216,13 @@ namespace raw2cdng_v2
                         rawFiles.Add(importRaw);
                         _convert.IsEnabled = true;
 
-                        debugging._saveDebug(" Item " + importRaw.fileData.fileNameOnly + " imported | "+ (importRaw.metaData.isMLV? "MLV":"RAW"));
-                        debugging._saveDebug(" ---- res " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px | " + importRaw.metaData.fpsString + "fps | " + importRaw.metaData.frames + " frames | BL" + importRaw.metaData.blackLevelOld + " | WL" + importRaw.metaData.whiteLevelOld);
-                        if(importRaw.metaData.isMLV) debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio?"":"no") + "audio");
-                        else debugging._saveDebug(" ---- modell " + importRaw.metaData.modell + " | rawblocks " + importRaw.metaData.RAWBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
-
+                        if (settings.debugLogEnabled)
+                        {
+                            debugging._saveDebug("[drop] ** Item " + importRaw.fileData.fileNameOnly + " imported | " + (importRaw.metaData.isMLV ? "MLV" : "RAW"));
+                            debugging._saveDebug("[drop] * res " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px | " + importRaw.metaData.fpsString + "fps | " + importRaw.metaData.frames + " frames | BL" + importRaw.metaData.blackLevelOld + " | WL" + importRaw.metaData.whiteLevelOld);
+                            if (importRaw.metaData.isMLV) debugging._saveDebug("[drop] * modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
+                            else debugging._saveDebug("[drop] * modell " + importRaw.metaData.modell + " | rawblocks " + importRaw.metaData.RAWBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
+                        }
                     }
                 }
             }
@@ -212,7 +242,7 @@ namespace raw2cdng_v2
 
         private void doWork(object state)
         {
-            debugging._saveDebug("** start converting to DNG");
+            if (settings.debugLogEnabled) debugging._saveDebug("[doWork] started");
 
             allFramesCount = 0;
             // -- count all frames for progressbarAll --
@@ -221,7 +251,7 @@ namespace raw2cdng_v2
                 allFramesCount += file.metaData.frames;
             }
 
-            debugging._saveDebug("all in all there are "+allFramesCount+" frames to convert");
+            if (settings.debugLogEnabled) debugging._saveDebug("[doWork] all in all there are " + allFramesCount + " frames to convert");
 
             // some GUI-Things - progressbar
             this.Dispatcher.Invoke((Action)(() =>
@@ -247,14 +277,14 @@ namespace raw2cdng_v2
             // set threadpool properties
             ThreadPool.SetMaxThreads(CPUcores, CPUcores);
 
-            debugging._saveDebug(CPUcores + " Cores used");
+            if (settings.debugLogEnabled) debugging._saveDebug("[doWork] "+CPUcores + " Cores used");
 
 
             // and go.
             foreach (raw file in rawFiles)
             {
-                
-                debugging._saveDebug(" --> converting item " + file.fileData.fileNameOnly);
+
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] -> converting item " + file.fileData.fileNameOnly);
 
                  this.Dispatcher.Invoke((Action)(() =>
                 {
@@ -312,12 +342,17 @@ namespace raw2cdng_v2
                         break;
                 }
 
-                debugging._saveDebug(" * settings format " + settings.format+" with BL"+file.metaData.blackLevelNew+" WL"+file.metaData.whiteLevelNew+" with+"+(file.metaData.maximize?"":"out")+" maximizingvalue "+file.metaData.maximizer);
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] settings format " + settings.format + " with BL" + file.metaData.blackLevelNew + " WL" + file.metaData.whiteLevelNew + " with+" + (file.metaData.maximize ? "" : "out") + " maximizingvalue " + file.metaData.maximizer);
 
                 // prepare prefix variables
                 string date = string.Format("{0:yyMMdd}", file.fileData.creationTime);
                 string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.fileData.creationTime);
+                string modifiedDate = string.Format("{0:yyMMdd}", file.fileData.modificationTime);
+                string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.fileData.modificationTime);
+                
                 string time = string.Format("{0:HHmmss}", file.fileData.creationTime);
+                string modifiedTime = string.Format("{0:HHmmss}", file.fileData.modificationTime);
+
                 string parentSourcePath = file.fileData.sourcePath.Split(winIO.Path.DirectorySeparatorChar).Last();
                 string bitdepth = file.metaData.bitsperSampleChanged.ToString();
 
@@ -325,7 +360,10 @@ namespace raw2cdng_v2
                 file.fileData.outputFilename = settings.prefix.
                     Replace("[D]", date).
                     Replace("[D2]", datetime).
+                    Replace("[M]", modifiedDate).
+                    Replace("[M2]", modifiedDatetime).
                     Replace("[T]", time).
+                    Replace("[T2]", modifiedTime).
                     Replace("[S]", file.fileData.fileNameShort).
                     Replace("[C]", file.fileData.fileNameNum).
                     Replace("[P]", parentSourcePath).
@@ -352,16 +390,20 @@ namespace raw2cdng_v2
                 {
                     file.fileData.basePath = settings.outputPath;
                 }
-                debugging._saveDebug(" * filename generator " + settings.prefix);
-                debugging._saveDebug(" * path -> " + file.fileData.destinationPath);
-                debugging._saveDebug(" * file -> " + file.fileData.outputFilename);
-
+                if (settings.debugLogEnabled)
+                {
+                    debugging._saveDebug("[doWork] prefix - filename generator " + settings.prefix);
+                    debugging._saveDebug("[doWork] destinationPath -> " + file.fileData.destinationPath);
+                    debugging._saveDebug("[doWork] outputFilename  -> " + file.fileData.outputFilename);
+                }
                 // check/make destination path
                 winIO.Directory.CreateDirectory(file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath);
-
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath+" created");
+                            
                 // set dngheader
                 // dngheader is a fileresource (DNGtemplate20)
                 file.metaData.DNGHeader = dng.setDNGHeader(file);
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
 
                 // destinationPath as its used in the threads
                 file.fileData._changedPath = file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
@@ -369,6 +411,7 @@ namespace raw2cdng_v2
                 // init for multithreading
                 int frameCount;
                 frameCount = file.metaData.frames;
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
                 
                 int taskCount = frameCount;
                 var cde = new CountdownEvent(taskCount);
@@ -376,18 +419,23 @@ namespace raw2cdng_v2
                 // start frameconvert
                 for (int f = 0; f < frameCount; f++)
                 {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] throw sequential frame "+f+" into doFrame thread");
+
                     //multithread
                     if (file.metaData.isMLV)
                     {
                         //its MLV
                         file.fileData.VIDFBlock = file.metaData.VIDFBlocks[f];
                         file.threadData.frame = file.fileData.VIDFBlock.MLVFrameNo;
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read MLV VIDF Block frameNo "+file.threadData.frame);
+
                     }
                     else
                     {
                         // its RAW
                         file.fileData.RAWBlock = file.metaData.RAWBlocks[f];
                         file.threadData.frame = f;
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read RAW Block frameNo " + f);
                     }
                     raw para = new raw();
                     para = file.Copy(); // deep copy object from ObjectExtensions.cs
@@ -400,10 +448,12 @@ namespace raw2cdng_v2
                 // wait till all threads has ended
                 cde.Wait();
 
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
+
                 // now finally audio if existent
                 if (file.metaData.hasAudio)
                 {
-                    debugging._saveDebug(" * wave -> " + file.fileData.destinationPath+".wav");
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.fileData.destinationPath + ".wav");
                     io.saveAudio(file.fileData._changedPath + file.fileData.destinationPath + ".wav", file);
                 }
                 this.Dispatcher.Invoke((Action)(() =>
@@ -453,7 +503,7 @@ namespace raw2cdng_v2
 
             // write Timecode into dng
             int timestamp = param.threadData.frame + (int)calc.creationTime2Frame( param.fileData.creationTime, (double)(param.metaData.fpsNom/param.metaData.fpsDen) );
-            param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1db8, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
+            param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1dba, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
 
             byte[] fillUp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             byte[] tempRaw = new byte[fillUp.Length + param.rawData.Length];
@@ -481,7 +531,7 @@ namespace raw2cdng_v2
             {
                 //if using chroma Smoothing, recalculate ev2raw/raw2ev
                 // can be possibly done one time in the beginning.
-                calc.reinitRAWEVArrays(param.metaData.blackLevelOld);
+                calc.reinitRAWEVArrays(param.metaData.blackLevelNew, param.metaData.blackLevelNew);
                 rawDataChanged = calc.verticalBanding(rawDataChanged, param);
             }
             // if chroma Smoothing
@@ -493,6 +543,8 @@ namespace raw2cdng_v2
             // if 12bit        
             if (param.convertData.bitdepth == 12) rawDataChanged = calc.from16to12(rawDataChanged, param);
 
+            // if proxy jpeg
+            if (param.convertData.proxyJpegs) io.saveProxy(param, io.showPicture(param).Clone());
 
             // -------- write the dng-header --
             using (System.IO.FileStream stream = new System.IO.FileStream(finalOutputFilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
@@ -545,6 +597,8 @@ namespace raw2cdng_v2
 
         private void batchList_Click(object sender, RoutedEventArgs e)
         {
+            if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] showPicture");
+            
             int item = (sender as ListView).Items.IndexOf((sender as ListView).SelectedItems[0]);
             if (item != null)
             {
@@ -558,7 +612,10 @@ namespace raw2cdng_v2
                     rawFiles[item].lensData.isoValue, 
                     ((double)rawFiles[item].lensData.aperture / (double)100),
                     CultureInfo.InvariantCulture
-                    ); 
+                    );
+                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].fileData.fileNameOnly+" frame "+rawFiles[item].threadData.frame);
+                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].fileData.fileNameOnly);
+
             }
         }
 
@@ -707,6 +764,20 @@ namespace raw2cdng_v2
             //empty
         }
 
+        private void _logDebug_Unchecked(object sender, RoutedEventArgs e)
+        {
+            settings.debugLogEnabled = false;
+            debugging.debugLogEnabled = false;
+            saveGUIsettings();
+        }
+
+        private void _logDebug_Checked(object sender, RoutedEventArgs e)
+        {
+            settings.debugLogEnabled = true;
+            debugging.debugLogEnabled = true;
+            saveGUIsettings();
+        }
+
         // ------- Helper ------------
         
         private void saveGUIsettings()
@@ -719,6 +790,7 @@ namespace raw2cdng_v2
                 settings.highlightFix = convertData.pinkHighlight;
                 settings.outputPath = _takePath.Content.ToString();
                 settings.prefix = _prefix.Text;
+                settings.debugLogEnabled = (bool)_logDebug.IsChecked;
                 //settings.format = settings.format;
                 settings.Save();
             }
@@ -747,6 +819,8 @@ namespace raw2cdng_v2
                 r.metaData.maximize = true;
                 r.metaData.previewFrame = r.metaData.previewFrame % r.metaData.frames;
                 Task.Factory.StartNew(() => previewBackground(r));
+                if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.metaData.previewFrame+" from "+r.fileData.fileNameOnly);
+
             }
         }
 
@@ -775,6 +849,7 @@ namespace raw2cdng_v2
             }
         }
 
+
         public void loadSettings()
         {
             settings = appSettings.Load();
@@ -794,6 +869,17 @@ namespace raw2cdng_v2
                 _takePath.Content = "select destination path";
                 settings.sourcePath = true;
             }
+            if (settings.debugLogEnabled == true)
+            {
+                _logDebug.IsChecked = true;
+                debugging.debugLogEnabled = true;
+            }
+            else
+            {
+                _logDebug.IsChecked = false;
+                debugging.debugLogEnabled = false;
+            }
+
             switch (settings.format)
             {
                 case 1:
@@ -873,11 +959,18 @@ namespace raw2cdng_v2
                 settings.prefix = "[F]";
                 _prefix.Text = settings.prefix;
             }
-
+            if (settings.debugLogEnabled)
+            {
+                _logDebug.IsChecked = true;
+            }
+            else
+            {
+                _logDebug.IsChecked = false;
+            }
             toggleSettingsSave = true;
 
         }
-        
+
         // ------- EOF ----------
     }
 }
