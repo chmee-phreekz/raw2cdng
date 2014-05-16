@@ -150,5 +150,6 @@
         <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,477,0,0" Name="_progressOne" VerticalAlignment="Top" Width="506" Orientation="Horizontal" BorderBrush="#FFC8C8C8" Background="#FFEEEEEE" Foreground="#FF0064EE" Value="25" />
         <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,493,0,0" Name="_progressAll" Orientation="Horizontal" VerticalAlignment="Top" Width="506" Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Value="75" />
         <Label Background="#FFDEDEDE" Content="4" Height="28" HorizontalAlignment="Left" Margin="8,477,0,0" Name="_cores" VerticalAlignment="Top" Width="38" HorizontalContentAlignment="Center" FontWeight="Bold" FontSize="14" />
+        <ProgressBar Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Height="12" HorizontalAlignment="Left" Margin="172,281,0,0" Name="_dragDropProgressBar" Orientation="Horizontal" Template="{StaticResource chmeeProgress}" Value="75" VerticalAlignment="Top" Width="200" IsEnabled="True" />
     </Grid>
 </Window>

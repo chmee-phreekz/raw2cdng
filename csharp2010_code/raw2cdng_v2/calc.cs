@@ -46,7 +46,7 @@ namespace raw2cdng_v2
 
         // --- bitdepth conversion ---
 
-        public static byte[] to16(byte[] source, raw rData)
+        public static byte[] to16(byte[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
@@ -151,11 +151,12 @@ namespace raw2cdng_v2
 
                 Dest[tt++] = (byte)(senselH & 0xff);
                 Dest[tt++] = (byte)(senselH >> 8);
+
             }
             return Dest;
         }
 
-        public static byte[] from16to12(byte[] source, raw rData)
+        public static byte[] from16to12(byte[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
@@ -252,7 +253,7 @@ namespace raw2cdng_v2
             return Dest;
         }
 
-        public static byte[] to12(byte[] source, raw rData)
+        public static byte[] to12(byte[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
@@ -487,7 +488,7 @@ namespace raw2cdng_v2
             return Dest;
         }
 
-        public static byte[] pinkHighlight(byte[] pic, raw param)
+        public static byte[] pinkHighlight(byte[] pic, data param)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
@@ -533,7 +534,7 @@ namespace raw2cdng_v2
             return pic;
         }
 
-        public static byte[] verticalBanding(byte[] pic, raw param)
+        public static byte[] verticalBanding(byte[] pic, data param)
         {
             // verticalBanding from ml/a1ex here
             // 16bit byte[] in
@@ -541,7 +542,7 @@ namespace raw2cdng_v2
             return pic;
         }
 
-        public static byte[] chromaSmoothing(byte[] picIn, raw param)
+        public static byte[] chromaSmoothing(byte[] picIn, data param)
         {
             // chroma Smoothing 2x2 written by a1ex
             // to be found in Magic Lantern / modules / dual_iso / chroma_smooth.c 
@@ -618,7 +619,7 @@ namespace raw2cdng_v2
 
         // --- preview helper ---
 
-        public static WriteableBitmap doBitmap(byte[] imageData, raw param)
+        public static WriteableBitmap doBitmap(byte[] imageData, data param)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;

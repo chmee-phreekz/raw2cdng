@@ -47,13 +47,13 @@ namespace raw2cdng_v2
             
             Blocks.mlvBlockList.Clear();
             // -- count stripFiles
-            raw.metaData.splitCount = 0;
+            raw.data.metaData.splitCount = 0;
             for (var i = 0; i < MLVFileEnding.Length; i++)
             {
                 string searchSplittedFile = Path.GetDirectoryName(filename) + Path.DirectorySeparatorChar + Path.GetFileNameWithoutExtension(filename) + "." + MLVFileEnding[i];
                 if (File.Exists(searchSplittedFile) == true)
                 {
-                    raw.metaData.splitCount++;
+                    raw.data.metaData.splitCount++;
                 }
                 else
                 {
@@ -63,16 +63,16 @@ namespace raw2cdng_v2
             // iterate thru all files
             // and
             // put into list
-            if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] splitFiles counted ("+raw.metaData.splitCount+")");
+            if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] splitFiles counted ("+raw.data.metaData.splitCount+")");
 
             long offset;
             int bl;
             byte[] chunk = new byte[16];
-            for (var j = 0; j < raw.metaData.splitCount; j++)
+            for (var j = 0; j < raw.data.metaData.splitCount; j++)
             {
                 offset = 0;
                 bl = 0;
-                string fn = raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + MLVFileEnding[j];
+                string fn = raw.data.fileData.sourcePath + Path.DirectorySeparatorChar + raw.data.fileData.fileNameOnly + "." + MLVFileEnding[j];
 
                 if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] indexing Blocks in "+fn);
                 
@@ -105,9 +105,9 @@ namespace raw2cdng_v2
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[readVIDFBlockData] started");
 
-            foreach (Blocks.mlvBlock VIDFBlock in raw.metaData.VIDFBlocks)
+            foreach (Blocks.mlvBlock VIDFBlock in raw.VIDFBlocks)
             {
-                FileInfo fi = new FileInfo(raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + MLVFileEnding[VIDFBlock.fileNo]);
+                FileInfo fi = new FileInfo(raw.data.fileData.sourcePath + Path.DirectorySeparatorChar + raw.data.fileData.fileNameOnly + "." + MLVFileEnding[VIDFBlock.fileNo]);
                 FileStream fs = fi.OpenRead();
                 byte[] vidfProp = new byte[32];
                 fs.Position = VIDFBlock.fileOffset;
@@ -130,16 +130,16 @@ namespace raw2cdng_v2
             int fno = 0;
             bool isSplitted = false;
 
-            string fn = raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + RAWFileEnding[fno];
+            string fn = raw.data.fileData.sourcePath + Path.DirectorySeparatorChar + raw.data.fileData.fileNameOnly + "." + RAWFileEnding[fno];
             FileInfo fi = new FileInfo(fn);
             FileStream fs = fi.OpenRead();
             long fl = fs.Length;
             long offset = 0;
             long delta = 0;
 
-            for (int f = 0; f < raw.metaData.frames; f++)
+            for (int f = 0; f < raw.data.metaData.frames; f++)
             {
-                if ((fl-offset) < raw.metaData.stripByteCount)
+                if ((fl-offset) < raw.data.metaData.stripByteCount)
                 {
                     isSplitted = true;
                 }
@@ -150,22 +150,22 @@ namespace raw2cdng_v2
                     splitted = isSplitted
                 });
 
-                if((fl-offset) < raw.metaData.stripByteCount)
+                if((fl-offset) < raw.data.metaData.stripByteCount)
                 {
                     isSplitted = false;
                     delta = fl - offset;
                     fs.Close();
-                    fn = raw.fileData.sourcePath + Path.DirectorySeparatorChar + raw.fileData.fileNameOnly + "." + RAWFileEnding[fno];
+                    fn = raw.data.fileData.sourcePath + Path.DirectorySeparatorChar + raw.data.fileData.fileNameOnly + "." + RAWFileEnding[fno];
                     fi = new FileInfo(fn);
                     fs = fi.OpenRead();
                     fl = fs.Length + delta;
                     offset = -delta;
                     fno++;
                 }
-                
-                offset += raw.metaData.stripByteCount;
+
+                offset += raw.data.metaData.stripByteCount;
             }
-            raw.metaData.RAWBlocks = tmpList;
+            raw.RAWBlocks = tmpList;
             return raw;
         }
 
@@ -173,20 +173,20 @@ namespace raw2cdng_v2
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] started");
 
-            string PhotoRAWFile = mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + ".CR2";
-            string allRAWFile = mData.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
+            string PhotoRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + ".CR2";
+            string allRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
             if (File.Exists(PhotoRAWFile) == true)
             {
-                mData.metaData.photoRAW = true;
-                mData.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
-                mData.metaData.RGBfraction = calc.convertToFraction(mData.metaData.RGGBValues);
+                mData.data.metaData.photoRAW = true;
+                mData.data.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
+                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a CR2");
             }
-            if ((mData.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
+            if ((mData.data.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
             {
-                mData.metaData.photoRAW = true;
-                mData.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
-                mData.metaData.RGBfraction = calc.convertToFraction(mData.metaData.RGGBValues);
+                mData.data.metaData.photoRAW = true;
+                mData.data.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
+                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a ALL.CR2");
             }
 
@@ -194,10 +194,10 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading RAWI-Block");
             var RAWI = bList.FirstOrDefault(x => x.blockTag == "RAWI");
 
-            FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[RAWI.fileNo]);
+            FileInfo fi = new FileInfo(mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + "." + MLVFileEnding[RAWI.fileNo]);
             string readPath = fi.DirectoryName;
-            mData.fileData.creationTime = fi.CreationTime;
-            mData.fileData.modificationTime = fi.LastWriteTime;
+            mData.data.fileData.creationTime = fi.CreationTime;
+            mData.data.fileData.modificationTime = fi.LastWriteTime;
 
             string fn = fi.Name;
             FileStream fs = fi.OpenRead();
@@ -206,26 +206,26 @@ namespace raw2cdng_v2
             byte[] RAWIArray = new byte[RAWI.blockLength];
             fs.Read(RAWIArray, 0, RAWI.blockLength);
 
-            mData.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[16], RAWIArray[17] }, 0);
-            mData.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[18], RAWIArray[19] }, 0);
-            mData.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[48], RAWIArray[49], RAWIArray[50], RAWIArray[51] }, 0);
-            if (mData.metaData.blackLevelOld == 0) mData.metaData.blackLevelOld = 2037;
-            mData.metaData.whiteLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[52], RAWIArray[53], RAWIArray[54], RAWIArray[55] }, 0);
-            if (mData.metaData.whiteLevelOld == 0) mData.metaData.whiteLevelOld = 15000;
-            mData.metaData.blackLevelNew = mData.metaData.blackLevelOld;
-            mData.metaData.whiteLevelNew = mData.metaData.whiteLevelOld;
+            mData.data.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[16], RAWIArray[17] }, 0);
+            mData.data.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[18], RAWIArray[19] }, 0);
+            mData.data.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[48], RAWIArray[49], RAWIArray[50], RAWIArray[51] }, 0);
+            if (mData.data.metaData.blackLevelOld == 0) mData.data.metaData.blackLevelOld = 2037;
+            mData.data.metaData.whiteLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[52], RAWIArray[53], RAWIArray[54], RAWIArray[55] }, 0);
+            if (mData.data.metaData.whiteLevelOld == 0) mData.data.metaData.whiteLevelOld = 15000;
+            mData.data.metaData.blackLevelNew = mData.data.metaData.blackLevelOld;
+            mData.data.metaData.whiteLevelNew = mData.data.metaData.whiteLevelOld;
 
-            mData.metaData.bitsperSample = 14;// RAWIArray[56];
-            mData.metaData.maximizer = Math.Pow(2, 16) / (mData.metaData.whiteLevelOld - mData.metaData.blackLevelOld);
-            mData.metaData.maximize = true;
+            mData.data.metaData.bitsperSample = 14;// RAWIArray[56];
+            mData.data.metaData.maximizer = Math.Pow(2, 16) / (mData.data.metaData.whiteLevelOld - mData.data.metaData.blackLevelOld);
+            mData.data.metaData.maximize = true;
 
             byte[] colorMatrix = new byte[72];
             Array.Copy(RAWIArray, 104, colorMatrix, 0, 72);
-            mData.metaData.colorMatrix = colorMatrix;
+            mData.data.metaData.colorMatrix = colorMatrix;
             colorMatrix = null;
 
-            mData.metaData.stripByteCount = mData.metaData.xResolution * mData.metaData.yResolution * mData.metaData.bitsperSample / 8;
-            mData.metaData.stripByteCountReal = mData.metaData.stripByteCount;
+            mData.data.metaData.stripByteCount = mData.data.metaData.xResolution * mData.data.metaData.yResolution * mData.data.metaData.bitsperSample / 8;
+            mData.data.metaData.stripByteCountReal = mData.data.metaData.stripByteCount;
 
             // from fileheader MLVI
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading MLVI-Block");
@@ -235,14 +235,14 @@ namespace raw2cdng_v2
             byte[] MLVIArray = new byte[MLVI.blockLength];
             fs.Read(MLVIArray, 0, MLVI.blockLength);
 
-            mData.metaData.frames = BitConverter.ToInt32(new byte[4] { MLVIArray[36], MLVIArray[37], MLVIArray[38], MLVIArray[39] }, 0);
-            mData.metaData.lostFrames = 0;//BitConverter.ToInt32(new byte[4] { MLVIArray[21], MLVIArray[22], MLVIArray[23], MLVIArray[24] }, 0);
-            mData.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { MLVIArray[44], MLVIArray[45], MLVIArray[46], MLVIArray[47] }, 0);
-            mData.metaData.fpsDen = BitConverter.ToInt32(new byte[4] { MLVIArray[48], MLVIArray[49], MLVIArray[50], MLVIArray[51] }, 0);
-            mData.metaData.dropFrame = false;
+            mData.data.metaData.frames = BitConverter.ToInt32(new byte[4] { MLVIArray[36], MLVIArray[37], MLVIArray[38], MLVIArray[39] }, 0);
+            mData.data.metaData.lostFrames = 0;//BitConverter.ToInt32(new byte[4] { MLVIArray[21], MLVIArray[22], MLVIArray[23], MLVIArray[24] }, 0);
+            mData.data.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { MLVIArray[44], MLVIArray[45], MLVIArray[46], MLVIArray[47] }, 0);
+            mData.data.metaData.fpsDen = BitConverter.ToInt32(new byte[4] { MLVIArray[48], MLVIArray[49], MLVIArray[50], MLVIArray[51] }, 0);
+            mData.data.metaData.dropFrame = false;
 
-            Single fps_out = (Single)mData.metaData.fpsNom / (Single)mData.metaData.fpsDen;
-            mData.metaData.fpsString = string.Format("{0:0.00}", fps_out);
+            Single fps_out = (Single)mData.data.metaData.fpsNom / (Single)mData.data.metaData.fpsDen;
+            mData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
 
             // modellname from IDNT
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading IDNT-Block");
@@ -254,13 +254,13 @@ namespace raw2cdng_v2
 
             byte[] modelName = new byte[32];
             Array.Copy(IDNTArray, 16, modelName, 0, 32);
-            mData.metaData.modell = Encoding.ASCII.GetString(modelName).Replace("\0", "");
+            mData.data.metaData.modell = Encoding.ASCII.GetString(modelName).Replace("\0", "");
 
             byte[] modelid = new byte[52];
             Array.Copy(IDNTArray, 16, modelid, 0, 32);
-            mData.metaData.modell = Encoding.ASCII.GetString(modelid).Replace("\0", "");
+            mData.data.metaData.modell = Encoding.ASCII.GetString(modelid).Replace("\0", "");
 
-            mData.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
+            mData.data.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
 
             modelName = null;
 
@@ -272,12 +272,12 @@ namespace raw2cdng_v2
             byte[] EXPOArray = new byte[EXPO.blockLength];
             fs.Read(EXPOArray, 0, EXPO.blockLength);
 
-            mData.lensData.isoValue = BitConverter.ToInt32(new byte[4] { EXPOArray[20], EXPOArray[21], EXPOArray[22], EXPOArray[23] }, 0);
+            mData.data.lensData.isoValue = BitConverter.ToInt32(new byte[4] { EXPOArray[20], EXPOArray[21], EXPOArray[22], EXPOArray[23] }, 0);
 
             var shutterDen = BitConverter.ToInt64(new byte[8] { EXPOArray[32], EXPOArray[33], EXPOArray[34], EXPOArray[35], EXPOArray[36], EXPOArray[37], EXPOArray[38], EXPOArray[39] }, 0);
             int[] shutterD = calc.DoubleToFraction(1000000/shutterDen);
             if (shutterD[1] == 0) shutterD[1] = 1;
-            mData.lensData.shutter = shutterD[1].ToString()+"/"+shutterD[0].ToString()+"s";
+            mData.data.lensData.shutter = shutterD[1].ToString()+"/"+shutterD[0].ToString()+"s";
 
 
             // exposure data from EXPO
@@ -288,8 +288,8 @@ namespace raw2cdng_v2
             byte[] LENSArray = new byte[LENS.blockLength];
             fs.Read(LENSArray, 0, LENS.blockLength);
 
-            mData.lensData.aperture = BitConverter.ToInt16(new byte[2] { LENSArray[20], LENSArray[21]}, 0);
-            mData.lensData.focalLength = BitConverter.ToInt16(new byte[2] { LENSArray[16], LENSArray[17] }, 0);
+            mData.data.lensData.aperture = BitConverter.ToInt16(new byte[2] { LENSArray[20], LENSArray[21]}, 0);
+            mData.data.lensData.focalLength = BitConverter.ToInt16(new byte[2] { LENSArray[16], LENSArray[17] }, 0);
 
             byte[] lensName = new byte[32];
             Array.Copy(LENSArray, 32, lensName, 0, 32);
@@ -297,7 +297,7 @@ namespace raw2cdng_v2
             {
                 if (lensName[i] < 21 || lensName[i] > 120) lensName[i] = 0;
             }
-            mData.lensData.lens = Encoding.ASCII.GetString(lensName).Replace("\0", "");
+            mData.data.lensData.lens = Encoding.ASCII.GetString(lensName).Replace("\0", "");
 
             // audioproperties from WAVI
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading WAVI-Block");
@@ -305,27 +305,27 @@ namespace raw2cdng_v2
 
             if (WAVI != null)
             {
-                mData.metaData.hasAudio = true;
+                mData.data.metaData.hasAudio = true;
                 fs.Position = WAVI.fileOffset;
                 byte[] WAVIArray = new byte[WAVI.blockLength];
                 fs.Read(WAVIArray, 0, WAVI.blockLength);
 
                 //byte[] modelName = new byte[32];
                 //Array.Copy(IDNTArray, 16, modelName, 0, 32);
-                mData.metaData.audioFormat = BitConverter.ToInt16(new byte[2] { WAVIArray[16], WAVIArray[17] }, 0);
-                mData.metaData.audioChannels = BitConverter.ToInt16(new byte[2] { WAVIArray[18], WAVIArray[19] }, 0);
-                mData.metaData.audioSamplingRate = BitConverter.ToInt32(new byte[4] { WAVIArray[20], WAVIArray[21], WAVIArray[22], WAVIArray[23] }, 0);
-                mData.metaData.audioBytesPerSecond = BitConverter.ToInt32(new byte[4] { WAVIArray[24], WAVIArray[25], WAVIArray[26], WAVIArray[27] }, 0);
-                mData.metaData.audioBlockAlign = BitConverter.ToInt16(new byte[2] { WAVIArray[28], WAVIArray[29] }, 0);
-                mData.metaData.audioBitsPerSample = BitConverter.ToInt16(new byte[2] { WAVIArray[30], WAVIArray[31] }, 0);
+                mData.data.metaData.audioFormat = BitConverter.ToInt16(new byte[2] { WAVIArray[16], WAVIArray[17] }, 0);
+                mData.data.metaData.audioChannels = BitConverter.ToInt16(new byte[2] { WAVIArray[18], WAVIArray[19] }, 0);
+                mData.data.metaData.audioSamplingRate = BitConverter.ToInt32(new byte[4] { WAVIArray[20], WAVIArray[21], WAVIArray[22], WAVIArray[23] }, 0);
+                mData.data.metaData.audioBytesPerSecond = BitConverter.ToInt32(new byte[4] { WAVIArray[24], WAVIArray[25], WAVIArray[26], WAVIArray[27] }, 0);
+                mData.data.metaData.audioBlockAlign = BitConverter.ToInt16(new byte[2] { WAVIArray[28], WAVIArray[29] }, 0);
+                mData.data.metaData.audioBitsPerSample = BitConverter.ToInt16(new byte[2] { WAVIArray[30], WAVIArray[31] }, 0);
 
-                //mData.modell = Encoding.ASCII.GetString(modelName).Replace("\0", "");
+                //mData.data.modell = Encoding.ASCII.GetString(modelName).Replace("\0", "");
 
                 modelName = null;
             }
             else
             {
-                mData.metaData.hasAudio = false;
+                mData.data.metaData.hasAudio = false;
             }
 
             //return mData;
@@ -336,23 +336,23 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] started");
 
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] counting Splitfiles");
-            rData.metaData.splitCount = 0;
+            rData.data.metaData.splitCount = 0;
             for (var i = 0; i < RAWFileEnding.Length; i++)
             {
-                string searchSplittedFile = rData.fileData.sourcePath + Path.DirectorySeparatorChar + rData.fileData.fileNameOnly + "." + RAWFileEnding[i];
+                string searchSplittedFile = rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + rData.data.fileData.fileNameOnly + "." + RAWFileEnding[i];
                 if (File.Exists(searchSplittedFile) == true)
                 {
-                    rData.metaData.splitCount++;
+                    rData.data.metaData.splitCount++;
                 }
                 else
                 {
                     break;
                 }
             }
-            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] found "+rData.metaData.splitCount+" Files");
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] found "+rData.data.metaData.splitCount+" Files");
 
-            string PhotoRAWFile = rData.fileData.sourcePath + Path.DirectorySeparatorChar + rData.fileData.fileNameOnly + ".CR2";
-            string allRAWFile = rData.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
+            string PhotoRAWFile = rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + rData.data.fileData.fileNameOnly + ".CR2";
+            string allRAWFile = rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
             if (File.Exists(PhotoRAWFile) == true)
             {
                 // 110 = Model | 829a = Exposure | 829d = Fno | 8827 = ISO | 920a = FocalLength
@@ -360,24 +360,24 @@ namespace raw2cdng_v2
                 // Makernotes - MeasuredRGGB | WB_RGGB_Levels_Measured
                 // -------------------
                 //MessageBox.Show("CR2 is existent");
-                rData.metaData.photoRAW = true;
+                rData.data.metaData.photoRAW = true;
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] there is a CR2. reading RGGBValues");
                 // -------------------------------
-                rData.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
-                rData.metaData.RGBfraction = calc.convertToFraction(rData.metaData.RGGBValues);
+                rData.data.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
+                rData.data.metaData.RGBfraction = calc.convertToFraction(rData.data.metaData.RGGBValues);
             }
-            if ((rData.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
+            if ((rData.data.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
             {
-                rData.metaData.photoRAW = true;
+                rData.data.metaData.photoRAW = true;
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] there is a ALL.CR2. reading RGGBValues");
                 // -------------------------------
-                rData.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
-                rData.metaData.RGBfraction = calc.convertToFraction(rData.metaData.RGGBValues);
+                rData.data.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
+                rData.data.metaData.RGBfraction = calc.convertToFraction(rData.data.metaData.RGGBValues);
             }
-            FileInfo fi = new FileInfo(rData.fileData.sourcePath + Path.DirectorySeparatorChar + rData.fileData.fileNameOnly + "." + RAWFileEnding[rData.metaData.splitCount - 1]);
+            FileInfo fi = new FileInfo(rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + rData.data.fileData.fileNameOnly + "." + RAWFileEnding[rData.data.metaData.splitCount - 1]);
             string readPath = fi.DirectoryName;
-            rData.fileData.creationTime = fi.CreationTime;
-            rData.fileData.modificationTime = fi.LastWriteTime;
+            rData.data.fileData.creationTime = fi.CreationTime;
+            rData.data.fileData.modificationTime = fi.LastWriteTime;
             string fn = fi.Name;
             FileStream fs = fi.OpenRead();
 
@@ -391,74 +391,74 @@ namespace raw2cdng_v2
             int nBytesRead = fs.Read(ByteArray, 0, nBytes);
 
 
-            rData.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { ByteArray[4], ByteArray[5] }, 0);
-            rData.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { ByteArray[6], ByteArray[7] }, 0);
-            rData.metaData.stripByteCount = BitConverter.ToInt32(new byte[4] { ByteArray[8], ByteArray[9], ByteArray[10], ByteArray[11] }, 0);
-            rData.metaData.frames = BitConverter.ToInt32(new byte[4] { ByteArray[12], ByteArray[13], ByteArray[14], ByteArray[15] }, 0);
-            rData.metaData.lostFrames = BitConverter.ToInt32(new byte[4] { ByteArray[16], ByteArray[17], ByteArray[18], ByteArray[19] }, 0);
-            rData.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { ByteArray[20], ByteArray[21], ByteArray[22], ByteArray[23] }, 0);
-            rData.metaData.fpsDen = 1000;
-            Single fps_out = (Single)rData.metaData.fpsNom / 1000;
-            rData.metaData.fpsString = string.Format("{0:0.00}", fps_out);
-            rData.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { ByteArray[60], ByteArray[61], ByteArray[62], ByteArray[63] }, 0);
-            if (rData.metaData.blackLevelOld == 0)
+            rData.data.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { ByteArray[4], ByteArray[5] }, 0);
+            rData.data.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { ByteArray[6], ByteArray[7] }, 0);
+            rData.data.metaData.stripByteCount = BitConverter.ToInt32(new byte[4] { ByteArray[8], ByteArray[9], ByteArray[10], ByteArray[11] }, 0);
+            rData.data.metaData.frames = BitConverter.ToInt32(new byte[4] { ByteArray[12], ByteArray[13], ByteArray[14], ByteArray[15] }, 0);
+            rData.data.metaData.lostFrames = BitConverter.ToInt32(new byte[4] { ByteArray[16], ByteArray[17], ByteArray[18], ByteArray[19] }, 0);
+            rData.data.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { ByteArray[20], ByteArray[21], ByteArray[22], ByteArray[23] }, 0);
+            rData.data.metaData.fpsDen = 1000;
+            Single fps_out = (Single)rData.data.metaData.fpsNom / 1000;
+            rData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
+            rData.data.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { ByteArray[60], ByteArray[61], ByteArray[62], ByteArray[63] }, 0);
+            if (rData.data.metaData.blackLevelOld == 0)
             {
-                rData.metaData.blackLevelOld = 2037;
+                rData.data.metaData.blackLevelOld = 2037;
             }
-            rData.metaData.whiteLevelOld = 15000;
-            rData.metaData.blackLevelNew = rData.metaData.blackLevelOld;
-            rData.metaData.whiteLevelNew = rData.metaData.whiteLevelOld;
+            rData.data.metaData.whiteLevelOld = 15000;
+            rData.data.metaData.blackLevelNew = rData.data.metaData.blackLevelOld;
+            rData.data.metaData.whiteLevelNew = rData.data.metaData.whiteLevelOld;
 
-            rData.metaData.bitsperSample = 14;// ByteArray[56];
-            rData.metaData.maximize = true;
-            rData.metaData.maximizer = Math.Pow(2, 16) / (rData.metaData.whiteLevelOld - rData.metaData.blackLevelOld);
+            rData.data.metaData.bitsperSample = 14;// ByteArray[56];
+            rData.data.metaData.maximize = true;
+            rData.data.metaData.maximizer = Math.Pow(2, 16) / (rData.data.metaData.whiteLevelOld - rData.data.metaData.blackLevelOld);
             
 
-            rData.metaData.stripByteCountReal = (rData.metaData.xResolution * rData.metaData.yResolution * rData.metaData.bitsperSample) / 8;
+            rData.data.metaData.stripByteCountReal = (rData.data.metaData.xResolution * rData.data.metaData.yResolution * rData.data.metaData.bitsperSample) / 8;
 
-            //int real = (rData.metaData.xResolution*rData.metaData.yResolution)*14/8;
-            //long diff = real - rData.metaData.stripByteCount;
+            //int real = (rData.data.metaData.xResolution*rData.data.metaData.yResolution)*14/8;
+            //long diff = real - rData.data.metaData.stripByteCount;
             byte[] colorMatrix = new byte[72];
             fs.Seek(-76, SeekOrigin.End);
             nBytesRead = fs.Read(colorMatrix, 0, 72);
-            rData.metaData.colorMatrix = colorMatrix;
+            rData.data.metaData.colorMatrix = colorMatrix;
             colorMatrix = null;
             fs.Close();
 
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] deciding model on first colorMatrix-Value");
 
-            int tmpMod = BitConverter.ToInt32(rData.metaData.colorMatrix, 0);
+            int tmpMod = BitConverter.ToInt32(rData.data.metaData.colorMatrix, 0);
             switch (tmpMod)
             {
                 case 6722:
-                    rData.metaData.modell = "Canon EOS 5D Mark III";
+                    rData.data.metaData.modell = "Canon EOS 5D Mark III";
                     break;
                 case 4716:
-                    rData.metaData.modell = "Canon EOS 5D Mark II";
+                    rData.data.metaData.modell = "Canon EOS 5D Mark II";
                     break;
                 case 6461:
-                    rData.metaData.modell = "Canon EOS 600D";
+                    rData.data.metaData.modell = "Canon EOS 600D";
                     break;
                 case 7034:
-                    rData.metaData.modell = "Canon EOS 6D";
+                    rData.data.metaData.modell = "Canon EOS 6D";
                     break;
                 case 4763:
-                    rData.metaData.modell = "Canon EOS 500D";
+                    rData.data.metaData.modell = "Canon EOS 500D";
                     break;
                 case 6719:
-                    rData.metaData.modell = "Canon EOS 60D";
+                    rData.data.metaData.modell = "Canon EOS 60D";
                     break;
                 case 4920:
-                    rData.metaData.modell = "Canon EOS 50D";
+                    rData.data.metaData.modell = "Canon EOS 50D";
                     break;
                 default:
-                    rData.metaData.modell = "Canon EOS 7D";
+                    rData.data.metaData.modell = "Canon EOS 7D";
                     break;
             }
-            rData.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
+            rData.data.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
         }
 
-        public static byte[] readMLV(raw param)
+        public static byte[] readMLV(data param)
         {
             int usedFile = param.fileData.VIDFBlock.fileNo;
             param.rawData = new byte[param.metaData.stripByteCountReal];
@@ -474,7 +474,7 @@ namespace raw2cdng_v2
             return param.rawData;
         }
 
-        public static byte[] readRAW(raw param)
+        public static byte[] readRAW(data param)
         {
             int usedFile = param.fileData.RAWBlock.fileNo;
             param.rawData = new byte[param.metaData.stripByteCountReal];
@@ -526,24 +526,33 @@ namespace raw2cdng_v2
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");
 
-            byte[] imageArray = new byte[rawFile.metaData.stripByteCountReal];
+            byte[] imageArray = new byte[rawFile.data.metaData.stripByteCountReal];
 
-            if (rawFile.metaData.isMLV)
+            if (rawFile.data.metaData.isMLV)
             {
-                
-                rawFile.fileData.VIDFBlock = rawFile.metaData.VIDFBlocks[rawFile.threadData.frame];
-                imageArray = io.readMLV(rawFile);
+
+                rawFile.data.fileData.VIDFBlock = rawFile.VIDFBlocks[rawFile.data.threadData.frame];
+                imageArray = io.readMLV(rawFile.data);
             }
             else
             {
-                rawFile.fileData.RAWBlock = rawFile.metaData.RAWBlocks[rawFile.threadData.frame];
-                imageArray = io.readRAW(rawFile);
+                rawFile.data.fileData.RAWBlock = rawFile.RAWBlocks[rawFile.data.threadData.frame];
+                imageArray = io.readRAW(rawFile.data);
             }
 
-            return calc.doBitmap(calc.to16(imageArray, rawFile), rawFile);
+            return calc.doBitmap(calc.to16(imageArray, rawFile.data), rawFile.data);
         }
 
-        public static void saveBitmap(BitmapImage pic, raw r)
+        public static WriteableBitmap showPicture(data rawData)
+        {
+            if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");
+
+            byte[] imageArray = new byte[rawData.metaData.stripByteCountReal];
+
+            return calc.doBitmap(calc.to16(imageArray, rawData), rawData);
+        }
+
+        public static void saveBitmap(BitmapImage pic, data r)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveBitmap] started");
 
@@ -556,7 +565,7 @@ namespace raw2cdng_v2
                 encoder.Save(filestream);
         }
 
-        public static void saveProxy(raw r, BitmapSource pic)
+        public static void saveProxy(data r, BitmapSource pic)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
 
@@ -586,7 +595,7 @@ namespace raw2cdng_v2
             // and https://tech.ebu.ch/docs/r/r099.pdf
 
             // set Name (originator)
-            string bextName = mData.metaData.modell;
+            string bextName = mData.data.metaData.modell;
             byte[] byteBextName = Enumerable.Repeat((byte)0x00, 32).ToArray();
 
             // first fill with zeros
@@ -605,51 +614,51 @@ namespace raw2cdng_v2
             Random rnd = new Random();
             int RRR= rnd.Next(100000000, 999999999);
 
-            string UDI = "DECan" + mData.metaData.camId.ToUpper() + String.Format("{0:HHmmss}", mData.fileData.modificationTime) + RRR.ToString();
+            string UDI = "DECan" + mData.data.metaData.camId.ToUpper() + String.Format("{0:HHmmss}", mData.data.fileData.modificationTime) + RRR.ToString();
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(UDI), 0, wavFile[0], 0x158, 32);
             
             // set timedate
-            string dateTime = String.Format("{0:yyyy:MM:ddHH:mm:ss}", mData.fileData.modificationTime);
+            string dateTime = String.Format("{0:yyyy:MM:ddHH:mm:ss}", mData.data.fileData.modificationTime);
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(dateTime), 0, wavFile[0], 0x178, 18);
             
             //have to adjust samples if dropped frames
-            double timeRefMultiplier = Math.Round((double)mData.metaData.fpsNom / 1000) / ((double)mData.metaData.fpsNom / 1000);
+            double timeRefMultiplier = Math.Round((double)mData.data.metaData.fpsNom / 1000) / ((double)mData.data.metaData.fpsNom / 1000);
                
             // set TimeRef (long)
-            long timeRef = (long)(mData.metaData.audioSamplingRate * calc.creationTime2Frame(mData.fileData.creationTime,timeRefMultiplier));
+            long timeRef = (long)(mData.data.metaData.audioSamplingRate * calc.creationTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier));
             Array.Copy(BitConverter.GetBytes(timeRef), 0, wavFile[0], 0x18a, 8);
 
             //change xml-framerate
-            string fpsString = mData.metaData.fpsNom.ToString() + "/" + mData.metaData.fpsDen.ToString();
+            string fpsString = mData.data.metaData.fpsNom.ToString() + "/" + mData.data.metaData.fpsDen.ToString();
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x4ce, fpsString.Length); // for example 25/1
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x4f7, fpsString.Length); // for example 25/1
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x521, fpsString.Length); // for example 25/1
 
             // mark in xml its ndf (nondropframe) or not
             string DF = "DF ";
-            if(!mData.metaData.dropFrame) DF ="NDF";
+            if (!mData.data.metaData.dropFrame) DF = "NDF";
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(DF), 0, wavFile[0], 0x54B, 3);
 
             // set chunksize fmt to 0x28
             Array.Copy(BitConverter.GetBytes(0x28), 0, wavFile[0], 0x29c, 4);
 
             //fmt area
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioFormat), 0, wavFile[0], 0x2a0, 2); // 01 00
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioChannels), 0, wavFile[0], 0x2a2, 2); // 02 00
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioSamplingRate), 0, wavFile[0], 0x2a4, 4); // 80 bb 00 00
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBytesPerSecond), 0, wavFile[0], 0x2a8, 4); // 00 ee 02 00
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBlockAlign), 0, wavFile[0], 0x2ac, 2); // 00 04
-            Array.Copy(BitConverter.GetBytes(mData.metaData.audioBitsPerSample), 0, wavFile[0], 0x2ae, 2); // 00 10
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioFormat), 0, wavFile[0], 0x2a0, 2); // 01 00
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioChannels), 0, wavFile[0], 0x2a2, 2); // 02 00
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioSamplingRate), 0, wavFile[0], 0x2a4, 4); // 80 bb 00 00
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBytesPerSecond), 0, wavFile[0], 0x2a8, 4); // 00 ee 02 00
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBlockAlign), 0, wavFile[0], 0x2ac, 2); // 00 04
+            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBitsPerSample), 0, wavFile[0], 0x2ae, 2); // 00 10
 
             // set XMLdata
             // read out audio chunks
-            for (var i = 0; i < mData.metaData.AUDFBlocks.Count; i++)
+            for (var i = 0; i < mData.AUDFBlocks.Count; i++)
             {
-                Blocks.mlvBlock audioBlock = mData.metaData.AUDFBlocks[i];
+                Blocks.mlvBlock audioBlock = mData.AUDFBlocks[i];
                 
                 int usedFile = audioBlock.fileNo;
                 byte[] audioBlockArray = new byte[audioBlock.blockLength];
-                FileInfo fi = new FileInfo(mData.fileData.sourcePath + Path.DirectorySeparatorChar + mData.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);
+                FileInfo fi = new FileInfo(mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);
                 FileStream fs = fi.OpenRead();
 
                 fs.Position = (long)((long)audioBlock.fileOffset);

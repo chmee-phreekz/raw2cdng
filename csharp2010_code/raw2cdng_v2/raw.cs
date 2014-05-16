@@ -11,12 +11,21 @@ namespace raw2cdng_v2
 {
     public class raw
     {
-        public byte[] rawData {get;set;}
-        public rawdata metaData {get; set;}
-        public filedata fileData {get; set;}
+        public data data { get; set; }        
+        public List<Blocks.rawBlock> RAWBlocks { get; set; }
+        public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
+        public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
+    }
+
+    public class data
+    {
+        public byte[] rawData { get; set; }
+        public rawdata metaData { get; set; }
+        public filedata fileData { get; set; }
         public lensdata lensData { get; set; }
-        public threaddata threadData {get; set;}
+        public threaddata threadData { get; set; }
         public convertSettings convertData { get; set; }
+
     }
 
     public class rawdata
@@ -65,9 +74,6 @@ namespace raw2cdng_v2
         public string errorString { get; set; }
 
         public bool isMLV { get; set; }
-        public List<Blocks.rawBlock> RAWBlocks { get; set; }
-        public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
-        public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
 
         public byte[] DNGHeader { get; set; }
         public string version { get; set; }

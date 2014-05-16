@@ -50,6 +50,8 @@ namespace raw2cdng_v2
     {
         // -- timertick for _preview
         DispatcherTimer previewTimer = new DispatcherTimer();
+        // -- timertick for _draggedProgress
+        DispatcherTimer progressDragDrop = new DispatcherTimer();
 
         // -- old folderBrowserdialog
         System.Windows.Forms.FolderBrowserDialog _selectFolder = new System.Windows.Forms.FolderBrowserDialog();
@@ -93,7 +95,14 @@ namespace raw2cdng_v2
             // -- init _preview Tick and small frameProgressLine
             previewTimer.Tick += new EventHandler(previewTimer_Tick);
             previewTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
+            
+            progressDragDrop.Tick += new EventHandler(progressDragDrop_Tick);
+            progressDragDrop.Interval = new TimeSpan(0, 0, 0, 0, 20);
+ 
+ 
             _previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            _dragDropProgressBar.Height = 0;
+            _dragDropProgressBar.Width = 0;
 
             // ui init
             _progressAll.Value = 0;
@@ -122,111 +131,143 @@ namespace raw2cdng_v2
 
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                // --- list of dropped files
+                // draggedProgress Start
+                _dragDropProgressBar.Height = 12;
+                _dragDropProgressBar.Width = 200;
+                progressDragDrop.Start();
+        
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                Array.Sort(files);
-
-                if (settings.debugLogEnabled)
-                {
-                    debugging._saveDebug("[drop] started");
-                    debugging._saveDebug("[drop] Files dropped:");
-                    debugging._saveDebug("[drop] ------");
-                    foreach(string file in files) debugging._saveDebug("[drop] "+file);
-                    debugging._saveDebug("[drop] ------");
-                }         
-
-                foreach (string file in files)
-                {
-                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file "+file+" will be analyzed now.");
-
-                    if (io.isMLV(file) || io.isRAW(file))
-                    {
-                        raw importRaw = new raw();
-                        importRaw.metaData = new rawdata();
-                        importRaw.fileData = new filedata();
-                        importRaw.threadData = new threaddata();
-                        importRaw.lensData = new lensdata();
-                        // write versionstring into author-tag
-                        // not done yet.
-                        importRaw.metaData.version = version;
-
-                        if (io.isMLV(file))
-                        {
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] is MLV ");
-                            importRaw.metaData.isMLV = true;
-                            io.setFileinfoData(file, importRaw.fileData);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
-                            io.createMLVBlockList(file, importRaw);
-                            Blocks.mlvBlockList = Blocks.mlvBlockList.OrderBy(x => x.timestamp).ToList();
-                            io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: "+Blocks.mlvBlockList.Count);
-                            importRaw.metaData.AUDFBlocks = null;
-                            if (importRaw.metaData.hasAudio)
-                            {
-                                importRaw.metaData.AUDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "AUDF").ToList();
-                                if (settings.debugLogEnabled) debugging._saveDebug("[drop] hasAudio. AUDF-List created. Blocks: " + importRaw.metaData.AUDFBlocks.Count);
-                            }
-                            importRaw.metaData.VIDFBlocks = null;
-                            importRaw.metaData.VIDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "VIDF").ToList();
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-List created. Blocks: " + importRaw.metaData.VIDFBlocks.Count);
-                            io.readVIDFBlockData(importRaw);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blockdata created.");
-                            // correct frameCount
-                            importRaw.metaData.frames = importRaw.metaData.VIDFBlocks.Count;
-
-                            importRaw.fileData.convertIt = true;
-                        }
-                        if (io.isRAW(file))
-                        {
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] is RAW ");
-                            importRaw.metaData.isMLV = false;
-                            importRaw.metaData.hasAudio = false;
-                            importRaw.metaData.RAWBlocks = null;
-                            io.setFileinfoData(file, importRaw.fileData);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
-                            io.getRAWAttributes(file, importRaw);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Attributes read and set.");
-                            io.createRAWBlockList(file, importRaw);
-                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.metaData.RAWBlocks.Count);
-                            
-                            // then Framelist
-
-                            importRaw.fileData.convertIt = true;
-                        }
-                        // check errors
-                        // ..to be done..
-
-                        // now set item
-                        if (settings.debugLogEnabled) debugging._saveDebug("[drop] adding " + importRaw.fileData.fileNameOnly+" to batchList");
-                            
-                        _batchList.Items.Add(new lvItem
-                        {
-                            //convert = true,
-                            type = importRaw.metaData.isMLV ? "MLV" : "RAW",
-                            filename = importRaw.fileData.fileNameOnly,
-                            files = importRaw.metaData.splitCount.ToString(),
-                            frames = importRaw.metaData.frames.ToString(),
-                            duration = calc.frameToTC_s(importRaw.metaData.frames, (importRaw.metaData.fpsNom / importRaw.metaData.fpsDen)),
-                            resolution = importRaw.metaData.xResolution.ToString() + "x" + importRaw.metaData.yResolution.ToString(),
-                            fps = importRaw.metaData.fpsString,
-                            audio = importRaw.metaData.hasAudio ? "\u2714" : "\u2715"
-                        });
-
-                        // and save raw into list
-                        rawFiles.Add(importRaw);
-                        _convert.IsEnabled = true;
-
-                        if (settings.debugLogEnabled)
-                        {
-                            debugging._saveDebug("[drop] ** Item " + importRaw.fileData.fileNameOnly + " imported | " + (importRaw.metaData.isMLV ? "MLV" : "RAW"));
-                            debugging._saveDebug("[drop] * res " + importRaw.metaData.xResolution + "x" + importRaw.metaData.yResolution + "px | " + importRaw.metaData.fpsString + "fps | " + importRaw.metaData.frames + " frames | BL" + importRaw.metaData.blackLevelOld + " | WL" + importRaw.metaData.whiteLevelOld);
-                            if (importRaw.metaData.isMLV) debugging._saveDebug("[drop] * modell " + importRaw.metaData.modell + " | vidfblocks " + importRaw.metaData.VIDFBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
-                            else debugging._saveDebug("[drop] * modell " + importRaw.metaData.modell + " | rawblocks " + importRaw.metaData.RAWBlocks.Count() + " | has " + (importRaw.metaData.hasAudio ? "" : "no") + "audio");
-                        }
-                    }
-                }
+                
+                // do it in a task because of progress
+                List<lvItem> batchListItems = new List<lvItem>();
+                Task dragDropDataTask = Task.Factory.StartNew(() => dragDropData(files));
             }
         }
+
+        private void dragDropData(string[] files)
+        {
+            
+            // --- list of dropped files
+            Array.Sort(files);
+
+            if (settings.debugLogEnabled)
+            {
+                debugging._saveDebug("[drop] started");
+                debugging._saveDebug("[drop] Files dropped:");
+                debugging._saveDebug("[drop] ------");
+                foreach(string file in files) debugging._saveDebug("[drop] "+file);
+                debugging._saveDebug("[drop] ------");
+            }         
+
+            foreach (string file in files)
+            {
+                    
+                if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file "+file+" will be analyzed now.");
+
+                if (io.isMLV(file) || io.isRAW(file))
+                {
+                    raw importRaw = new raw();
+                    data importData = new data();
+                    importData.metaData = new rawdata();
+                    importData.fileData = new filedata();
+                    importData.threadData = new threaddata();
+                    importData.lensData = new lensdata();
+                       // write versionstring into author-tag
+                        // not done yet.
+                    importData.metaData.version = version;
+                    importRaw.data = importData;
+
+                if (io.isMLV(file))
+                {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] is MLV ");
+                    importRaw.data.metaData.isMLV = true;
+                    io.setFileinfoData(file, importRaw.data.fileData);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
+                    io.createMLVBlockList(file, importRaw);
+                    Blocks.mlvBlockList = Blocks.mlvBlockList.OrderBy(x => x.timestamp).ToList();
+                    io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: "+Blocks.mlvBlockList.Count);
+                    importRaw.AUDFBlocks = null;
+                    if (importRaw.data.metaData.hasAudio)
+                    {
+                       importRaw.AUDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "AUDF").ToList();
+                       if (settings.debugLogEnabled) debugging._saveDebug("[drop] hasAudio. AUDF-List created. Blocks: " + importRaw.AUDFBlocks.Count);
+                    }
+                    importRaw.VIDFBlocks = null;
+                    importRaw.VIDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "VIDF").ToList();
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-List created. Blocks: " + importRaw.VIDFBlocks.Count);
+                    io.readVIDFBlockData(importRaw);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blockdata created.");
+                    // correct frameCount
+                    importRaw.data.metaData.frames = importRaw.VIDFBlocks.Count;
+
+                    importRaw.data.fileData.convertIt = true;
+                }
+                if (io.isRAW(file))
+                {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] is RAW ");
+                    importRaw.data.metaData.isMLV = false;
+                    importRaw.data.metaData.hasAudio = false;
+                    importRaw.RAWBlocks = null;
+                    io.setFileinfoData(file, importRaw.data.fileData);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
+                    io.getRAWAttributes(file, importRaw);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Attributes read and set.");
+                    io.createRAWBlockList(file, importRaw);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.RAWBlocks.Count);
+                           
+                    // then Framelist
+                    importRaw.data.fileData.convertIt = true;
+                }
+                // check errors
+                // ..to be done..
+
+                // now set item
+                if (settings.debugLogEnabled) debugging._saveDebug("[drop] adding " + importRaw.data.fileData.fileNameOnly + " to batchList");
+
+                this.Dispatcher.Invoke((Action)(() =>
+                {         
+                    _batchList.Items.Add(new lvItem
+                    {
+                        //convert = true,
+                        type = importRaw.data.metaData.isMLV ? "MLV" : "RAW",
+                        filename = importRaw.data.fileData.fileNameOnly,
+                        files = importRaw.data.metaData.splitCount.ToString(),
+                        frames = importRaw.data.metaData.frames.ToString(),
+                        duration = calc.frameToTC_s(importRaw.data.metaData.frames, (importRaw.data.metaData.fpsNom / importRaw.data.metaData.fpsDen)),
+                        resolution = importRaw.data.metaData.xResolution.ToString() + "x" + importRaw.data.metaData.yResolution.ToString(),
+                        fps = importRaw.data.metaData.fpsString,
+                        audio = importRaw.data.metaData.hasAudio ? "\u2714" : "\u2715"
+                    });
+                }));
+                      
+                // and save raw into list
+                rawFiles.Add(importRaw);
+
+                        
+                if (settings.debugLogEnabled)
+                {
+                    debugging._saveDebug("[drop] ** Item " + importRaw.data.fileData.fileNameOnly + " imported | " + (importRaw.data.metaData.isMLV ? "MLV" : "RAW"));
+                    debugging._saveDebug("[drop] * res " + importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px | " + importRaw.data.metaData.fpsString + "fps | " + importRaw.data.metaData.frames + " frames | BL" + importRaw.data.metaData.blackLevelOld + " | WL" + importRaw.data.metaData.whiteLevelOld);
+                    if (importRaw.data.metaData.isMLV) debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | vidfblocks " + importRaw.VIDFBlocks.Count() + " | has " + (importRaw.data.metaData.hasAudio ? "" : "no ") + "audio");
+                    else debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | rawblocks " + importRaw.RAWBlocks.Count() + " | has " + (importRaw.data.metaData.hasAudio ? "" : "no") + "audio");
+                }
+
+              }
+          }
+          progressDragDrop.Stop();
+                
+          this.Dispatcher.Invoke((Action)(() =>
+          {
+            _dragDropProgressBar.Height = 0;
+            _dragDropProgressBar.Width = 0;
+                    
+            if (_batchList.Items.Count > 0)
+            {
+                _convert.IsEnabled = true;
+            }
+          }));
+       }
 
         private void _convert_Click(object sender, RoutedEventArgs e)
         {
@@ -248,7 +289,7 @@ namespace raw2cdng_v2
             // -- count all frames for progressbarAll --
             foreach (raw file in rawFiles)
             {
-                allFramesCount += file.metaData.frames;
+                allFramesCount += file.data.metaData.frames;
             }
 
             if (settings.debugLogEnabled) debugging._saveDebug("[doWork] all in all there are " + allFramesCount + " frames to convert");
@@ -268,6 +309,7 @@ namespace raw2cdng_v2
                    _highlights.IsEnabled = false;
                    _takePath.IsEnabled = false;
                    _noPath.IsEnabled = false;
+                   _jpegs.IsEnabled = false;
                }));
             allFramesCount = 0;
             
@@ -284,13 +326,13 @@ namespace raw2cdng_v2
             foreach (raw file in rawFiles)
             {
 
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] -> converting item " + file.fileData.fileNameOnly);
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] -> converting item " + file.data.fileData.fileNameOnly);
 
-                 this.Dispatcher.Invoke((Action)(() =>
+                this.Dispatcher.Invoke((Action)(() =>
                 {
                     // -- refresh _progressbar.One
                     _progressOne.Value = 0;
-                    _progressOne.Maximum = file.metaData.frames;
+                    _progressOne.Maximum = file.data.metaData.frames;
 
                     // -- mark item as converting (red)
                     //_batchList.SelectedItem = itemList;
@@ -298,119 +340,127 @@ namespace raw2cdng_v2
                 }));
 
                 // copy properties from GUI into rawobject
-                file.convertData = convertData;
+                file.data.convertData = convertData;
                 // if maximized use the multiplier
-                file.metaData.maximizer = (Math.Pow(2, convertData.bitdepth)-1) / (file.metaData.whiteLevelOld - file.metaData.blackLevelOld);
+                file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
+
+                // if verticalBanding
+                if (file.data.convertData.verticalBanding)
+                {
+                    //if using chroma Smoothing, recalculate ev2raw/raw2ev
+                    calc.reinitRAWEVArrays(file.data.metaData.blackLevelNew, file.data.metaData.blackLevelNew);
+                }
+                
 
                 // set new blacklevel whitelevel and bitdepth
                 switch (settings.format)
                 {
                     case 1:
                         // 16 bit normal
-                        file.metaData.blackLevelNew = file.metaData.blackLevelOld;
-                        file.metaData.whiteLevelNew = file.metaData.whiteLevelOld;
-                        file.metaData.bitsperSampleChanged = 16;
-                        file.metaData.maximize = false;
+                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
+                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
+                        file.data.metaData.bitsperSampleChanged = 16;
+                        file.data.metaData.maximize = false;
                         break;
                     case 2:
                         // 16 bit maximized
-                        file.metaData.blackLevelNew = 0;
-                        file.metaData.whiteLevelNew = 65535;
-                        file.metaData.bitsperSampleChanged = 16;
-                        file.metaData.maximize = true;
-                        file.metaData.maximizer = file.metaData.whiteLevelNew / (file.metaData.whiteLevelOld - file.metaData.blackLevelOld);
+                        file.data.metaData.blackLevelNew = 0;
+                        file.data.metaData.whiteLevelNew = 65535;
+                        file.data.metaData.bitsperSampleChanged = 16;
+                        file.data.metaData.maximize = true;
+                        file.data.metaData.maximizer = file.data.metaData.whiteLevelNew / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
                         break;
                     case 3:
                         // 12bit normal
-                        file.metaData.blackLevelNew = file.metaData.blackLevelOld/4;
-                        file.metaData.whiteLevelNew = file.metaData.whiteLevelOld/4;
-                        file.metaData.bitsperSampleChanged = 12;
-                        file.metaData.maximize = false;
+                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld / 4;
+                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld / 4;
+                        file.data.metaData.bitsperSampleChanged = 12;
+                        file.data.metaData.maximize = false;
                         break;
                     case 4:
                         // 12 bit maximized
-                        file.metaData.blackLevelNew = 0;
-                        file.metaData.whiteLevelNew = 4095;
-                        file.metaData.bitsperSampleChanged = 12;
-                        file.metaData.maximize = true;
+                        file.data.metaData.blackLevelNew = 0;
+                        file.data.metaData.whiteLevelNew = 4095;
+                        file.data.metaData.bitsperSampleChanged = 12;
+                        file.data.metaData.maximize = true;
                         break;
                     default:
-                        file.metaData.blackLevelNew = file.metaData.blackLevelOld;
-                        file.metaData.whiteLevelNew = file.metaData.whiteLevelOld;
-                        file.metaData.bitsperSampleChanged = 16;
-                        file.metaData.maximize = false;
+                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
+                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
+                        file.data.metaData.bitsperSampleChanged = 16;
+                        file.data.metaData.maximize = false;
                         break;
                 }
 
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] settings format " + settings.format + " with BL" + file.metaData.blackLevelNew + " WL" + file.metaData.whiteLevelNew + " with+" + (file.metaData.maximize ? "" : "out") + " maximizingvalue " + file.metaData.maximizer);
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] settings format " + settings.format + " with BL" + file.data.metaData.blackLevelNew + " WL" + file.data.metaData.whiteLevelNew + " with+" + (file.data.metaData.maximize ? "" : "out") + " maximizingvalue " + file.data.metaData.maximizer);
 
                 // prepare prefix variables
-                string date = string.Format("{0:yyMMdd}", file.fileData.creationTime);
-                string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.fileData.creationTime);
-                string modifiedDate = string.Format("{0:yyMMdd}", file.fileData.modificationTime);
-                string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.fileData.modificationTime);
-                
-                string time = string.Format("{0:HHmmss}", file.fileData.creationTime);
-                string modifiedTime = string.Format("{0:HHmmss}", file.fileData.modificationTime);
+                string date = string.Format("{0:yyMMdd}", file.data.fileData.creationTime);
+                string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.creationTime);
+                string modifiedDate = string.Format("{0:yyMMdd}", file.data.fileData.modificationTime);
+                string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.modificationTime);
 
-                string parentSourcePath = file.fileData.sourcePath.Split(winIO.Path.DirectorySeparatorChar).Last();
-                string bitdepth = file.metaData.bitsperSampleChanged.ToString();
+                string time = string.Format("{0:HHmmss}", file.data.fileData.creationTime);
+                string modifiedTime = string.Format("{0:HHmmss}", file.data.fileData.modificationTime);
+
+                string parentSourcePath = file.data.fileData.sourcePath.Split(winIO.Path.DirectorySeparatorChar).Last();
+                string bitdepth = file.data.metaData.bitsperSampleChanged.ToString();
 
                 // set filename from prefix-generator
-                file.fileData.outputFilename = settings.prefix.
+                file.data.fileData.outputFilename = settings.prefix.
                     Replace("[D]", date).
                     Replace("[D2]", datetime).
                     Replace("[M]", modifiedDate).
                     Replace("[M2]", modifiedDatetime).
                     Replace("[T]", time).
                     Replace("[T2]", modifiedTime).
-                    Replace("[S]", file.fileData.fileNameShort).
-                    Replace("[C]", file.fileData.fileNameNum).
+                    Replace("[S]", file.data.fileData.fileNameShort).
+                    Replace("[C]", file.data.fileData.fileNameNum).
                     Replace("[P]", parentSourcePath).
                     Replace("[B]", bitdepth).
-                    Replace("[F]", file.fileData.fileNameOnly);
+                    Replace("[F]", file.data.fileData.fileNameOnly);
                 // cut parenthesis-content
                 // its for the filesequences
-                if (file.fileData.outputFilename.IndexOf("(") > -1)
+                if (file.data.fileData.outputFilename.IndexOf("(") > -1)
                 {
-                    file.fileData.destinationPath = file.fileData.outputFilename.Substring(0,file.fileData.outputFilename.IndexOf("("));
-                    file.fileData.outputFilename = file.fileData.outputFilename.Replace("(", "").Replace(")", "");
+                    file.data.fileData.destinationPath = file.data.fileData.outputFilename.Substring(0, file.data.fileData.outputFilename.IndexOf("("));
+                    file.data.fileData.outputFilename = file.data.fileData.outputFilename.Replace("(", "").Replace(")", "");
                 }
                 else
                 {
-                    file.fileData.destinationPath = file.fileData.outputFilename;
+                    file.data.fileData.destinationPath = file.data.fileData.outputFilename;
                 }
 
                 // source or selected Path?
                 if (settings.sourcePath)
                 {
-                    file.fileData.basePath = file.fileData.sourcePath;
+                    file.data.fileData.basePath = file.data.fileData.sourcePath;
                 }
                 else
                 {
-                    file.fileData.basePath = settings.outputPath;
+                    file.data.fileData.basePath = settings.outputPath;
                 }
                 if (settings.debugLogEnabled)
                 {
                     debugging._saveDebug("[doWork] prefix - filename generator " + settings.prefix);
-                    debugging._saveDebug("[doWork] destinationPath -> " + file.fileData.destinationPath);
-                    debugging._saveDebug("[doWork] outputFilename  -> " + file.fileData.outputFilename);
+                    debugging._saveDebug("[doWork] destinationPath -> " + file.data.fileData.destinationPath);
+                    debugging._saveDebug("[doWork] outputFilename  -> " + file.data.fileData.outputFilename);
                 }
                 // check/make destination path
-                winIO.Directory.CreateDirectory(file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath);
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath+" created");
+                winIO.Directory.CreateDirectory(file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath);
+                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + " created");
                             
                 // set dngheader
                 // dngheader is a fileresource (DNGtemplate20)
-                file.metaData.DNGHeader = dng.setDNGHeader(file);
+                file.data.metaData.DNGHeader = dng.setDNGHeader(file.data);
                 if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
 
                 // destinationPath as its used in the threads
-                file.fileData._changedPath = file.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
+                file.data.fileData._changedPath = file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
 
                 // init for multithreading
                 int frameCount;
-                frameCount = file.metaData.frames;
+                frameCount = file.data.metaData.frames;
                 if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
                 
                 int taskCount = frameCount;
@@ -419,31 +469,30 @@ namespace raw2cdng_v2
                 // start frameconvert
                 for (int f = 0; f < frameCount; f++)
                 {
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] throw sequential frame "+f+" into doFrame thread");
-
                     //multithread
-                    if (file.metaData.isMLV)
+                    if (file.data.metaData.isMLV)
                     {
                         //its MLV
-                        file.fileData.VIDFBlock = file.metaData.VIDFBlocks[f];
-                        file.threadData.frame = file.fileData.VIDFBlock.MLVFrameNo;
-                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read MLV VIDF Block frameNo "+file.threadData.frame);
+                        file.data.fileData.VIDFBlock = file.VIDFBlocks[f];
+                        file.data.threadData.frame = file.data.fileData.VIDFBlock.MLVFrameNo;
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read MLV VIDF Block frameNo " + file.data.threadData.frame);
 
                     }
                     else
                     {
                         // its RAW
-                        file.fileData.RAWBlock = file.metaData.RAWBlocks[f];
-                        file.threadData.frame = f;
+                        file.data.fileData.RAWBlock = file.RAWBlocks[f];
+                        file.data.threadData.frame = f;
                         if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read RAW Block frameNo " + f);
                     }
-                    raw para = new raw();
-                    para = file.Copy(); // deep copy object from ObjectExtensions.cs
+                    //raw para = new raw();
+                    data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
 
                     para.threadData.CDEvent = cde;
 
                     ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
                     para = null;
+                    
                 }
                 // wait till all threads has ended
                 cde.Wait();
@@ -451,10 +500,10 @@ namespace raw2cdng_v2
                 if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
 
                 // now finally audio if existent
-                if (file.metaData.hasAudio)
+                if (file.data.metaData.hasAudio)
                 {
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.fileData.destinationPath + ".wav");
-                    io.saveAudio(file.fileData._changedPath + file.fileData.destinationPath + ".wav", file);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.data.fileData.destinationPath + ".wav");
+                    io.saveAudio(file.data.fileData._changedPath + file.data.fileData.destinationPath + ".wav", file);
                 }
                 this.Dispatcher.Invoke((Action)(() =>
                 {
@@ -483,13 +532,14 @@ namespace raw2cdng_v2
                     _highlights.IsEnabled = true;
                     _takePath.IsEnabled = true;
                     _noPath.IsEnabled = true;
+                    _jpegs.IsEnabled = true;
                 }));
         }
 
         private void doFrame_Thread(object state)
         {
-            raw param = new raw();
-            param = (raw)state;
+            //raw param = new raw();
+            data param = (data)state;
 
             if (param.metaData.isMLV) param.rawData = io.readMLV(param);
             else param.rawData = io.readRAW(param);
@@ -505,8 +555,8 @@ namespace raw2cdng_v2
             int timestamp = param.threadData.frame + (int)calc.creationTime2Frame( param.fileData.creationTime, (double)(param.metaData.fpsNom/param.metaData.fpsDen) );
             param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1dba, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
 
-            byte[] fillUp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            byte[] tempRaw = new byte[fillUp.Length + param.rawData.Length];
+            //byte[] fillUp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            //byte[] tempRaw = new byte[fillUp.Length + param.rawData.Length];
 
             // workaround for 12bit, because first module needs 16bit-data
             if (param.metaData.bitsperSampleChanged == 12)
@@ -529,9 +579,7 @@ namespace raw2cdng_v2
             // if verticalBanding
             if (param.convertData.verticalBanding)
             {
-                //if using chroma Smoothing, recalculate ev2raw/raw2ev
-                // can be possibly done one time in the beginning.
-                calc.reinitRAWEVArrays(param.metaData.blackLevelNew, param.metaData.blackLevelNew);
+                // raw2ev/ev2raw-tables are calculated in _doWork
                 rawDataChanged = calc.verticalBanding(rawDataChanged, param);
             }
             // if chroma Smoothing
@@ -563,17 +611,19 @@ namespace raw2cdng_v2
             allFramesCount++;
             param.threadData.CDEvent.Signal();
 
+            // clean some variables
+            param.rawData = null;
+            param.metaData.DNGHeader = null;
+            rawDataChanged = null;
         }
 
 
         // --- GUI events ---------------------
 
-        private void updateUI(byte kindOf, raw p)
+        private void updateUI(byte kindOf, data p)
         {
             if (kindOf == 1) // update after Frame
             {
-                //p.GUIData.ProgressBarValSingle = (Single)p.threadData.frame / p.metaData.frames;
-                //p.GUIData.ProgressBarValAll = (Single)allFramesCount / allFramesCount;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                     _progressOne.Value = (int)p.threadData.frame;
@@ -607,14 +657,14 @@ namespace raw2cdng_v2
                 _preview.Source = im;
                 _lensLabel.Content = String.Format(
                     "{0} | {1} | ISO{2} | f/{3}",
-                    rawFiles[item].lensData.lens,
-                    rawFiles[item].lensData.shutter, 
-                    rawFiles[item].lensData.isoValue, 
-                    ((double)rawFiles[item].lensData.aperture / (double)100),
+                    rawFiles[item].data.lensData.lens,
+                    rawFiles[item].data.lensData.shutter,
+                    rawFiles[item].data.lensData.isoValue,
+                    ((double)rawFiles[item].data.lensData.aperture / (double)100),
                     CultureInfo.InvariantCulture
                     );
-                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].fileData.fileNameOnly+" frame "+rawFiles[item].threadData.frame);
-                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].fileData.fileNameOnly);
+                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].data.fileData.fileNameOnly + " frame " + rawFiles[item].data.threadData.frame);
+                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].data.fileData.fileNameOnly);
 
             }
         }
@@ -815,24 +865,42 @@ namespace raw2cdng_v2
             {
                 int item = _batchList.Items.IndexOf(_batchList.SelectedItems[0]);
                 raw r = rawFiles[item];
-                r.metaData.previewFrame++;
-                r.metaData.maximize = true;
-                r.metaData.previewFrame = r.metaData.previewFrame % r.metaData.frames;
+                r.data.metaData.previewFrame++;
+                r.data.metaData.maximize = true;
+                r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
                 Task.Factory.StartNew(() => previewBackground(r));
-                if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.metaData.previewFrame+" from "+r.fileData.fileNameOnly);
+                if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
 
             }
         }
 
+        private void progressDragDrop_Tick(object sender, EventArgs e)
+        {
+            Task.Factory.StartNew(() => draggedProgress());
+        }
+
+        public void draggedProgress()
+        {
+            int w = 0;
+            this.Dispatcher.Invoke((Action)(() =>
+            {
+                w = (int)_dragDropProgressBar.Value;
+                w = (w+1) % 100;
+                _dragDropProgressBar.Value = w;
+                _dragDropProgressBar.InvalidateVisual();
+            }));
+
+        }
+
         public void previewBackground(raw r)
         {
-            var frame = r.metaData.previewFrame;
+            var frame = r.data.metaData.previewFrame;
             if (frame != null)
             {
-                var maxFrames = r.metaData.frames;
+                var maxFrames = r.data.metaData.frames;
                 var progressPosX = 564 + 320 * frame / maxFrames;
                 // read picture and show
-                r.threadData.frame = frame;
+                r.data.threadData.frame = frame;
 
 
                 //_preview.Source = im;

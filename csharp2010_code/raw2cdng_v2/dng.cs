@@ -9,7 +9,7 @@ namespace raw2cdng_v2
     {
         public static byte[] DNGtemplate = Properties.Resources.dngtemplate20;
         
-        public static byte[] setDNGHeader(raw Data)
+        public static byte[] setDNGHeader(data Data)
         {
             // -- change data in template
 
