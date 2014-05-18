@@ -347,7 +347,7 @@ namespace raw2cdng_v2
                 }));
 
                 // copy properties from GUI into rawobject
-                file.data.convertData = convertData
+                file.data.convertData = convertData;
                 // empty rawData - while preview it was filled. leads to "out of memory" exception.
                 file.data.rawData = null;
 
