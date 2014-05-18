@@ -165,7 +165,7 @@ namespace raw2cdng_v2
             // ------------- and go ----
 
             int chunks = resx * resy * 16 / 8;
-            byte[] Dest = new Byte[chunks / 16 * 12 + 48];
+            byte[] Dest = new Byte[chunks / 16 * 12 + 72];
             UInt32 tt = 0;
             int senselA, senselB, senselC, senselD, senselE, senselF, senselG, senselH;
             int senselI, senselJ, senselK, senselL, senselM, senselN, senselO, senselP;
@@ -499,21 +499,15 @@ namespace raw2cdng_v2
             {
                 for (var x = 0; x < halfResx; x++)
                 {
+                    // adress for both rows
                     int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    int r1 = (pic[rowRG] + pic[rowRG + 1] * 256);
-                    int g1 = (pic[rowRG + 2] + pic[rowRG + 3] * 256);
-                    int g2 = (pic[rowGB] + pic[rowGB + 1] * 256);
-                    int b1 = (pic[rowGB + 2] + pic[rowGB + 3] * 256);
-
-                    /*r1 = r1;
-                    g1 = g1;
-                    g2 = g2;
-                    b1 = b1;
-                    */
-                    //if (g1 > whitelevel) g1 = whitelevel + (g1 - whitelevel)/3*2;
-                    //if (g2 > whitelevel) g2 = whitelevel + (g2 - whitelevel)/3*2;
+                    // sensel-values
+                    int r1 = (pic[rowRG] | pic[rowRG + 1] << 8);
+                    int g1 = (pic[rowRG + 2] | pic[rowRG + 3] << 8);
+                    int g2 = (pic[rowGB] | pic[rowGB + 1] << 8);
+                    int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
 
                     if (r1 > whitelevel) r1 = whitelevel;
                     //if (g1 > whitelevel) g1 = whitelevel; // whitelevel + (g1 - whitelevel) * 2;
@@ -619,44 +613,57 @@ namespace raw2cdng_v2
 
         // --- preview helper ---
 
-        public static WriteableBitmap doBitmap(byte[] imageData, data param)
+        public static WriteableBitmap doBitmap(byte[] imageData, data param, bool convert)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
             int whole = halfResx * halfResy;
-            //int bmPos =0;
-            byte[] imageData8 = new byte[halfResx * halfResy * 3]; //you image data here
+
+            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+
+            int mul = 32;
+            double gamma = 0.5;
             
-            double gamma = 1 / 1.8;
-            int mul = 64;
+            if (convert) mul = 64;
+            
+            // basic variables
+            int rowRG = 0;
+            int rowGB = 0;
+            int b1 = 0;
+            int g1 = 0;
+            int g2 = 0;
+            int r1 = 0;
+            int bitmapPos = 0;
+            int gNew = 0;
 
             for (var y = 0; y < halfResy; y++)
             {
                 for (var x = 0; x < halfResx; x++)
                 {
+                    rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    b1 = (imageData[rowRG] | imageData[rowRG + 1] << 8) / mul;
+                    g1 = (imageData[rowRG + 2] | imageData[rowRG + 3] << 8) / mul;
+                    g2 = (imageData[rowGB] | imageData[rowGB + 1] << 8) / mul;
+                    r1 = (imageData[rowGB + 2] | imageData[rowGB + 3] << 8) / mul;
 
-                    int b1 = (imageData[rowRG] + imageData[rowRG + 1] * 256) / mul;
-                    int g1 = (imageData[rowRG + 2] + imageData[rowRG + 3] * 256) / mul;
-                    int g2 = (imageData[rowGB] + imageData[rowGB + 1] * 256) / mul;
-                    int r1 = (imageData[rowGB + 2] + imageData[rowGB + 3] * 256) / mul;
+                    if (convert)
+                    {
+                        b1 = (int)((Math.Pow((double)b1 / 256, gamma)) * 256);
+                        g1 = (int)((Math.Pow((double)g1 / 256, gamma)) * 324);
+                        g2 = (int)((Math.Pow((double)g2 / 256, gamma)) * 324);
+                        r1 = (int)((Math.Pow((double)r1 / 256, gamma)) * 256);
+                    }
+                    
 
-                    /*b1 = (int)((Math.Pow((double)b1 / 255, gamma)) * 255);
-                    g1 = (int)((Math.Pow((double)g1 / 256, gamma)) * 300);
-                    g2 = (int)((Math.Pow((double)g2 / 256, gamma)) * 300);
-                    r1 = (int)((Math.Pow((double)r1 / 255, gamma)) * 255);
-                    */
+                    bitmapPos = (x + y * halfResx) * 3;
 
-                    int bitmapPos = (x + y * halfResx) * 3;
-                    int rNew = r1 * 2;
-                    int gNew = (g1 + g2)/2;
-                    int bNew = b1 * 2;
-                    imageData8[bitmapPos] = (byte)((rNew > 255) ? 255 : rNew);  //(byte)(((r1*2)>255)?255:(r1*2));
+                    gNew = (g1 + g2)/4;
+
+                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);  //(byte)(((r1*2)>255)?255:(r1*2));
                     imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);  //(byte)((((g1+g2)/2)>255)?255:((g1+g2)/2));
-                    imageData8[bitmapPos + 2] = (byte)((bNew > 255) ? 255 : bNew);  //(byte)(((b1 * 2) > 255) ? 255 : (b1 * 2));
-
+                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);  //(byte)(((b1 * 2) > 255) ? 255 : (b1 * 2));
                 }
             }
             /* ------------------------ this is the debayered png..
@@ -706,11 +713,11 @@ namespace raw2cdng_v2
                 //imageData8[bmPos + 2] = (byte)(greyValue * bMul);
             }*/
         
-            var wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
+            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
             wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3*halfResx, 0);
-
-            return wbm;
             
+            //imageData8 = null;
+            return wbm;
         }
 
         // --- dng-tag helper ---

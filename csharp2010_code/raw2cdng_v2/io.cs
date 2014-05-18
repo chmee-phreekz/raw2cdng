@@ -530,7 +530,6 @@ namespace raw2cdng_v2
 
             if (rawFile.data.metaData.isMLV)
             {
-
                 rawFile.data.fileData.VIDFBlock = rawFile.VIDFBlocks[rawFile.data.threadData.frame];
                 imageArray = io.readMLV(rawFile.data);
             }
@@ -540,43 +539,29 @@ namespace raw2cdng_v2
                 imageArray = io.readRAW(rawFile.data);
             }
 
-            return calc.doBitmap(calc.to16(imageArray, rawFile.data), rawFile.data);
+            return calc.doBitmap(calc.to16(imageArray, rawFile.data), rawFile.data,false);
         }
 
-        public static WriteableBitmap showPicture(data rawData)
-        {
-            if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");
-
-            byte[] imageArray = new byte[rawData.metaData.stripByteCountReal];
-
-            return calc.doBitmap(calc.to16(imageArray, rawData), rawData);
-        }
-
-        public static void saveBitmap(BitmapImage pic, data r)
-        {
-            if (debugging.debugLogEnabled) debugging._saveDebug("[saveBitmap] started");
-
-            JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-            String photolocation = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
-
-            encoder.Frames.Add(BitmapFrame.Create(pic));
-
-            using (var filestream = new FileStream(photolocation, FileMode.Create))
-                encoder.Save(filestream);
-        }
-
-        public static void saveProxy(data r, BitmapSource pic)
+        public static void saveProxy(data r, byte[] imageArray)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
 
+            BitmapSource bitmapsource = calc.doBitmap(imageArray, r, true);
+            BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
+
             String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
-            using (FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create))
-                {
-                    JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
-                    jpgEncoder.Frames.Add(BitmapFrame.Create(pic));
-                    jpgEncoder.Save(jpgStream);
-                    jpgStream.Close();
-                }
+            FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create);
+            JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
+            jpgEncoder.Frames.Add(bitmapframe);
+            jpgEncoder.Save(jpgStream);
+            jpgStream.Close();
+
+            imageArray = null;
+            jpgEncoder = null;
+            jpgStream = null;
+            bitmapframe = null;
+            bitmapsource = null;
+                
         }
 
         public static bool saveAudio(string filename, raw mData)

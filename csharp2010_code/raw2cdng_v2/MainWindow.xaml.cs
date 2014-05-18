@@ -61,7 +61,7 @@ namespace raw2cdng_v2
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0.BETA4";
+        string version = "1.5.0.BETA5";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
@@ -80,11 +80,17 @@ namespace raw2cdng_v2
         appSettings settings = new appSettings();
         bool toggleSettingsSave = false;
 
-
+        // colors
+        SolidColorBrush green;
+        SolidColorBrush white;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            //colors
+            green = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+            white = new SolidColorBrush(Color.FromRgb(255, 255, 255));
 
             _title.Text = "rawcdng " + version;
             allFramesCount = 0;
@@ -175,6 +181,7 @@ namespace raw2cdng_v2
                        // write versionstring into author-tag
                         // not done yet.
                     importData.metaData.version = version;
+                    //importData.convertData = convertData.Copy();
                     importRaw.data = importData;
 
                 if (io.isMLV(file))
@@ -340,7 +347,10 @@ namespace raw2cdng_v2
                 }));
 
                 // copy properties from GUI into rawobject
-                file.data.convertData = convertData;
+                file.data.convertData = convertData
+                // empty rawData - while preview it was filled. leads to "out of memory" exception.
+                file.data.rawData = null;
+
                 // if maximized use the multiplier
                 file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
 
@@ -446,6 +456,7 @@ namespace raw2cdng_v2
                     debugging._saveDebug("[doWork] destinationPath -> " + file.data.fileData.destinationPath);
                     debugging._saveDebug("[doWork] outputFilename  -> " + file.data.fileData.outputFilename);
                 }
+            
                 // check/make destination path
                 winIO.Directory.CreateDirectory(file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath);
                 if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + " created");
@@ -476,7 +487,6 @@ namespace raw2cdng_v2
                         file.data.fileData.VIDFBlock = file.VIDFBlocks[f];
                         file.data.threadData.frame = file.data.fileData.VIDFBlock.MLVFrameNo;
                         if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read MLV VIDF Block frameNo " + file.data.threadData.frame);
-
                     }
                     else
                     {
@@ -538,7 +548,6 @@ namespace raw2cdng_v2
 
         private void doFrame_Thread(object state)
         {
-            //raw param = new raw();
             data param = (data)state;
 
             if (param.metaData.isMLV) param.rawData = io.readMLV(param);
@@ -575,6 +584,9 @@ namespace raw2cdng_v2
 
             // ------- here's the magic - converting the data --------
             rawDataChanged = calc.to16(param.rawData, param);
+
+            // if proxy jpeg
+            //if (param.convertData.proxyJpegs) io.saveProxy(param, rawDataChanged);
             
             // if verticalBanding
             if (param.convertData.verticalBanding)
@@ -591,9 +603,7 @@ namespace raw2cdng_v2
             // if 12bit        
             if (param.convertData.bitdepth == 12) rawDataChanged = calc.from16to12(rawDataChanged, param);
 
-            // if proxy jpeg
-            if (param.convertData.proxyJpegs) io.saveProxy(param, io.showPicture(param).Clone());
-
+ 
             // -------- write the dng-header --
             using (System.IO.FileStream stream = new System.IO.FileStream(finalOutputFilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
             {
@@ -616,7 +626,6 @@ namespace raw2cdng_v2
             param.metaData.DNGHeader = null;
             rawDataChanged = null;
         }
-
 
         // --- GUI events ---------------------
 
@@ -643,7 +652,6 @@ namespace raw2cdng_v2
             // -- enable window move --
             this.DragMove();
         }
-
 
         private void batchList_Click(object sender, RoutedEventArgs e)
         {
@@ -673,14 +681,14 @@ namespace raw2cdng_v2
         {
                         
             previewTimer.Start();
-            _previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+            _previewProgressBar.Stroke = green;
 
         }
 
         private void _preview_MouseLeave(object sender, MouseEventArgs e)
         {
             previewTimer.Stop();
-            _previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            _previewProgressBar.Stroke = white;
         }
 
         private void _takePath_Click(object sender, RoutedEventArgs e)
@@ -712,7 +720,6 @@ namespace raw2cdng_v2
             _takePath.Content = "sourcepath selected";
             settings.sourcePath = true;
         }
-
         private void _noPath_Unchecked(object sender, RoutedEventArgs e)
         {
             _takePath.Content = settings.outputPath;
@@ -820,7 +827,6 @@ namespace raw2cdng_v2
             debugging.debugLogEnabled = false;
             saveGUIsettings();
         }
-
         private void _logDebug_Checked(object sender, RoutedEventArgs e)
         {
             settings.debugLogEnabled = true;
@@ -870,7 +876,6 @@ namespace raw2cdng_v2
                 r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
                 Task.Factory.StartNew(() => previewBackground(r));
                 if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
-
             }
         }
 
@@ -902,21 +907,17 @@ namespace raw2cdng_v2
                 // read picture and show
                 r.data.threadData.frame = frame;
 
-
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    WriteableBitmap im = io.showPicture(r);
-                    _preview.Source = im;
+                    _preview.Source = io.showPicture(r);
                     _lensLabel.Content = String.Format("{0:d5}", frame);
                     _previewProgressBar.Margin = new Thickness(progressPosX, 243, 0, 0);
                     _preview.InvalidateVisual();
                     _lensLabel.InvalidateVisual();
-                    //this.InvalidateVisual();
                 }));
             }
         }
-
 
         public void loadSettings()
         {

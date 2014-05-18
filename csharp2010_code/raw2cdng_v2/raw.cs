@@ -25,7 +25,6 @@ namespace raw2cdng_v2
         public lensdata lensData { get; set; }
         public threaddata threadData { get; set; }
         public convertSettings convertData { get; set; }
-
     }
 
     public class rawdata
