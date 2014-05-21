@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -52,12 +53,46 @@ namespace raw2cdng_v2
         public static string debugLogFilename { get; set; }
         public static bool debugLogEnabled { get; set; }
 
+        public static void _startNewDebug(string input)
+        {
+                File.WriteAllText(debugLogFilename, input);
+        }
+
         public static void _saveDebug(string input)
         {
-            if (!File.Exists(debugLogFilename)) File.Create(debugLogFilename);
+            try
+            {
+                using (StreamWriter w = File.AppendText(debugLogFilename))
+                {
+                    w.WriteLine(input);
+                }
+            }
+            catch (Exception e)
+            {
+              
+            }
+        }
+
+        public static void _saveDebugObject(string input, object obj)
+        {
+            try{ 
             using (StreamWriter w = File.AppendText(debugLogFilename))
             {
-                w.WriteLine(input);
+                w.WriteLine(" ***** "+input);
+
+                foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(obj))
+                {
+                    string name = descriptor.Name;
+                    object value = descriptor.GetValue(obj);
+                    w.WriteLine("{0}={1}", name, value);
+                }
+                w.WriteLine(" ***** ");
+
+            }
+            }
+            catch (Exception e)
+            {
+              
             }
         }
     }

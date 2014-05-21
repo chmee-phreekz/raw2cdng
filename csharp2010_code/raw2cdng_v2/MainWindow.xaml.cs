@@ -61,7 +61,7 @@ namespace raw2cdng_v2
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0.BETA5";
+        string version = "1.5.0.BETA6";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
@@ -121,8 +121,7 @@ namespace raw2cdng_v2
             // debug log
             if (settings.debugLogEnabled)
             {
-                debugging._saveDebug(" - ");
-                debugging._saveDebug(" ------------- " + version + " started at " + String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now));
+                debugging._startNewDebug(" ------------- " + version + " started at " + String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now)+"\r\n");
             }
         }
 
@@ -174,10 +173,11 @@ namespace raw2cdng_v2
                 {
                     raw importRaw = new raw();
                     data importData = new data();
-                    importData.metaData = new rawdata();
+                    importData.metaData = new metadata();
                     importData.fileData = new filedata();
                     importData.threadData = new threaddata();
                     importData.lensData = new lensdata();
+                    importData.audioData = new audiodata();
                        // write versionstring into author-tag
                         // not done yet.
                     importData.metaData.version = version;
@@ -195,7 +195,7 @@ namespace raw2cdng_v2
                     io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: "+Blocks.mlvBlockList.Count);
                     importRaw.AUDFBlocks = null;
-                    if (importRaw.data.metaData.hasAudio)
+                    if (importRaw.data.audioData.hasAudio)
                     {
                        importRaw.AUDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "AUDF").ToList();
                        if (settings.debugLogEnabled) debugging._saveDebug("[drop] hasAudio. AUDF-List created. Blocks: " + importRaw.AUDFBlocks.Count);
@@ -214,7 +214,7 @@ namespace raw2cdng_v2
                 {
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] is RAW ");
                     importRaw.data.metaData.isMLV = false;
-                    importRaw.data.metaData.hasAudio = false;
+                    importRaw.data.audioData.hasAudio = false;
                     importRaw.RAWBlocks = null;
                     io.setFileinfoData(file, importRaw.data.fileData);
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
@@ -244,7 +244,7 @@ namespace raw2cdng_v2
                         duration = calc.frameToTC_s(importRaw.data.metaData.frames, (importRaw.data.metaData.fpsNom / importRaw.data.metaData.fpsDen)),
                         resolution = importRaw.data.metaData.xResolution.ToString() + "x" + importRaw.data.metaData.yResolution.ToString(),
                         fps = importRaw.data.metaData.fpsString,
-                        audio = importRaw.data.metaData.hasAudio ? "\u2714" : "\u2715"
+                        audio = importRaw.data.audioData.hasAudio ? "\u2714" : "\u2715"
                     });
                 }));
                       
@@ -256,8 +256,8 @@ namespace raw2cdng_v2
                 {
                     debugging._saveDebug("[drop] ** Item " + importRaw.data.fileData.fileNameOnly + " imported | " + (importRaw.data.metaData.isMLV ? "MLV" : "RAW"));
                     debugging._saveDebug("[drop] * res " + importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px | " + importRaw.data.metaData.fpsString + "fps | " + importRaw.data.metaData.frames + " frames | BL" + importRaw.data.metaData.blackLevelOld + " | WL" + importRaw.data.metaData.whiteLevelOld);
-                    if (importRaw.data.metaData.isMLV) debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | vidfblocks " + importRaw.VIDFBlocks.Count() + " | has " + (importRaw.data.metaData.hasAudio ? "" : "no ") + "audio");
-                    else debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | rawblocks " + importRaw.RAWBlocks.Count() + " | has " + (importRaw.data.metaData.hasAudio ? "" : "no") + "audio");
+                    if (importRaw.data.metaData.isMLV) debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | vidfblocks " + importRaw.VIDFBlocks.Count() + " | has " + (importRaw.data.audioData.hasAudio ? "" : "no ") + "audio");
+                    else debugging._saveDebug("[drop] * modell " + importRaw.data.metaData.modell + " | rawblocks " + importRaw.RAWBlocks.Count() + " | has " + (importRaw.data.audioData.hasAudio ? "" : "no") + "audio");
                 }
 
               }
@@ -354,13 +354,18 @@ namespace raw2cdng_v2
                 // if maximized use the multiplier
                 file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
 
-                // if verticalBanding
+                // if verticalBanding, calculate the coeffs from only first frame
                 if (file.data.convertData.verticalBanding)
+                {
+                    file.data.fileData.VIDFBlock = file.VIDFBlocks[0];
+                    file.verticalStripes = calc.calcVerticalCoeefs(calc.to16(io.readMLV(file.data),file.data));
+                }
+
+                if(file.data.convertData.chromaSmoothing)
                 {
                     //if using chroma Smoothing, recalculate ev2raw/raw2ev
                     calc.reinitRAWEVArrays(file.data.metaData.blackLevelNew, file.data.metaData.blackLevelNew);
                 }
-                
 
                 // set new blacklevel whitelevel and bitdepth
                 switch (settings.format)
@@ -381,7 +386,7 @@ namespace raw2cdng_v2
                         file.data.metaData.maximizer = file.data.metaData.whiteLevelNew / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
                         break;
                     case 3:
-                        // 12bit normal
+                        // 12bit normal - is disabled - now ARRIRAW tbd!
                         file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld / 4;
                         file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld / 4;
                         file.data.metaData.bitsperSampleChanged = 12;
@@ -393,6 +398,7 @@ namespace raw2cdng_v2
                         file.data.metaData.whiteLevelNew = 4095;
                         file.data.metaData.bitsperSampleChanged = 12;
                         file.data.metaData.maximize = true;
+                        file.data.metaData.maximizer = 65535 / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
                         break;
                     default:
                         file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
@@ -510,7 +516,7 @@ namespace raw2cdng_v2
                 if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
 
                 // now finally audio if existent
-                if (file.data.metaData.hasAudio)
+                if (file.data.audioData.hasAudio)
                 {
                     if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.data.fileData.destinationPath + ".wav");
                     io.saveAudio(file.data.fileData._changedPath + file.data.fileData.destinationPath + ".wav", file);
@@ -568,7 +574,7 @@ namespace raw2cdng_v2
             //byte[] tempRaw = new byte[fillUp.Length + param.rawData.Length];
 
             // workaround for 12bit, because first module needs 16bit-data
-            if (param.metaData.bitsperSampleChanged == 12)
+/*            if (param.metaData.bitsperSampleChanged == 12)
             {
                 param.metaData.bitsperSampleChanged = 16;
                 param.metaData.bitsperSample = 14;
@@ -581,18 +587,23 @@ namespace raw2cdng_v2
                     param.metaData.whiteLevelNew = 65535;
                 }
             }
+            */
 
             // ------- here's the magic - converting the data --------
             rawDataChanged = calc.to16(param.rawData, param);
 
             // if proxy jpeg
-            //if (param.convertData.proxyJpegs) io.saveProxy(param, rawDataChanged);
+            if (param.convertData.proxyJpegs) io.saveProxy(param, rawDataChanged);
             
             // if verticalBanding
             if (param.convertData.verticalBanding)
             {
+                if (param.threadData.frame == 0)
+                {
+
+                }
                 // raw2ev/ev2raw-tables are calculated in _doWork
-                rawDataChanged = calc.verticalBanding(rawDataChanged, param);
+                rawDataChanged = calc.fixVerticalBanding(rawDataChanged, param);
             }
             // if chroma Smoothing
             if (param.convertData.chromaSmoothing) rawDataChanged = calc.chromaSmoothing(rawDataChanged, param);
@@ -601,9 +612,8 @@ namespace raw2cdng_v2
             if (param.convertData.pinkHighlight) rawDataChanged = calc.pinkHighlight(rawDataChanged, param);
             
             // if 12bit        
-            if (param.convertData.bitdepth == 12) rawDataChanged = calc.from16to12(rawDataChanged, param);
+            if (param.metaData.bitsperSampleChanged == 12) rawDataChanged = calc.from16to12(rawDataChanged, param);
 
- 
             // -------- write the dng-header --
             using (System.IO.FileStream stream = new System.IO.FileStream(finalOutputFilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
             {
@@ -799,10 +809,7 @@ namespace raw2cdng_v2
         private void _highlights_Checked(object sender, RoutedEventArgs e)
         {
             convertData.pinkHighlight = true;
-            _format16max.IsChecked = true;
-            convertData.bitdepth = 16;
             convertData.maximize = true;
-            settings.format = 2;
             saveGUIsettings();
         }
         private void _highlights_Unchecked(object sender, RoutedEventArgs e)

@@ -173,33 +173,33 @@ namespace raw2cdng_v2
 
             for (var t = 0; t < chunks; t += 48)
             {
-                //read 16bit data and shift 2 bits.
-                senselA = (source[t] | (source[t + 1] << 8)) >> 2;  
-                senselB = (source[t + 2] | (source[t + 3] << 8)) >> 2;
-                senselC = (source[t + 4] | (source[t + 5] << 8)) >> 2;
-                senselD = (source[t + 6] | (source[t + 7] << 8)) >> 2;
-                senselE = (source[t + 8] | (source[t + 9] << 8)) >> 2;
-                senselF = (source[t + 10] | (source[t + 11] << 8)) >> 2;
-                senselG = (source[t + 12] | (source[t + 13] << 8)) >> 2;
-                senselH = (source[t + 14] | (source[t + 15] << 8)) >> 2;
+                //read 16bit data and shift 4 bits.
+                senselA = (source[t] | (source[t + 1] << 8)) >> 4;  
+                senselB = (source[t + 2] | (source[t + 3] << 8)) >> 4;
+                senselC = (source[t + 4] | (source[t + 5] << 8)) >> 4;
+                senselD = (source[t + 6] | (source[t + 7] << 8)) >> 4;
+                senselE = (source[t + 8] | (source[t + 9] << 8)) >> 4;
+                senselF = (source[t + 10] | (source[t + 11] << 8)) >> 4;
+                senselG = (source[t + 12] | (source[t + 13] << 8)) >> 4;
+                senselH = (source[t + 14] | (source[t + 15] << 8)) >> 4;
 
-                senselI = (source[t + 16] | (source[t + 17] << 8)) >> 2;
-                senselJ = (source[t + 18] | (source[t + 19] << 8)) >> 2;
-                senselK = (source[t + 20] | (source[t + 21] << 8)) >> 2;
-                senselL = (source[t + 22] | (source[t + 23] << 8)) >> 2;
-                senselM = (source[t + 24] | (source[t + 25] << 8)) >> 2;
-                senselN = (source[t + 26] | (source[t + 27] << 8)) >> 2;
-                senselO = (source[t + 28] | (source[t + 29] << 8)) >> 2;
-                senselP = (source[t + 30] | (source[t + 31] << 8)) >> 2;
+                senselI = (source[t + 16] | (source[t + 17] << 8)) >> 4;
+                senselJ = (source[t + 18] | (source[t + 19] << 8)) >> 4;
+                senselK = (source[t + 20] | (source[t + 21] << 8)) >> 4;
+                senselL = (source[t + 22] | (source[t + 23] << 8)) >> 4;
+                senselM = (source[t + 24] | (source[t + 25] << 8)) >> 4;
+                senselN = (source[t + 26] | (source[t + 27] << 8)) >> 4;
+                senselO = (source[t + 28] | (source[t + 29] << 8)) >> 4;
+                senselP = (source[t + 30] | (source[t + 31] << 8)) >> 4;
 
-                senselQ = (source[t + 32] | (source[t + 33] << 8)) >> 2;
-                senselR = (source[t + 34] | (source[t + 35] << 8)) >> 2;
-                senselS = (source[t + 36] | (source[t + 37] << 8)) >> 2;
-                senselT = (source[t + 38] | (source[t + 39] << 8)) >> 2;
-                senselU = (source[t + 40] | (source[t + 41] << 8)) >> 2;
-                senselV = (source[t + 42] | (source[t + 43] << 8)) >> 2;
-                senselW = (source[t + 44] | (source[t + 45] << 8)) >> 2;
-                senselX = (source[t + 46] | (source[t + 47] << 8)) >> 2;
+                senselQ = (source[t + 32] | (source[t + 33] << 8)) >> 4;
+                senselR = (source[t + 34] | (source[t + 35] << 8)) >> 4;
+                senselS = (source[t + 36] | (source[t + 37] << 8)) >> 4;
+                senselT = (source[t + 38] | (source[t + 39] << 8)) >> 4;
+                senselU = (source[t + 40] | (source[t + 41] << 8)) >> 4;
+                senselV = (source[t + 42] | (source[t + 43] << 8)) >> 4;
+                senselW = (source[t + 44] | (source[t + 45] << 8)) >> 4;
+                senselX = (source[t + 46] | (source[t + 47] << 8)) >> 4;
 
                 Dest[tt++] = (byte)((senselA >> 4) & 0xff);
                 Dest[tt++] = (byte)(((senselA & 0xF) << 4) | (senselB >> 8));
@@ -492,8 +492,10 @@ namespace raw2cdng_v2
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
-            int whitelevel = (int)(param.metaData.whiteLevelOld * 2.8);
-            //int lowWL = whitelevel;
+            
+            // thats the value green and red/blue drifts in bmcc-premiere code.
+            int whitelevel = 42000;
+            //double maxRange = 1.5;
 
             for (var y = 0; y < halfResy; y++)
             {
@@ -509,10 +511,18 @@ namespace raw2cdng_v2
                     int g2 = (pic[rowGB] | pic[rowGB + 1] << 8);
                     int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
 
+                    // limiting r and b to values of g1/g2
                     if (r1 > whitelevel) r1 = whitelevel;
                     //if (g1 > whitelevel) g1 = whitelevel; // whitelevel + (g1 - whitelevel) * 2;
                     //if (g2 > whitelevel) g2 = whitelevel; // whitelevel + (g2 - whitelevel) * 2;
                     if (b1 > whitelevel) b1 = whitelevel;
+                    
+                    /* ------- tried to higher the output, but gets pink, assume of overflow
+                    r1 = (int)(r1 * (double)maxRange);
+                    g1 = (int)(g1 * (double)maxRange);
+                    g2 = (int)(g2 * (double)maxRange);
+                    b1 = (int)(b1 * (double)maxRange);
+                    */
 
                     pic[rowRG] = (byte)(r1 & 0xff);
                     pic[rowRG + 1] = (byte)(r1 >> 8);
@@ -522,19 +532,37 @@ namespace raw2cdng_v2
                     pic[rowGB + 1] = (byte)(g2 >> 8);
                     pic[rowGB + 2] = (byte)(b1 & 0xff);
                     pic[rowGB + 3] = (byte)(b1 >> 8);
-
                 }
             }
             return pic;
         }
 
-        public static byte[] verticalBanding(byte[] pic, data param)
+        public static double[] calcVerticalCoeefs(byte[] picIn)
         {
+            double[] coeffs = new double[8];
+            /*
+            compute Histograms
+            compute median correction factor
+            decide if correction needed (save it in coeffs[8])
+            */
+            return coeffs;
+        }
+
+        public static byte[] fixVerticalBanding(byte[] picIn, data param)
+        {
+            // vertical Banding written by a1ex
+            // to be found in Magic Lantern / modules / lv_rec / raw2dng.c
+
+            byte[] picOut = new byte[picIn.Length];
             // verticalBanding from ml/a1ex here
             // 16bit byte[] in
             // 16bit byte[] out
-            return pic;
+            /*
+            apply_vertical_stripes_correction
+            */
+            return picOut;
         }
+
 
         public static byte[] chromaSmoothing(byte[] picIn, data param)
         {
@@ -544,9 +572,6 @@ namespace raw2cdng_v2
             // is half recoded and put into sourcecode - but not ready yet.
             //please look into calc.cs as well, there is ev2raw and raw2ev
             
-            int CHROMA_SMOOTH_MAX_IJ = 2;
-            int CHROMA_SMOOTH_FILTER_SIZE = 5;
-
             int xres = param.metaData.xResolution;
             int yres = param.metaData.yResolution;
             int xresHalf = xres / 2;
@@ -571,11 +596,11 @@ namespace raw2cdng_v2
 
                                 int i,j;
                                 int k = 0;
-                                int[] med_r = new int[CHROMA_SMOOTH_FILTER_SIZE];
-                                int[] med_b = new int[CHROMA_SMOOTH_FILTER_SIZE];
-                                for (i = -CHROMA_SMOOTH_MAX_IJ; i <= CHROMA_SMOOTH_MAX_IJ; i += 2)
+                                int[] med_r = new int[5];
+                                int[] med_b = new int[5];
+                                for (i = -2; i <= 2; i += 2)
                                 {
-                                    for (j = -CHROMA_SMOOTH_MAX_IJ; j <= CHROMA_SMOOTH_MAX_IJ; j += 2)
+                                    for (j = -2; j <= 2; j += 2)
                                     {
                                         //#ifdef CHROMA_SMOOTH_2X2
                                         if (Math.Abs(i) + Math.Abs(j) == 4) continue;
@@ -666,7 +691,7 @@ namespace raw2cdng_v2
                     imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);  //(byte)(((b1 * 2) > 255) ? 255 : (b1 * 2));
                 }
             }
-            /* ------------------------ this is the debayered png..
+            /* ------------------------ this is the debayered pic..
             int rMul, gMul, bMul; 
             for (var i = 0; i < whole; i++)
             {

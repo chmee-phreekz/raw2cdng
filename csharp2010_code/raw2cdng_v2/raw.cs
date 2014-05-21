@@ -11,7 +11,9 @@ namespace raw2cdng_v2
 {
     public class raw
     {
-        public data data { get; set; }        
+        public data data { get; set; }
+        public double[] verticalStripes{get;set;}
+        public bool verticalBandingNeeded { get; set; }
         public List<Blocks.rawBlock> RAWBlocks { get; set; }
         public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
         public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
@@ -20,14 +22,15 @@ namespace raw2cdng_v2
     public class data
     {
         public byte[] rawData { get; set; }
-        public rawdata metaData { get; set; }
+        public metadata metaData { get; set; }
+        public audiodata audioData { get; set; }
         public filedata fileData { get; set; }
         public lensdata lensData { get; set; }
         public threaddata threadData { get; set; }
         public convertSettings convertData { get; set; }
     }
 
-    public class rawdata
+    public class metadata
     {
         public int xResolution { get; set; }
         public int yResolution { get; set; }
@@ -59,15 +62,6 @@ namespace raw2cdng_v2
         //public double gamma { get; set; }
         public double maximizer { get; set; }
 
-        public bool hasAudio { get; set; }
-        public string audioFile { get; set; }
-        public int audioSamplingRate { get; set; }
-        public int audioBitsPerSample { get; set; }
-        public int audioFormat { get; set; }
-        public int audioChannels { get; set; }
-        public int audioBytesPerSecond { get; set; }
-        public int audioBlockAlign { get; set; }
-
         public BitmapImage previewPic { get; set; }
         public int previewFrame { get; set; }
         public string errorString { get; set; }
@@ -77,7 +71,19 @@ namespace raw2cdng_v2
         public byte[] DNGHeader { get; set; }
         public string version { get; set; }
 
-        }
+    }
+
+    public class audiodata 
+    {
+        public bool hasAudio { get; set; }
+        public string audioFile { get; set; }
+        public int audioSamplingRate { get; set; }
+        public int audioBitsPerSample { get; set; }
+        public int audioFormat { get; set; }
+        public int audioChannels { get; set; }
+        public int audioBytesPerSecond { get; set; }
+        public int audioBlockAlign { get; set; }
+    }
 
     public class filedata
     {

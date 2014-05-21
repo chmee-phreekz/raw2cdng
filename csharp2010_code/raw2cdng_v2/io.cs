@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -305,30 +306,34 @@ namespace raw2cdng_v2
 
             if (WAVI != null)
             {
-                mData.data.metaData.hasAudio = true;
+                mData.data.audioData.hasAudio = true;
                 fs.Position = WAVI.fileOffset;
                 byte[] WAVIArray = new byte[WAVI.blockLength];
                 fs.Read(WAVIArray, 0, WAVI.blockLength);
 
                 //byte[] modelName = new byte[32];
                 //Array.Copy(IDNTArray, 16, modelName, 0, 32);
-                mData.data.metaData.audioFormat = BitConverter.ToInt16(new byte[2] { WAVIArray[16], WAVIArray[17] }, 0);
-                mData.data.metaData.audioChannels = BitConverter.ToInt16(new byte[2] { WAVIArray[18], WAVIArray[19] }, 0);
-                mData.data.metaData.audioSamplingRate = BitConverter.ToInt32(new byte[4] { WAVIArray[20], WAVIArray[21], WAVIArray[22], WAVIArray[23] }, 0);
-                mData.data.metaData.audioBytesPerSecond = BitConverter.ToInt32(new byte[4] { WAVIArray[24], WAVIArray[25], WAVIArray[26], WAVIArray[27] }, 0);
-                mData.data.metaData.audioBlockAlign = BitConverter.ToInt16(new byte[2] { WAVIArray[28], WAVIArray[29] }, 0);
-                mData.data.metaData.audioBitsPerSample = BitConverter.ToInt16(new byte[2] { WAVIArray[30], WAVIArray[31] }, 0);
+                mData.data.audioData.audioFormat = BitConverter.ToInt16(new byte[2] { WAVIArray[16], WAVIArray[17] }, 0);
+                mData.data.audioData.audioChannels = BitConverter.ToInt16(new byte[2] { WAVIArray[18], WAVIArray[19] }, 0);
+                mData.data.audioData.audioSamplingRate = BitConverter.ToInt32(new byte[4] { WAVIArray[20], WAVIArray[21], WAVIArray[22], WAVIArray[23] }, 0);
+                mData.data.audioData.audioBytesPerSecond = BitConverter.ToInt32(new byte[4] { WAVIArray[24], WAVIArray[25], WAVIArray[26], WAVIArray[27] }, 0);
+                mData.data.audioData.audioBlockAlign = BitConverter.ToInt16(new byte[2] { WAVIArray[28], WAVIArray[29] }, 0);
+                mData.data.audioData.audioBitsPerSample = BitConverter.ToInt16(new byte[2] { WAVIArray[30], WAVIArray[31] }, 0);
 
                 //mData.data.modell = Encoding.ASCII.GetString(modelName).Replace("\0", "");
 
                 modelName = null;
+                if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] audioData Object:", mData.data.audioData);
             }
             else
             {
-                mData.data.metaData.hasAudio = false;
+                mData.data.audioData.hasAudio = false;
             }
 
-            //return mData;
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] metaData Object:", mData.data.metaData);
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] fileData Object:", mData.data.fileData);
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] lensData Object:", mData.data.lensData);
+
         }
 
         public static void getRAWAttributes(string filename, raw rData)
@@ -384,6 +389,7 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] reading RAW Footer and Attribs");
 
             // -- Read 192 Bytes at EOF and values
+            // description found on bitbucket -> Magic Lantern / src / raw.h and raw.c
             int nBytes = 192;
             byte[] ByteArray = new byte[nBytes];
             //long offset = fi.Length;
@@ -397,6 +403,7 @@ namespace raw2cdng_v2
             rData.data.metaData.frames = BitConverter.ToInt32(new byte[4] { ByteArray[12], ByteArray[13], ByteArray[14], ByteArray[15] }, 0);
             rData.data.metaData.lostFrames = BitConverter.ToInt32(new byte[4] { ByteArray[16], ByteArray[17], ByteArray[18], ByteArray[19] }, 0);
             rData.data.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { ByteArray[20], ByteArray[21], ByteArray[22], ByteArray[23] }, 0);
+            if (rData.data.metaData.fpsNom == 0) rData.data.metaData.fpsNom = 24000;
             rData.data.metaData.fpsDen = 1000;
             Single fps_out = (Single)rData.data.metaData.fpsNom / 1000;
             rData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
@@ -411,13 +418,10 @@ namespace raw2cdng_v2
 
             rData.data.metaData.bitsperSample = 14;// ByteArray[56];
             rData.data.metaData.maximize = true;
-            rData.data.metaData.maximizer = Math.Pow(2, 16) / (rData.data.metaData.whiteLevelOld - rData.data.metaData.blackLevelOld);
-            
+            rData.data.metaData.maximizer = (Math.Pow(2, 16)-1) / (rData.data.metaData.whiteLevelOld - rData.data.metaData.blackLevelOld);
 
             rData.data.metaData.stripByteCountReal = (rData.data.metaData.xResolution * rData.data.metaData.yResolution * rData.data.metaData.bitsperSample) / 8;
 
-            //int real = (rData.data.metaData.xResolution*rData.data.metaData.yResolution)*14/8;
-            //long diff = real - rData.data.metaData.stripByteCount;
             byte[] colorMatrix = new byte[72];
             fs.Seek(-76, SeekOrigin.End);
             nBytesRead = fs.Read(colorMatrix, 0, 72);
@@ -456,6 +460,10 @@ namespace raw2cdng_v2
                     break;
             }
             rData.data.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
+
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] metaData Object:", rData.data.metaData);
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] fileData Object:", rData.data.fileData);
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] lensData Object:", rData.data.lensData);
         }
 
         public static byte[] readMLV(data param)
@@ -464,13 +472,14 @@ namespace raw2cdng_v2
             param.rawData = new byte[param.metaData.stripByteCountReal];
             FileInfo fi = new FileInfo(param.fileData.sourcePath + Path.DirectorySeparatorChar + param.fileData.fileNameOnly + "." + MLVFileEnding[usedFile]);
             FileStream fs = fi.OpenRead();
-            
+
             param.threadData.frame = param.fileData.VIDFBlock.MLVFrameNo;
             
             fs.Position = (long)((long)param.fileData.VIDFBlock.fileOffset + (long)32 + (long)param.fileData.VIDFBlock.EDMACoffset);
             fs.Read(param.rawData, 0, param.metaData.stripByteCountReal);
 
             fs.Close();
+            
             return param.rawData;
         }
 
@@ -567,6 +576,7 @@ namespace raw2cdng_v2
         public static bool saveAudio(string filename, raw mData)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] started");
+            if (debugging.debugLogEnabled) debugging._saveDebugObject("[saveAudio] audioData Object:", mData.data.audioData);
 
             bool success = false;
             // manage all Audiodata first as list of bytearrays
@@ -594,6 +604,8 @@ namespace raw2cdng_v2
 
             Array.Copy(byteBextName, 0, wavFile[0], 0x138, byteBextName.Length);
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] bextName: " + bextName);
+
             // set USID/UDI
             // CCOOO NNNNNNNNNNNN HHMMSS RRRRRRRRR
             Random rnd = new Random();
@@ -601,17 +613,27 @@ namespace raw2cdng_v2
 
             string UDI = "DECan" + mData.data.metaData.camId.ToUpper() + String.Format("{0:HHmmss}", mData.data.fileData.modificationTime) + RRR.ToString();
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(UDI), 0, wavFile[0], 0x158, 32);
-            
+
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] UDI: " + UDI);
+
             // set timedate
             string dateTime = String.Format("{0:yyyy:MM:ddHH:mm:ss}", mData.data.fileData.modificationTime);
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(dateTime), 0, wavFile[0], 0x178, 18);
+
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] datetime: " + dateTime);
             
             //have to adjust samples if dropped frames
             double timeRefMultiplier = Math.Round((double)mData.data.metaData.fpsNom / 1000) / ((double)mData.data.metaData.fpsNom / 1000);
-               
+
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] timeRefMultiplier: " + timeRefMultiplier);
+   
             // set TimeRef (long)
-            long timeRef = (long)(mData.data.metaData.audioSamplingRate * calc.creationTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier));
+            double time2frame = calc.creationTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier);
+            long timeRef = (long)(mData.data.audioData.audioSamplingRate * time2frame);
             Array.Copy(BitConverter.GetBytes(timeRef), 0, wavFile[0], 0x18a, 8);
+
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] time2frame: " + time2frame);
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] timeRef (samplingRate*time2frame): " + timeRef);
 
             //change xml-framerate
             string fpsString = mData.data.metaData.fpsNom.ToString() + "/" + mData.data.metaData.fpsDen.ToString();
@@ -619,21 +641,25 @@ namespace raw2cdng_v2
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x4f7, fpsString.Length); // for example 25/1
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(fpsString), 0, wavFile[0], 0x521, fpsString.Length); // for example 25/1
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] fpsString: " + fpsString);
+
             // mark in xml its ndf (nondropframe) or not
             string DF = "DF ";
             if (!mData.data.metaData.dropFrame) DF = "NDF";
             Array.Copy(System.Text.Encoding.ASCII.GetBytes(DF), 0, wavFile[0], 0x54B, 3);
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] DF: " + DF);
+
             // set chunksize fmt to 0x28
             Array.Copy(BitConverter.GetBytes(0x28), 0, wavFile[0], 0x29c, 4);
 
             //fmt area
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioFormat), 0, wavFile[0], 0x2a0, 2); // 01 00
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioChannels), 0, wavFile[0], 0x2a2, 2); // 02 00
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioSamplingRate), 0, wavFile[0], 0x2a4, 4); // 80 bb 00 00
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBytesPerSecond), 0, wavFile[0], 0x2a8, 4); // 00 ee 02 00
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBlockAlign), 0, wavFile[0], 0x2ac, 2); // 00 04
-            Array.Copy(BitConverter.GetBytes(mData.data.metaData.audioBitsPerSample), 0, wavFile[0], 0x2ae, 2); // 00 10
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioFormat), 0, wavFile[0], 0x2a0, 2); // 01 00
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioChannels), 0, wavFile[0], 0x2a2, 2); // 02 00
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioSamplingRate), 0, wavFile[0], 0x2a4, 4); // 80 bb 00 00
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioBytesPerSecond), 0, wavFile[0], 0x2a8, 4); // 00 ee 02 00
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioBlockAlign), 0, wavFile[0], 0x2ac, 2); // 00 04
+            Array.Copy(BitConverter.GetBytes(mData.data.audioData.audioBitsPerSample), 0, wavFile[0], 0x2ae, 2); // 00 10
 
             // set XMLdata
             // read out audio chunks
@@ -667,6 +693,8 @@ namespace raw2cdng_v2
                 subChunkSize += wavFile[i].Length;
             }
 
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] subChunkSize :"+subChunkSize);
+
             // put complete datalength into header
             Array.Copy(BitConverter.GetBytes(subChunkSize + 8192), 0, wavFile[0], 4, 4);
             
@@ -683,6 +711,8 @@ namespace raw2cdng_v2
             }
             _WAVFile.Close();
             success = true;
+
+            if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] success");
 
             return success;
         }
