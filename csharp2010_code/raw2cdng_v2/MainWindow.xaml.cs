@@ -320,8 +320,8 @@ namespace raw2cdng_v2
                }));
             allFramesCount = 0;
             
-            // used for GUI refresh item in _batchList
-            int itemList = 0;
+            // used for GUI refresh item in _batchList (not used so commenting out)
+            // int itemList = 0;
 
             // set threadpool properties
             ThreadPool.SetMaxThreads(CPUcores, CPUcores);
@@ -668,7 +668,7 @@ namespace raw2cdng_v2
             if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] showPicture");
             
             int item = (sender as ListView).Items.IndexOf((sender as ListView).SelectedItems[0]);
-            if (item != null)
+            if (item != 0)
             {
                 // read picture and show
                 WriteableBitmap im = io.showPicture(rawFiles[item]);
@@ -907,7 +907,7 @@ namespace raw2cdng_v2
         public void previewBackground(raw r)
         {
             var frame = r.data.metaData.previewFrame;
-            if (frame != null)
+            if (frame != 0)
             {
                 var maxFrames = r.data.metaData.frames;
                 var progressPosX = 564 + 320 * frame / maxFrames;

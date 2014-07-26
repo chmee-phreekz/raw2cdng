@@ -69,7 +69,9 @@ namespace raw2cdng_v2
             }
             catch (Exception e)
             {
-              
+                if (e.Source != null)
+                    Console.WriteLine("Exception source: {0}", e.Source);
+                throw;
             }
         }
 
@@ -92,7 +94,9 @@ namespace raw2cdng_v2
             }
             catch (Exception e)
             {
-              
+                if (e.Source != null)
+                    Console.WriteLine("Exception source: {0}", e.Source);
+                throw;
             }
         }
     }
