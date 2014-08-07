@@ -73,16 +73,17 @@
         <ListView Height="400" HorizontalAlignment="Left" Margin="8,71,0,0" Name="_batchList" VerticalAlignment="Top" Width="550" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" HorizontalContentAlignment="Center">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="do" Width="28" CellTemplate="{StaticResource CheckBoxCell}" DisplayMemberBinding="{Binding do}"/>
-                    <GridViewColumn Header="type" Width="48" DisplayMemberBinding="{Binding type}" />
-                    <GridViewColumn Header="filename" Width="108" DisplayMemberBinding="{Binding filename}"/>
+                    <GridViewColumn Header="do" Width="22" CellTemplate="{StaticResource CheckBoxCell}" DisplayMemberBinding="{Binding do}"/>
+                    <GridViewColumn Header="type" Width="36" DisplayMemberBinding="{Binding type}" />
+                    <GridViewColumn Header="filename" Width="120" DisplayMemberBinding="{Binding filename}"/>
                     <GridViewColumn Header="files" Width="36" DisplayMemberBinding="{Binding files}"/>
                     <GridViewColumn Header="frames" Width="50" DisplayMemberBinding="{Binding frames}"/>
 
-                    <GridViewColumn Header="duration" Width="83" DisplayMemberBinding="{Binding duration}"/>
-                    <GridViewColumn Header="resolution" Width="84" DisplayMemberBinding="{Binding resolution}"/>
+                    <GridViewColumn Header="duration" Width="80" DisplayMemberBinding="{Binding duration}"/>
+                    <GridViewColumn Header="resolution" Width="80" DisplayMemberBinding="{Binding resolution}"/>
                     <GridViewColumn Header="fps" Width="50" DisplayMemberBinding="{Binding fps}"/>
-                    <GridViewColumn Header="audio" Width="40" DisplayMemberBinding="{Binding audio}"/>
+                    <GridViewColumn Header="CR2" Width="32" DisplayMemberBinding="{Binding cr2}"/>
+                    <GridViewColumn Header="audio" Width="36" DisplayMemberBinding="{Binding audio}"/>
 
                 </GridView>
             </ListView.View>
@@ -143,7 +144,7 @@
         </TextBox>
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="vertical banding" Height="23" HorizontalAlignment="Left" Margin="564,421,0,0" Name="_banding" VerticalAlignment="Top" Width="156" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" />
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="chroma smoothing 2x2" Height="23" HorizontalAlignment="Left" Margin="728,421,0,0" Name="_smoothing" VerticalAlignment="Top" Width="156" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy jpegs" Height="23" HorizontalAlignment="Left" Margin="564,448,0,0" Name="_jpegs" VerticalAlignment="Top" Width="156" Unchecked="_jpegs_Unchecked" Checked="_jpegs_Checked" IsEnabled="True" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy jpeg" Height="23" HorizontalAlignment="Left" Margin="564,448,0,0" Name="_jpegs" VerticalAlignment="Top" Width="156" Unchecked="_jpegs_Unchecked" Checked="_jpegs_Checked" IsEnabled="True" />
         <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="delta pink highlights" Height="23" HorizontalAlignment="Left" Margin="728,448,0,0" Name="_highlights" VerticalAlignment="Top" Width="156" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" />
         <Button Template="{StaticResource chmeeButton}" Content="convert" Height="28" HorizontalAlignment="Left" Margin="564,477,0,0" Name="_convert" VerticalAlignment="Top" Width="320" FontSize="14" FontWeight="Bold" HorizontalContentAlignment="Center" Padding="2" Click="_convert_Click" IsEnabled="False" />
 

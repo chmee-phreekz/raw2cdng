@@ -51,8 +51,11 @@ namespace raw2cdng_v2
         public int apiVersion { get; set; }
         public int splitCount { get; set; }
         public bool photoRAW { get; set; }
+        public bool photoRAWe { get; set; }
         public int[] RGGBValues { get; set; }
         public int[] RGBfraction { get; set; }
+        public int whiteBalance { get; set; }
+        public int whiteBalanceMode { get; set; }
         // variables for blackpoint and maximizing
         public int blackLevelOld { get; set; }
         public int blackLevelNew { get; set; }
@@ -70,7 +73,7 @@ namespace raw2cdng_v2
 
         public byte[] DNGHeader { get; set; }
         public string version { get; set; }
-
+        public byte[] versionString { get; set; }
     }
 
     public class audiodata 
@@ -92,6 +95,7 @@ namespace raw2cdng_v2
         public string fileNameOnly { get; set; }
         public string fileNameShort { get; set; }
         public string fileNameNum { get; set; }
+        public string tempPath { get; set; }
         public string sourcePath { get; set; }
         public string basePath { get; set; }
         public string destinationPath { get; set; }

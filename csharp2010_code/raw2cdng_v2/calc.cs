@@ -156,6 +156,11 @@ namespace raw2cdng_v2
             return Dest;
         }
 
+        // 5DIII valuerange
+        // 14bit original - 2048-15.000 = ~12.900
+        // 16bit - 8192-60.000 - maximized 0-65535
+        // 12bit - 512-3750 = ~3.200 - maximized 0-4095 (
+        
         public static byte[] from16to12(byte[] source, data rData)
         {
             // preparing variables
@@ -495,7 +500,7 @@ namespace raw2cdng_v2
             
             // thats the value green and red/blue drifts in bmcc-premiere code.
             int whitelevel = 42000;
-            //double maxRange = 1.5;
+            double maxRange = 1.8;
 
             for (var y = 0; y < halfResy; y++)
             {
@@ -516,14 +521,18 @@ namespace raw2cdng_v2
                     //if (g1 > whitelevel) g1 = whitelevel; // whitelevel + (g1 - whitelevel) * 2;
                     //if (g2 > whitelevel) g2 = whitelevel; // whitelevel + (g2 - whitelevel) * 2;
                     if (b1 > whitelevel) b1 = whitelevel;
-                    
-                    /* ------- tried to higher the output, but gets pink, assume of overflow
+
+                    // ------- tried to higher the output, but gets pink, assume of overflow
                     r1 = (int)(r1 * (double)maxRange);
                     g1 = (int)(g1 * (double)maxRange);
                     g2 = (int)(g2 * (double)maxRange);
                     b1 = (int)(b1 * (double)maxRange);
-                    */
-
+                    // --- so simply doin a check on overflow
+                    if(r1>65535)r1=65535;
+                    if(g1>65535)g1=65535;
+                    if(g2>65535)g2=65535;
+                    if(b1>65535)b1=65535;
+ 
                     pic[rowRG] = (byte)(r1 & 0xff);
                     pic[rowRG + 1] = (byte)(r1 >> 8);
                     pic[rowRG + 2] = (byte)(g1 & 0xff);
@@ -552,6 +561,7 @@ namespace raw2cdng_v2
         {
             // vertical Banding written by a1ex
             // to be found in Magic Lantern / modules / lv_rec / raw2dng.c
+            // https://bitbucket.org/hudson/magic-lantern/src/c38da103d1842fce7da5a3a5f2d5d71990ed4f0c/modules/lv_rec/raw2dng.c?at=unified
 
             byte[] picOut = new byte[picIn.Length];
             // verticalBanding from ml/a1ex here
@@ -562,7 +572,6 @@ namespace raw2cdng_v2
             */
             return picOut;
         }
-
 
         public static byte[] chromaSmoothing(byte[] picIn, data param)
         {
@@ -579,13 +588,13 @@ namespace raw2cdng_v2
 
             byte[] picOut = new byte[picIn.Length];
 
-            /*
+          /*
                         for (int y = 4; y < yres - 5; y += 2)
                         {
                             for (int x = 4; x < xres - 4; x += 2)
                             {
-                                int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                                int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                                int rowRG = (x * 2 * 2 + (y * 2 + 0) * xresHalf * 4);
+                                int rowGB = (x * 2 * 2 + (y * 2 + 1) * yresHalf * 4);
                                 
                                 int g1 = picIn[x+1 +     y * xres];
                                 int g2 = picIn[x   + (y+1) * yres];
@@ -625,6 +634,7 @@ namespace raw2cdng_v2
                                 int gedr = ge + dr;
                                 int gedb = ge + db;
                                 int fullArray = 14 * full;
+
 
                                 picOut[x   +     y * xres] = ev2raw[COERCE(ref gedr, ref zero, ref fullArray)];
                                 picOut[x+1 + (y+1) * yres] = ev2raw[COERCE(ge + db, 0, 14*EV_RESOLUTION-1)];
@@ -668,16 +678,16 @@ namespace raw2cdng_v2
                     rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (imageData[rowRG] | imageData[rowRG + 1] << 8) / mul;
-                    g1 = (imageData[rowRG + 2] | imageData[rowRG + 3] << 8) / mul;
-                    g2 = (imageData[rowGB] | imageData[rowGB + 1] << 8) / mul;
-                    r1 = (imageData[rowGB + 2] | imageData[rowGB + 3] << 8) / mul;
+                    b1 = (imageData[rowRG] | imageData[rowRG + 1] << 8) / mul;    // *param.metaData.RGBfraction[4] / param.metaData.RGBfraction[5];
+                    g1 = (imageData[rowRG + 2] | imageData[rowRG + 3] << 8) / mul;// *param.metaData.RGBfraction[2] / param.metaData.RGBfraction[3];
+                    g2 = (imageData[rowGB] | imageData[rowGB + 1] << 8) / mul;    // *param.metaData.RGBfraction[2] / param.metaData.RGBfraction[3];
+                    r1 = (imageData[rowGB + 2] | imageData[rowGB + 3] << 8) / mul;// *param.metaData.RGBfraction[0] / param.metaData.RGBfraction[1];
 
                     if (convert)
                     {
                         b1 = (int)((Math.Pow((double)b1 / 256, gamma)) * 256);
-                        g1 = (int)((Math.Pow((double)g1 / 256, gamma)) * 324);
-                        g2 = (int)((Math.Pow((double)g2 / 256, gamma)) * 324);
+                        g1 = (int)((Math.Pow((double)g1 / 256, gamma)) * 384);
+                        g2 = (int)((Math.Pow((double)g2 / 256, gamma)) * 384);
                         r1 = (int)((Math.Pow((double)r1 / 256, gamma)) * 256);
                     }
                     

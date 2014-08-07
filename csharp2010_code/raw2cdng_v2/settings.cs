@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Web.Script.Serialization;
 using System.IO;
+using System.Reflection;
 
 namespace raw2cdng_v2
 {
@@ -22,6 +23,7 @@ namespace raw2cdng_v2
         public bool verticalBanding;
         public int format;
         public string prefix;
+        public bool ffmpegExists;
     }
 
     public class AppSettings<T> where T : new()
@@ -67,9 +69,10 @@ namespace raw2cdng_v2
                     w.WriteLine(input);
                 }
             }
-            catch (Exception e)
+            catch
             {
-              
+                // leaving it empty is better than a throw
+                // it "only" cant write into the logfile (on mutlithreads fi)
             }
         }
 
@@ -92,8 +95,30 @@ namespace raw2cdng_v2
             }
             catch (Exception e)
             {
-              
+                if (e.Source != null)
+                    Console.WriteLine("Exceptions source: {0}", e.Source);
+                throw;
             }
+        }
+
+        public static string getExceptionDetails(Exception exception)
+        {
+            // found on great great stackoverflow
+            // http://stackoverflow.com/questions/8039660/net-how-to-convert-exception-to-string
+
+            PropertyInfo[] properties = exception.GetType()
+                                    .GetProperties();
+            List<string> fields = new List<string>();
+            foreach (PropertyInfo property in properties)
+            {
+                object value = property.GetValue(exception, null);
+                fields.Add(String.Format(
+                                 "{0} = {1}",
+                                 property.Name,
+                                 value != null ? value.ToString() : String.Empty
+                ));
+            }
+            return String.Join("\n", fields.ToArray());
         }
     }
 

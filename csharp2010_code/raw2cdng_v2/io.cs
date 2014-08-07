@@ -14,7 +14,7 @@ namespace raw2cdng_v2
     {
         public static string[] RAWFileEnding = new string[] { "RAW", "R00", "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20" };
         public static string[] MLVFileEnding = new string[] { "MLV", "M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18", "M19", "M20" };
-        
+        public static string blocknames = "RAWIMLVIWBALIDNTVIDFRTCILENSEXPOWAVIAUDFINFONULLXREFMARKDISOELVLSTYLBKUP";
         // old classic short header : public static byte[] RIFFheader = Properties.Resources.RIFFtemplate;
         public static byte[] riffHeader = Properties.Resources.riffbwf_Template;
 
@@ -29,7 +29,7 @@ namespace raw2cdng_v2
             return f != null && f.EndsWith(".RAW", StringComparison.Ordinal);
         }
 
-        public static bool setFileinfoData(string fn, filedata fd)
+        public static string setFileinfoData(string fn, filedata fd)
         {
             fd.fileName = fn;
             fd.fileNameOnly = Path.GetFileNameWithoutExtension(fn);
@@ -38,11 +38,11 @@ namespace raw2cdng_v2
             fd.fileNameNum = calc.setFilenameNum(fd.fileNameOnly);
             fd.outputFilename = "";
             if (debugging.debugLogEnabled) debugging._saveDebug("[setFileinfoData] set/changed Filedata");
-
-            return true;
+            string errorString = "";
+            return errorString;
         }
 
-        public static raw createMLVBlockList(string filename, raw raw)
+        public static string createMLVBlockList(string filename, raw raw)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] started");
             
@@ -80,30 +80,49 @@ namespace raw2cdng_v2
                 FileInfo fi = new FileInfo(fn);
                 FileStream fs = fi.OpenRead();
                 long fl = fs.Length;
-                while ((fl - offset) > 0)
+                while ((fl - offset) >= 0)
                 {
-                    fs.Position = offset;
-                    fs.Read(chunk, 0, 16);
-                    bl = BitConverter.ToInt32(chunk, 4);
-                    Blocks.mlvBlockList.Add(new Blocks.mlvBlock()
+                    try
                     {
-                        blockTag = Encoding.ASCII.GetString(new byte[4] { chunk[0], chunk[1], chunk[2], chunk[3] }),
-                        blockLength = bl,
-                        fileOffset = offset,
-                        timestamp = BitConverter.ToInt64(chunk, 8),
-                        fileNo = j
-                    });
-                    offset += bl;
-                    if (j > 0) { }
+                        fs.Position = offset;
+                        fs.Read(chunk, 0, 16);
+                        bl = BitConverter.ToInt32(chunk, 4);
+                        Blocks.mlvBlockList.Add(new Blocks.mlvBlock()
+                        {
+                            blockTag = Encoding.ASCII.GetString(new byte[4] { chunk[0], chunk[1], chunk[2], chunk[3] }),
+                            blockLength = bl,
+                            fileOffset = offset,
+                            timestamp = BitConverter.ToInt64(chunk, 8),
+                            fileNo = j
+                        });
+                        offset += bl;
+                        if (j > 0) { }
+                    }
+                    catch(Exception e)
+                    {
+                        if (debugging.debugLogEnabled)
+                        {
+                            debugging._saveDebug("[createMLVBlocklist] --- exception(!) --- ");
+                            debugging._saveDebug("[createMLVBlocklist] blockTag|offset|fileNo : " + Encoding.ASCII.GetString(new byte[4] { chunk[0], chunk[1], chunk[2], chunk[3] })+"|"+offset.ToString()+"|"+j.ToString());
+                            debugging._saveDebug(debugging.getExceptionDetails(e));
+                        }
+                        throw;
+                    }
 
                 }
             }
-            return raw;
+            // break/abort import if blocks werent read accordingly
+            string errorString = "";
+            return errorString;
 
         }
 
-        public static void readVIDFBlockData(raw raw)
+        public static string readVIDFBlockData(raw raw)
         {
+            string errorString = "";
+            string debugString = "";
+            int framecount = 0;
+
             if (debugging.debugLogEnabled) debugging._saveDebug("[readVIDFBlockData] started");
 
             foreach (Blocks.mlvBlock VIDFBlock in raw.VIDFBlocks)
@@ -117,9 +136,17 @@ namespace raw2cdng_v2
                 VIDFBlock.EDMACoffset = BitConverter.ToInt32(new byte[4] { vidfProp[28], vidfProp[29], vidfProp[30], vidfProp[31] }, 0); 
                             
                 fs.Close();
-
-                if (debugging.debugLogEnabled) debugging._saveDebug("[readVIDFBlockData] read VIDFBlock-Data Frame #" + VIDFBlock.MLVFrameNo + " in File #" + VIDFBlock.fileNo + " on offset " + VIDFBlock.fileOffset);
+                if (debugging.debugLogEnabled)
+                {
+                debugString += "[" + (framecount++) + "]";
+                if (framecount % 25 == 0)
+                    {
+                        debugging._saveDebug("[readVIDFBlockData] done: " + debugString);
+                        debugString = "";
+                    }
+                }
             }
+            return errorString;
         }
 
         public static raw createRAWBlockList(string filename, raw raw)
@@ -170,8 +197,9 @@ namespace raw2cdng_v2
             return raw;
         }
 
-        public static void getMLVAttributes(string filename, List<Blocks.mlvBlock> bList, raw mData)
+        public static string getMLVAttributes(string filename, List<Blocks.mlvBlock> bList, raw mData)
         {
+            string errorString = "";
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] started");
 
             string PhotoRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + ".CR2";
@@ -179,6 +207,7 @@ namespace raw2cdng_v2
             if (File.Exists(PhotoRAWFile) == true)
             {
                 mData.data.metaData.photoRAW = true;
+                mData.data.metaData.photoRAWe = false;
                 mData.data.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
                 mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a CR2");
@@ -186,6 +215,7 @@ namespace raw2cdng_v2
             if ((mData.data.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
             {
                 mData.data.metaData.photoRAW = true;
+                mData.data.metaData.photoRAWe = true;
                 mData.data.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
                 mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
                 if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a ALL.CR2");
@@ -194,43 +224,53 @@ namespace raw2cdng_v2
             // get Data from RAWI Block
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading RAWI-Block");
             var RAWI = bList.FirstOrDefault(x => x.blockTag == "RAWI");
+            if (RAWI == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO RAWI Block");
+                errorString += "[NORAWI]";
+            }
+            
+                FileInfo fi = new FileInfo(mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + "." + MLVFileEnding[RAWI.fileNo]);
+                string readPath = fi.DirectoryName;
+                mData.data.fileData.creationTime = fi.CreationTime;
+                mData.data.fileData.modificationTime = fi.LastWriteTime;
 
-            FileInfo fi = new FileInfo(mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + "." + MLVFileEnding[RAWI.fileNo]);
-            string readPath = fi.DirectoryName;
-            mData.data.fileData.creationTime = fi.CreationTime;
-            mData.data.fileData.modificationTime = fi.LastWriteTime;
+                string fn = fi.Name;
+                FileStream fs = fi.OpenRead();
 
-            string fn = fi.Name;
-            FileStream fs = fi.OpenRead();
+                fs.Position = RAWI.fileOffset;
+                byte[] RAWIArray = new byte[RAWI.blockLength];
+                fs.Read(RAWIArray, 0, RAWI.blockLength);
 
-            fs.Position = RAWI.fileOffset;
-            byte[] RAWIArray = new byte[RAWI.blockLength];
-            fs.Read(RAWIArray, 0, RAWI.blockLength);
+                mData.data.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[16], RAWIArray[17] }, 0);
+                mData.data.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[18], RAWIArray[19] }, 0);
+                mData.data.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[48], RAWIArray[49], RAWIArray[50], RAWIArray[51] }, 0);
+                if (mData.data.metaData.blackLevelOld == 0) mData.data.metaData.blackLevelOld = 2037;
+                mData.data.metaData.whiteLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[52], RAWIArray[53], RAWIArray[54], RAWIArray[55] }, 0);
+                if (mData.data.metaData.whiteLevelOld == 0) mData.data.metaData.whiteLevelOld = 15000;
+                mData.data.metaData.blackLevelNew = mData.data.metaData.blackLevelOld;
+                mData.data.metaData.whiteLevelNew = mData.data.metaData.whiteLevelOld;
 
-            mData.data.metaData.xResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[16], RAWIArray[17] }, 0);
-            mData.data.metaData.yResolution = BitConverter.ToUInt16(new byte[2] { RAWIArray[18], RAWIArray[19] }, 0);
-            mData.data.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[48], RAWIArray[49], RAWIArray[50], RAWIArray[51] }, 0);
-            if (mData.data.metaData.blackLevelOld == 0) mData.data.metaData.blackLevelOld = 2037;
-            mData.data.metaData.whiteLevelOld = BitConverter.ToInt32(new byte[4] { RAWIArray[52], RAWIArray[53], RAWIArray[54], RAWIArray[55] }, 0);
-            if (mData.data.metaData.whiteLevelOld == 0) mData.data.metaData.whiteLevelOld = 15000;
-            mData.data.metaData.blackLevelNew = mData.data.metaData.blackLevelOld;
-            mData.data.metaData.whiteLevelNew = mData.data.metaData.whiteLevelOld;
+                mData.data.metaData.bitsperSample = 14;// RAWIArray[56];
+                mData.data.metaData.maximizer = Math.Pow(2, 16) / (mData.data.metaData.whiteLevelOld - mData.data.metaData.blackLevelOld);
+                mData.data.metaData.maximize = true;
 
-            mData.data.metaData.bitsperSample = 14;// RAWIArray[56];
-            mData.data.metaData.maximizer = Math.Pow(2, 16) / (mData.data.metaData.whiteLevelOld - mData.data.metaData.blackLevelOld);
-            mData.data.metaData.maximize = true;
+                byte[] colorMatrix = new byte[72];
+                Array.Copy(RAWIArray, 104, colorMatrix, 0, 72);
+                mData.data.metaData.colorMatrix = colorMatrix;
+                colorMatrix = null;
 
-            byte[] colorMatrix = new byte[72];
-            Array.Copy(RAWIArray, 104, colorMatrix, 0, 72);
-            mData.data.metaData.colorMatrix = colorMatrix;
-            colorMatrix = null;
-
-            mData.data.metaData.stripByteCount = mData.data.metaData.xResolution * mData.data.metaData.yResolution * mData.data.metaData.bitsperSample / 8;
-            mData.data.metaData.stripByteCountReal = mData.data.metaData.stripByteCount;
-
+                mData.data.metaData.stripByteCount = mData.data.metaData.xResolution * mData.data.metaData.yResolution * mData.data.metaData.bitsperSample / 8;
+                mData.data.metaData.stripByteCountReal = mData.data.metaData.stripByteCount;
+            
             // from fileheader MLVI
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading MLVI-Block");
             var MLVI = bList.FirstOrDefault(x => x.blockTag == "MLVI");
+            if (MLVI == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO MLVI Block");
+                errorString += "[NOMLVI]";
+            }
 
             fs.Position = MLVI.fileOffset;
             byte[] MLVIArray = new byte[MLVI.blockLength];
@@ -248,6 +288,11 @@ namespace raw2cdng_v2
             // modellname from IDNT
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading IDNT-Block");
             var IDNT = bList.FirstOrDefault(x => x.blockTag == "IDNT");
+            if (IDNT == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO IDNT Block");
+                errorString += "[NOIDNT]";
+            }
 
             fs.Position = IDNT.fileOffset;
             byte[] IDNTArray = new byte[IDNT.blockLength];
@@ -265,9 +310,96 @@ namespace raw2cdng_v2
 
             modelName = null;
 
+            // whitebalance/colortemperature data from WBAL
+            // since beta7
+            if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading WBAL-Block");
+            var WBAL = bList.FirstOrDefault(x => x.blockTag == "WBAL");
+            if (WBAL == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO WBAL Block");
+                errorString += "[NOWBAL]";
+            }
+
+            fs.Position = WBAL.fileOffset;
+            byte[] WBALArray = new byte[WBAL.blockLength];
+            fs.Read(WBALArray, 0, WBAL.blockLength);
+
+            mData.data.metaData.whiteBalanceMode = BitConverter.ToInt32(new byte[4] { WBALArray[16], WBALArray[17], WBALArray[18], WBALArray[19] }, 0);
+            mData.data.metaData.RGBfraction = new int[6];//{1024,1024,1024,1024,1024,1024};
+
+            if (mData.data.metaData.whiteBalanceMode == 8 || mData.data.metaData.whiteBalanceMode < 6)
+            {
+                mData.data.metaData.whiteBalance = dng.whitebalancePresets[mData.data.metaData.whiteBalanceMode][0];
+                mData.data.metaData.RGGBValues = new int[4]{
+                    dng.whitebalancePresets[mData.data.metaData.whiteBalanceMode][1],
+                    dng.whitebalancePresets[mData.data.metaData.whiteBalanceMode][2],
+                    dng.whitebalancePresets[mData.data.metaData.whiteBalanceMode][3],
+                    dng.whitebalancePresets[mData.data.metaData.whiteBalanceMode][4]
+                };
+                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
+            }
+            else
+            {
+                // 9 is custom manual kelvin-value
+                if (mData.data.metaData.whiteBalanceMode == 9)
+                {
+                    mData.data.metaData.whiteBalance = BitConverter.ToInt32(new byte[4] { WBALArray[20], WBALArray[21], WBALArray[22], WBALArray[23] }, 0);
+                    int nearestVal = 9999;
+                    int accordingArray = 0;
+                    for (var n = 0; n < dng.whitebalanceManual.Length; n++)
+                    {
+                        int wbal = dng.whitebalanceManual[n][0];
+                        if (Math.Abs(wbal-mData.data.metaData.whiteBalance)<nearestVal)
+                        {
+                            nearestVal = Math.Abs(wbal - mData.data.metaData.whiteBalance);
+                            accordingArray = n;
+                        }
+                    }
+                    mData.data.metaData.RGGBValues = new int[4]{
+                        dng.whitebalanceManual[accordingArray][1],
+                        dng.whitebalanceManual[accordingArray][2],
+                        dng.whitebalanceManual[accordingArray][3],
+                        dng.whitebalanceManual[accordingArray][4]
+                    };
+                    mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
+                }
+
+                // 6 is custom whitebalance
+                if (mData.data.metaData.whiteBalanceMode == 6)
+                {
+                    int sourceVal = BitConverter.ToInt32(new byte[4] { WBALArray[32], WBALArray[33], WBALArray[34], WBALArray[35] }, 0);
+                    mData.data.metaData.RGBfraction[0] = (int)(1024/((double)sourceVal/1024));
+                    int nearestVal = 9999;
+                    int accordingArray = 0;
+                    for (var n = 0; n < dng.whitebalanceManual.Length; n++)
+                    {
+                        int rFraction = dng.whitebalanceManual[n][1];
+                        if (Math.Abs(rFraction - mData.data.metaData.RGBfraction[0]) < nearestVal)
+                        {
+                            nearestVal = Math.Abs(rFraction - mData.data.metaData.RGBfraction[0]);
+                            accordingArray = n;
+                        }
+                    }
+                    mData.data.metaData.RGGBValues = new int[4]{
+                        dng.whitebalanceManual[accordingArray][1],
+                        dng.whitebalanceManual[accordingArray][2],
+                        dng.whitebalanceManual[accordingArray][3],
+                        dng.whitebalanceManual[accordingArray][4]
+                    };
+                    mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
+                    mData.data.metaData.whiteBalance = dng.whitebalanceManual[accordingArray][0];
+                }
+
+            }
+
             // exposure data from EXPO
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading EXPO-Block");
             var EXPO = bList.FirstOrDefault(x => x.blockTag == "EXPO");
+            if (EXPO == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO EXPO Block");
+                mData.data.metaData.errorString += "[NOEXPO]";
+            }
 
             fs.Position = EXPO.fileOffset;
             byte[] EXPOArray = new byte[EXPO.blockLength];
@@ -284,6 +416,11 @@ namespace raw2cdng_v2
             // exposure data from EXPO
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading LENS-Block");
             var LENS = bList.FirstOrDefault(x => x.blockTag == "LENS");
+            if (LENS == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO LENS Block");
+                errorString += "[NOLENS]";
+            }
 
             fs.Position = LENS.fileOffset;
             byte[] LENSArray = new byte[LENS.blockLength];
@@ -303,6 +440,12 @@ namespace raw2cdng_v2
             // audioproperties from WAVI
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading WAVI-Block");
             var WAVI = bList.FirstOrDefault(x => x.blockTag == "WAVI");
+            if (WAVI == null)
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] NO WAVI Block");
+                // dont mark that as error
+                //mData.data.metaData.errorString += "[NOWAVI]";
+            }
 
             if (WAVI != null)
             {
@@ -311,8 +454,6 @@ namespace raw2cdng_v2
                 byte[] WAVIArray = new byte[WAVI.blockLength];
                 fs.Read(WAVIArray, 0, WAVI.blockLength);
 
-                //byte[] modelName = new byte[32];
-                //Array.Copy(IDNTArray, 16, modelName, 0, 32);
                 mData.data.audioData.audioFormat = BitConverter.ToInt16(new byte[2] { WAVIArray[16], WAVIArray[17] }, 0);
                 mData.data.audioData.audioChannels = BitConverter.ToInt16(new byte[2] { WAVIArray[18], WAVIArray[19] }, 0);
                 mData.data.audioData.audioSamplingRate = BitConverter.ToInt32(new byte[4] { WAVIArray[20], WAVIArray[21], WAVIArray[22], WAVIArray[23] }, 0);
@@ -334,6 +475,7 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] fileData Object:", mData.data.fileData);
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] lensData Object:", mData.data.lensData);
 
+            return errorString;
         }
 
         public static void getRAWAttributes(string filename, raw rData)
@@ -553,7 +695,7 @@ namespace raw2cdng_v2
 
         public static void saveProxy(data r, byte[] imageArray)
         {
-            if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
+            //if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
 
             BitmapSource bitmapsource = calc.doBitmap(imageArray, r, true);
             BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
