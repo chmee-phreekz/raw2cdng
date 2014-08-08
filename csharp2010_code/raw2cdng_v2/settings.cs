@@ -71,8 +71,14 @@ namespace raw2cdng_v2
             }
             catch
             {
+<<<<<<< HEAD
                 // leaving it empty is better than a throw
                 // it "only" cant write into the logfile (on mutlithreads fi)
+=======
+                if (e.Source != null)
+                    Console.WriteLine("Exception source: {0}", e.Source);
+                throw;
+>>>>>>> origin/master
             }
         }
 
@@ -96,6 +102,7 @@ namespace raw2cdng_v2
             catch (Exception e)
             {
                 if (e.Source != null)
+<<<<<<< HEAD
                     Console.WriteLine("Exceptions source: {0}", e.Source);
                 throw;
             }
@@ -117,6 +124,10 @@ namespace raw2cdng_v2
                                  property.Name,
                                  value != null ? value.ToString() : String.Empty
                 ));
+=======
+                    Console.WriteLine("Exception source: {0}", e.Source);
+                throw;
+>>>>>>> origin/master
             }
             return String.Join("\n", fields.ToArray());
         }

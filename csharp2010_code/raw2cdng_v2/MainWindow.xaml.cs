@@ -343,6 +343,12 @@ namespace raw2cdng_v2
                }));
             allFramesCount = 0;
             
+<<<<<<< HEAD
+=======
+            // used for GUI refresh item in _batchList (not used so commenting out)
+            // int itemList = 0;
+
+>>>>>>> origin/master
             // set threadpool properties
             ThreadPool.SetMaxThreads(CPUcores, CPUcores);
 
@@ -721,7 +727,11 @@ namespace raw2cdng_v2
             if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] showPicture");
             
             int item = (sender as ListView).Items.IndexOf((sender as ListView).SelectedItems[0]);
+<<<<<<< HEAD
             if (item > -1)
+=======
+            if (item != 0)
+>>>>>>> origin/master
             {
                 // if on zero was a bad idea - the first entry is 0 ;)
                 // maybe deleting the if
@@ -965,7 +975,11 @@ namespace raw2cdng_v2
         public void previewBackground(raw r)
         {
             var frame = r.data.metaData.previewFrame;
+<<<<<<< HEAD
             if (frame > -1)
+=======
+            if (frame != 0)
+>>>>>>> origin/master
             {
                 var maxFrames = r.data.metaData.frames;
                 var progressPosX = 564 + 320 * frame / maxFrames;

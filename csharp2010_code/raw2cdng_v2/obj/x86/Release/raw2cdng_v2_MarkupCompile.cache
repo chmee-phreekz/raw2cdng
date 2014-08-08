@@ -4,12 +4,20 @@
 winexe
 C#
 .cs
+<<<<<<< HEAD
 C:\Users\chmee\Documents\Visual Studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Release\
+=======
+C:\Users\Phillip\Source\Repos\raw2cdng-phil\csharp2010_code\raw2cdng_v2\obj\x86\Release\
+>>>>>>> origin/master
 raw2cdng_v2
 none
 false
 TRACE
+<<<<<<< HEAD
 C:\Users\chmee\Documents\Visual Studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\App.xaml
+=======
+C:\Users\Phillip\Source\Repos\raw2cdng-phil\csharp2010_code\raw2cdng_v2\App.xaml
+>>>>>>> origin/master
 2775740036
 
 12-123494794
