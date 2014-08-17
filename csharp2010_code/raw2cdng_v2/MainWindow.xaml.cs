@@ -62,7 +62,7 @@ namespace raw2cdng_v2
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0.BETA7";
+        string version = "1.5.0 BETA8";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
@@ -88,6 +88,7 @@ namespace raw2cdng_v2
         public MainWindow()
         {
             InitializeComponent();
+            //if(mlvplay.FocusableProperty = IsFocused)
 
             //colors
             green = new SolidColorBrush(Color.FromRgb(0, 255, 0));
@@ -161,10 +162,6 @@ namespace raw2cdng_v2
 
         private void dragDropData(string[] files)
         {
-            
-            // --- list of dropped files
-            Array.Sort(files);
-
             if (settings.debugLogEnabled)
             {
                 debugging._saveDebug("[drop] started");
@@ -172,15 +169,33 @@ namespace raw2cdng_v2
                 debugging._saveDebug("[drop] ------");
                 foreach(string file in files) debugging._saveDebug("[drop] "+file);
                 debugging._saveDebug("[drop] ------");
-            }         
+            }
 
+            // since beta8 -folderimport
+            List<string> fileList = new List<string>();
             foreach (string file in files)
             {
-                    
-                if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file "+file+" will be analyzed now.");
+                if (io.isFolder(file))
+                {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- " + file + " is a folder. seeking for MLV and RAW.");
+                    io.dirSearch(file, ref fileList);
+                }
+                else
+                {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file " + file + ".");
+                    fileList.Add(file);
+                }
+            }
 
+            // --- list of dropped files
+            fileList.Sort();
+
+            foreach (string file in fileList)
+            {
+            
                 if (io.isMLV(file) || io.isRAW(file))
                 {
+                    if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file " + file + " will be analyzed now.");
                     raw importRaw = new raw();
                     data importData = new data();
                     importData.metaData = new metadata();
@@ -348,6 +363,9 @@ namespace raw2cdng_v2
 
             if (settings.debugLogEnabled) debugging._saveDebug("[doWork] "+CPUcores + " Cores used");
 
+            // variables for _actionOutput while converting
+            int convertPosition = 0;
+            int convertAmount = rawFiles.Count();
 
             // and go.
             foreach (raw file in rawFiles)
@@ -360,7 +378,9 @@ namespace raw2cdng_v2
                     // -- refresh _progressbar.One
                     _progressOne.Value = 0;
                     _progressOne.Maximum = file.data.metaData.frames;
-
+                    convertPosition++;
+                    _actionOutput.Content = "converting " + convertPosition+"/"+convertAmount+" - "+file.data.fileData.fileNameOnly;
+                    
                     // -- to be done - mark item as converting (red)
                     //_batchList.SelectedItem = itemList;
                     // does not work, wpf styles and containerchange-refreshes i think..
@@ -578,6 +598,7 @@ namespace raw2cdng_v2
                 {
                     _batchList.Items.Clear();
                     rawFiles.Clear();
+                    _preview.Source = null;
 
                     _progressOne.Value = 0;
                     _progressAll.Value = 0;
@@ -1123,11 +1144,11 @@ namespace raw2cdng_v2
                 
                 if (r.data.audioData.hasAudio)
                 {
-                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 4 -codec:a mp2 -b:a 192k " + outputFile;
+                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 2 -codec:a mp2 -b:a 192k -shortest " + outputFile;
                 }
                 else
                 {
-                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -codec:v mpeg2video -qscale:v 4 " + outputFile;
+                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -codec:v mpeg2video -qscale:v 2 " + outputFile;
                 }
 
                 ProcessStartInfo info = new ProcessStartInfo("ffmpeg.exe",commandline);
@@ -1160,7 +1181,7 @@ namespace raw2cdng_v2
             //Console.WriteLine("Input line: {0} ({1:m:s:fff})", lineCount++, DateTime.Now);
             this.Dispatcher.Invoke((Action)(() =>
             {
-                _lensLabel.Content = e.Data;
+                _actionOutput.Content = e.Data;
             }));
             if (settings.debugLogEnabled) debugging._saveDebug("[ffmpeg]: " + e.Data);
             //Console.WriteLine(e.Data);
@@ -1176,6 +1197,7 @@ namespace raw2cdng_v2
             if (settings.debugLogEnabled) debugging._saveDebug("[ffmpeg]: "+e.Data);
             //Console.WriteLine(e.Data);
         }
+
 
         // ------- EOF ----------
     }

@@ -54,8 +54,14 @@ namespace raw2cdng_v2
         public bool photoRAWe { get; set; }
         public int[] RGGBValues { get; set; }
         public int[] RGBfraction { get; set; }
+        public double jpgConvertR { get; set; }
+        public double jpgConvertG { get; set; }
+        public double jpgConvertB { get; set; }
         public int whiteBalance { get; set; }
         public int whiteBalanceMode { get; set; }
+        public int whiteBalanceGM { get; set; }
+        public int whiteBalanceBA { get; set; }
+
         // variables for blackpoint and maximizing
         public int blackLevelOld { get; set; }
         public int blackLevelNew { get; set; }
@@ -74,6 +80,7 @@ namespace raw2cdng_v2
         public byte[] DNGHeader { get; set; }
         public string version { get; set; }
         public byte[] versionString { get; set; }
+        public string propertiesString { get; set; }
     }
 
     public class audiodata 
@@ -156,6 +163,7 @@ namespace raw2cdng_v2
         public bool chromaSmoothing { get; set; }
         public bool verticalBanding { get; set; }
         public bool proxyJpegs { get; set; }
+
     }
 
  

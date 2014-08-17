@@ -29,6 +29,42 @@ namespace raw2cdng_v2
             return f != null && f.EndsWith(".RAW", StringComparison.Ordinal);
         }
 
+        public static bool isFolder(string f)
+        {
+            bool result = false;
+            FileAttributes attr = File.GetAttributes(@f);
+            if ((attr & FileAttributes.Directory) == FileAttributes.Directory)
+                result = true;
+            else
+                result = false;
+
+            return result; 
+        }
+
+        public static void dirSearch(string sDir, ref List<string> fileList)
+        {
+            try
+            {
+                foreach (string f in Directory.GetFiles(sDir))
+                {
+                    if(isMLV(f)||isRAW(f)) fileList.Add(f);
+                }
+                foreach (string d in Directory.GetDirectories(sDir))
+                {
+                    foreach (string f in Directory.GetFiles(d))
+                    {
+                        if (isMLV(f) || isRAW(f)) fileList.Add(f);
+                    }
+                    dirSearch(d, ref fileList);
+                }
+            }
+            catch (System.Exception excpt)
+            {
+                Console.WriteLine(excpt.Message);
+            }
+        }
+
+
         public static string setFileinfoData(string fn, filedata fd)
         {
             fd.fileName = fn;
@@ -202,25 +238,6 @@ namespace raw2cdng_v2
             string errorString = "";
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] started");
 
-            string PhotoRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + ".CR2";
-            string allRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
-            if (File.Exists(PhotoRAWFile) == true)
-            {
-                mData.data.metaData.photoRAW = true;
-                mData.data.metaData.photoRAWe = false;
-                mData.data.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
-                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
-                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a CR2");
-            }
-            if ((mData.data.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
-            {
-                mData.data.metaData.photoRAW = true;
-                mData.data.metaData.photoRAWe = true;
-                mData.data.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
-                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
-                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a ALL.CR2");
-            }
-
             // get Data from RAWI Block
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading RAWI-Block");
             var RAWI = bList.FirstOrDefault(x => x.blockTag == "RAWI");
@@ -325,6 +342,11 @@ namespace raw2cdng_v2
             fs.Read(WBALArray, 0, WBAL.blockLength);
 
             mData.data.metaData.whiteBalanceMode = BitConverter.ToInt32(new byte[4] { WBALArray[16], WBALArray[17], WBALArray[18], WBALArray[19] }, 0);
+            mData.data.metaData.whiteBalance = BitConverter.ToInt32(new byte[4] { WBALArray[20], WBALArray[21], WBALArray[22], WBALArray[23] }, 0);
+            // RG and AB actually not used.
+            mData.data.metaData.whiteBalanceGM = BitConverter.ToInt32(new byte[4] { WBALArray[20], WBALArray[21], WBALArray[22], WBALArray[23] }, 0);
+            mData.data.metaData.whiteBalanceBA = BitConverter.ToInt32(new byte[4] { WBALArray[20], WBALArray[21], WBALArray[22], WBALArray[23] }, 0);
+
             mData.data.metaData.RGBfraction = new int[6];//{1024,1024,1024,1024,1024,1024};
 
             if (mData.data.metaData.whiteBalanceMode == 8 || mData.data.metaData.whiteBalanceMode < 6)
@@ -343,7 +365,6 @@ namespace raw2cdng_v2
                 // 9 is custom manual kelvin-value
                 if (mData.data.metaData.whiteBalanceMode == 9)
                 {
-                    mData.data.metaData.whiteBalance = BitConverter.ToInt32(new byte[4] { WBALArray[20], WBALArray[21], WBALArray[22], WBALArray[23] }, 0);
                     int nearestVal = 9999;
                     int accordingArray = 0;
                     for (var n = 0; n < dng.whitebalanceManual.Length; n++)
@@ -391,6 +412,32 @@ namespace raw2cdng_v2
                 }
 
             }
+
+            // short break :) override internal wb-data if CR2 is existent.
+            string PhotoRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + mData.data.fileData.fileNameOnly + ".CR2";
+            string allRAWFile = mData.data.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
+            if (File.Exists(PhotoRAWFile) == true)
+            {
+                mData.data.metaData.photoRAW = true;
+                mData.data.metaData.photoRAWe = false;
+                mData.data.metaData.RGGBValues = calc.getRGGBValues(PhotoRAWFile);
+                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is a CR2");
+            }
+            if ((mData.data.metaData.photoRAW != true) && (File.Exists(allRAWFile) == true))
+            {
+                mData.data.metaData.photoRAW = true;
+                mData.data.metaData.photoRAWe = true;
+                mData.data.metaData.RGGBValues = calc.getRGGBValues(allRAWFile);
+                mData.data.metaData.RGBfraction = calc.convertToFraction(mData.data.metaData.RGGBValues);
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] there is an ALL.CR2");
+            }
+
+            // used them only for tests - leaving for further checking..
+            mData.data.metaData.jpgConvertR = (double)mData.data.metaData.RGBfraction[0] / (double)mData.data.metaData.RGBfraction[1];
+            mData.data.metaData.jpgConvertG = (double)mData.data.metaData.RGBfraction[2] / (double)mData.data.metaData.RGBfraction[3];
+            mData.data.metaData.jpgConvertB = (double)mData.data.metaData.RGBfraction[4] / (double)mData.data.metaData.RGBfraction[5];
+
 
             // exposure data from EXPO
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading EXPO-Block");

@@ -656,14 +656,14 @@ namespace raw2cdng_v2
 
             byte[] imageData8 = new byte[halfResx * halfResy * 3];
 
-            int mul = 32;
+            int div = 64;
+            if (convert) div = 65536;
+
             double gamma = 0.5;
             
-            if (convert) mul = 64;
-            
             // basic variables
-            int rowRG = 0;
-            int rowGB = 0;
+            int rowBG = 0;
+            int rowGR = 0;
             int b1 = 0;
             int g1 = 0;
             int g2 = 0;
@@ -675,30 +675,38 @@ namespace raw2cdng_v2
             {
                 for (var x = 0; x < halfResx; x++)
                 {
-                    rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (imageData[rowRG] | imageData[rowRG + 1] << 8) / mul;    // *param.metaData.RGBfraction[4] / param.metaData.RGBfraction[5];
-                    g1 = (imageData[rowRG + 2] | imageData[rowRG + 3] << 8) / mul;// *param.metaData.RGBfraction[2] / param.metaData.RGBfraction[3];
-                    g2 = (imageData[rowGB] | imageData[rowGB + 1] << 8) / mul;    // *param.metaData.RGBfraction[2] / param.metaData.RGBfraction[3];
-                    r1 = (imageData[rowGB + 2] | imageData[rowGB + 3] << 8) / mul;// *param.metaData.RGBfraction[0] / param.metaData.RGBfraction[1];
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)(imageData[rowBG + 2] | imageData[rowBG + 3] << 8);  /// ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)(imageData[rowGR] | imageData[rowGR + 1] << 8); /// ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    
+                    gNew = (g1 + g2) / 2;
 
                     if (convert)
                     {
-                        b1 = (int)((Math.Pow((double)b1 / 256, gamma)) * 256);
-                        g1 = (int)((Math.Pow((double)g1 / 256, gamma)) * 384);
-                        g2 = (int)((Math.Pow((double)g2 / 256, gamma)) * 384);
-                        r1 = (int)((Math.Pow((double)r1 / 256, gamma)) * 256);
+                        b1 = (int)((Math.Pow((double)b1 / div, gamma)) * 256);
+                        gNew = (int)((Math.Pow((double)gNew / div, gamma)) * 256);
+                        //g1 = (int)((Math.Pow((double)g1 / div, gamma)) * 256);
+                        //g2 = (int)((Math.Pow((double)g2 / div, gamma)) * 256);
+                        r1 = (int)((Math.Pow((double)r1 / div, gamma)) * 256);
+                    }
+                    else
+                    {
+                        b1 = (b1 / div);
+                        gNew = (gNew / div);
+                        //g1 = g1 / div;
+                        //g2 = g2 / div;
+                        r1 = (r1 / div);
                     }
                     
-
                     bitmapPos = (x + y * halfResx) * 3;
-
-                    gNew = (g1 + g2)/4;
-
-                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);  //(byte)(((r1*2)>255)?255:(r1*2));
-                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);  //(byte)((((g1+g2)/2)>255)?255:((g1+g2)/2));
-                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);  //(byte)(((b1 * 2) > 255) ? 255 : (b1 * 2));
+                    
+                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
+                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
                 }
             }
             /* ------------------------ this is the debayered pic..

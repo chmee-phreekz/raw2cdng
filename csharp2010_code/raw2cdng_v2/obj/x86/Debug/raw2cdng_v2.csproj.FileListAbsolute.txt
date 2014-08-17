@@ -25,3 +25,5 @@ C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\bin
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Debug\infoWindow.baml
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Debug\infoWindow.g.cs
 C:\Users\chmee\documents\visual studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Debug\raw2cdng_v2.csproj.GenerateResource.Cache
+C:\Users\chmee\Documents\Visual Studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Debug\mlvplay.baml
+C:\Users\chmee\Documents\Visual Studio 2010\Projects\raw2cdng_v2\raw2cdng_v2\obj\x86\Debug\mlvplay.g.cs
