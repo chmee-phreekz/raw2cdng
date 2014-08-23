@@ -27,6 +27,16 @@ namespace raw2cdng_v2
         // -- timertick for _preview
         DispatcherTimer playbackTimer = new DispatcherTimer();
 
+        // for realtime changes
+        int wbP = 0;
+        int wbM = 0;
+        double wbGM = 1;
+        int originalWB = 0;
+        string originalWBText = "";
+        int[] originalFractions = new int[6];
+        int playbackQuality = 0;
+        string output = "";
+
         public mlvplay()
         {
             InitializeComponent();
@@ -98,15 +108,20 @@ namespace raw2cdng_v2
                     // then Framelist
                     importRaw.data.fileData.convertIt = true;
                 }
+                // save file-WB values.
+                originalWB = importRaw.data.metaData.whiteBalance;
+                originalFractions = importRaw.data.metaData.RGBfraction;
+                originalWBText = originalWB + "°K";
 
                 // save all Properties as String
-                importRaw.data.metaData.propertiesString = importRaw.data.metaData.xResolution+"x"+importRaw.data.metaData.yResolution+"px || "+importRaw.data.lensData.isoValue+"ISO | "+importRaw.data.lensData.shutter+" | "+importRaw.data.metaData.whiteBalance+"°K | "+importRaw.data.metaData.fpsString+"fps";
+                importRaw.data.metaData.propertiesString = importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px || " + importRaw.data.lensData.isoValue + "ISO | " + importRaw.data.lensData.shutter + " | " + importRaw.data.metaData.fpsString + "fps";
 
                 // set properties of the window
                 _playback.Width = importRaw.data.metaData.xResolution / 2;
                 _playback.Height = importRaw.data.metaData.yResolution / 2;
                 _playback.Source = null;
                 this.Title = "mlvplay " + importRaw.data.fileData.fileNameOnly;
+                _wbLabel.Content = originalWBText;
                 playbackTimer.Start();
             }
 
@@ -133,12 +148,101 @@ namespace raw2cdng_v2
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    _playback.Source = io.showPicture(r);
-                    _playbackLabel.Content = r.data.metaData.propertiesString+" || "+String.Format("{0:d5}", frame)+" of "+maxFrames;
+                    switch (playbackQuality % 4)
+                    {
+                        case 0:
+                            _playback.Source = io.showPicture(r,quality.high709);
+                            output = "HQ 709";
+                            break;
+                        case 1:
+                            _playback.Source = io.showPicture(r,quality.highgamma2);
+                            output = "HQ gamma 2.0";
+                            break;
+                        case 2:
+                            _playback.Source = io.showPicture(r,quality.lowmullim);
+                            output = "LQ mul/lim";
+                            break;
+                        case 3:
+                            _playback.Source = io.showPicture(r,quality.lowgrey);
+                            output = "LQ grey";
+                            break;
+
+                        default:
+                            break;
+                    }
+                    _playbackLabel.Content = r.data.metaData.propertiesString;
+                    _fpsLabel.Content = String.Format("{0:d5}", frame) + " of " + maxFrames;
+                    _qualityLabel.Content = output;
+                    _wbLabel.Content = originalWBText;
                     //_playbackProgressBar.Margin = new Thickness(progressPosX, 0, 0, 0);
                     _playback.InvalidateVisual();
                     _playbackLabel.InvalidateVisual();
+                    _fpsLabel.InvalidateVisual();
                 }));
+            }
+        }
+
+        private void Window_KeyUp(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.O:
+                    wbGM = 1;
+                    importRaw.data.metaData.RGBfraction = originalFractions;
+                    importRaw.data.metaData.whiteBalance = originalWB;
+                    originalWBText = "(whitebalance from filedata) "+originalWB+"°K";
+                    // revert to WB-filevalues..
+                    break;
+                case Key.P:
+                    wbP+=1;
+                    wbGM = 1;
+                    if (wbP > 5) wbP = 0;
+                    importRaw.data.metaData.RGBfraction = calc.convertToFraction(new int[]{dng.whitebalancePresets[wbP][1],dng.whitebalancePresets[wbP][2],dng.whitebalancePresets[wbP][3],dng.whitebalancePresets[wbP][4]});
+                    importRaw.data.metaData.whiteBalance = dng.whitebalancePresets[wbP][0];
+                    originalWBText = "preset WB "+importRaw.data.metaData.whiteBalance+"°K";
+                    // change to presets    
+                    break;
+                case Key.Right:
+                    wbM += 1;
+                    if (wbM == dng.whitebalanceManual.Length) wbM = 0;
+                    importRaw.data.metaData.RGBfraction = calc.convertToFraction(new int[]{dng.whitebalanceManual[wbM][1],dng.whitebalanceManual[wbM][2],dng.whitebalanceManual[wbM][3],dng.whitebalanceManual[wbM][4]});
+                    importRaw.data.metaData.whiteBalance = dng.whitebalanceManual[wbM][0];
+                    originalWBText = "manual WB "+importRaw.data.metaData.whiteBalance+"°K";
+                    // increment manual wb    
+                    break;
+                case Key.Left:
+                    wbM -= 1;
+                    if (wbM < 0) wbM = dng.whitebalanceManual.Length-1;
+                    importRaw.data.metaData.RGBfraction = calc.convertToFraction(new int[]{dng.whitebalanceManual[wbM][1],dng.whitebalanceManual[wbM][2],dng.whitebalanceManual[wbM][3],dng.whitebalanceManual[wbM][4]});
+                    importRaw.data.metaData.whiteBalance = dng.whitebalanceManual[wbM][0];
+                    originalWBText = "manual WB "+importRaw.data.metaData.whiteBalance+"°K";
+                    // decrement manual wb    
+                    break;
+                case Key.Up:
+                    if(wbGM<1.25) wbGM+=0.01;
+                    importRaw.data.metaData.RGBfraction = calc.convertToFraction(new int[] { (int)(dng.whitebalanceManual[wbM][1] * wbGM), (int)(dng.whitebalanceManual[wbM][2]/wbGM), (int)(dng.whitebalanceManual[wbM][3]/wbGM), (int)(dng.whitebalanceManual[wbM][4] *wbGM) });
+                    importRaw.data.metaData.whiteBalance = dng.whitebalanceManual[wbM][0];
+                    originalWBText = "manual WB " + importRaw.data.metaData.whiteBalance + "°K + GM-Shift %"+wbGM;
+                    // add gm-shift   
+                    break;
+                case Key.Down:
+                    if(wbGM>0.80) wbGM-=0.01;
+                    importRaw.data.metaData.RGBfraction = calc.convertToFraction(new int[] { (int)(dng.whitebalanceManual[wbM][1] * wbGM), (int)(dng.whitebalanceManual[wbM][2] / wbGM), (int)(dng.whitebalanceManual[wbM][3] / wbGM), (int)(dng.whitebalanceManual[wbM][4] * wbGM) });
+                    importRaw.data.metaData.whiteBalance = dng.whitebalanceManual[wbM][0];
+                    originalWBText = "manual WB " + importRaw.data.metaData.whiteBalance + "°K + GM-Shift %" + wbGM;
+                    // sub gm-shift    
+                    break;
+                case Key.Q:
+                    playbackQuality++;
+                    // change Quality on Q
+                    break;
+                case Key.X:
+                    Application.Current.Shutdown();
+                    // close on X
+                    break;
+                default:
+                    break;
+
             }
         }
     }

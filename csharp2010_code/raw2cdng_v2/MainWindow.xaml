@@ -73,7 +73,7 @@
         <ListView Height="400" HorizontalAlignment="Left" Margin="8,71,0,0" Name="_batchList" VerticalAlignment="Top" Width="550" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" HorizontalContentAlignment="Center">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="do" Width="22" CellTemplate="{StaticResource CheckBoxCell}" DisplayMemberBinding="{Binding do}"/>
+                    <GridViewColumn Header="do" Width="22" CellTemplate="{StaticResource CheckBoxCell}" DisplayMemberBinding="{Binding convert}"/>
                     <GridViewColumn Header="type" Width="36" DisplayMemberBinding="{Binding type}" />
                     <GridViewColumn Header="filename" Width="120" DisplayMemberBinding="{Binding filename}"/>
                     <GridViewColumn Header="files" Width="36" DisplayMemberBinding="{Binding files}"/>

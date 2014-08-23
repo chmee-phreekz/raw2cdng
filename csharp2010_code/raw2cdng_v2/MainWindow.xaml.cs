@@ -269,7 +269,7 @@ namespace raw2cdng_v2
                     {
                         _batchList.Items.Add(new lvItem
                         {
-                            //convert = true,
+                            convert = new CheckBox(),
                             type = importRaw.data.metaData.isMLV ? "MLV" : "RAW",
                             filename = importRaw.data.fileData.fileNameOnly,
                             files = importRaw.data.metaData.splitCount.ToString(),
@@ -748,7 +748,7 @@ namespace raw2cdng_v2
                 // maybe deleting the if
 
                 // read picture and show
-                WriteableBitmap im = io.showPicture(rawFiles[item]);
+                WriteableBitmap im = io.showPicture(rawFiles[item],quality.high709);
                 _preview.Source = im;
                 _lensLabel.Content = String.Format(
                     "{0} | {1} | ISO{2} | f/{3} | {4}°K",
@@ -939,7 +939,7 @@ namespace raw2cdng_v2
 
         public class lvItem
         {
-            public bool convert { get; set; }
+            public CheckBox convert { get; set; }
             public string type { get; set; }
             public string filename { get; set; }
             public string files { get; set; }
@@ -996,7 +996,7 @@ namespace raw2cdng_v2
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    _preview.Source = io.showPicture(r);
+                    _preview.Source = io.showPicture(r,quality.lowmullim);
                     _lensLabel.Content = String.Format("{0:d5}", frame);
                     _previewProgressBar.Margin = new Thickness(progressPosX, 243, 0, 0);
                     _preview.InvalidateVisual();

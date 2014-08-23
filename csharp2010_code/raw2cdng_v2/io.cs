@@ -720,7 +720,7 @@ namespace raw2cdng_v2
             return param.rawData;
         }
 
-        public static WriteableBitmap showPicture(raw rawFile)
+        public static WriteableBitmap showPicture(raw rawFile, quality quality)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");
 
@@ -737,14 +737,27 @@ namespace raw2cdng_v2
                 imageArray = io.readRAW(rawFile.data);
             }
 
-            return calc.doBitmap(calc.to16(imageArray, rawFile.data), rawFile.data,false);
+            switch (quality)
+            {
+                case raw2cdng_v2.quality.lowgrey:
+                    return calc.doBitmapLQgrey(calc.to16(imageArray, rawFile.data), rawFile.data);
+                case raw2cdng_v2.quality.lowmullim:
+                    return calc.doBitmapLQmullim(calc.to16(imageArray, rawFile.data), rawFile.data);
+                case raw2cdng_v2.quality.highgamma2:
+                    return calc.doBitmapHQ(calc.to16(imageArray, rawFile.data), rawFile.data);
+                case raw2cdng_v2.quality.high709:
+                    return calc.doBitmapHQ709(calc.to16(imageArray, rawFile.data), rawFile.data);
+                default:
+                    return calc.doBitmapLQmullim(calc.to16(imageArray, rawFile.data), rawFile.data);
+            }
         }
+
 
         public static void saveProxy(data r, byte[] imageArray)
         {
             //if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
 
-            BitmapSource bitmapsource = calc.doBitmap(imageArray, r, true);
+            BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
             BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
 
             String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 

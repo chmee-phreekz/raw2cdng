@@ -1,10 +1,13 @@
 ﻿<Window x:Class="raw2cdng_v2.mlvplay"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="mlvplay" Height="166" Width="150" SizeToContent="WidthAndHeight">
+        Title="mlvplay" Height="166" Width="150" SizeToContent="WidthAndHeight" KeyUp="Window_KeyUp">
     <Grid>
         <Image Height="128" HorizontalAlignment="Left" Name="_playback" Stretch="Fill" VerticalAlignment="Top" Width="128" Source="/raw2cdng_v2;component/appicon.ico" />
         <Label Content="" Height="24" HorizontalAlignment="Left" Margin="0,0,0,0" Name="_playbackLabel" VerticalAlignment="Top" Background="#7FFFFFFF" FontSize="10" />
+        <Label Content="" Height="24" HorizontalAlignment="Right" Margin="0,0,0,0" Name="_fpsLabel" VerticalAlignment="Top" Background="#7FFFFFFF" FontSize="10" />
+        <Label Content="" Height="24" HorizontalAlignment="Left" Margin="0,0,0,0" Name="_wbLabel" VerticalAlignment="Bottom" Background="#7FFFFFFF" FontSize="10" />
+        <Label Content="" Height="24" HorizontalAlignment="Right" Margin="0,0,0,0" Name="_qualityLabel" VerticalAlignment="Bottom" Background="#7FFFFFFF" FontSize="10" />
         <Rectangle Height="8" HorizontalAlignment="Left" Margin="0,8,0,0" Name="_playbackProgressBar" Stroke="Green" VerticalAlignment="Top" Width="1" />
 
     </Grid>

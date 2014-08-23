@@ -9,6 +9,13 @@ using System.Threading;
 
 namespace raw2cdng_v2
 {
+    public enum quality
+    {
+        lowgrey = 0,
+        lowmullim = 1,
+        highgamma2 = 2,
+        high709 =3
+    }
     public class raw
     {
         public data data { get; set; }

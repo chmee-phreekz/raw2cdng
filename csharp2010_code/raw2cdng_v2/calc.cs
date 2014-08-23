@@ -647,8 +647,7 @@ namespace raw2cdng_v2
         }
 
         // --- preview helper ---
-
-        public static WriteableBitmap doBitmap(byte[] imageData, data param, bool convert)
+        public static WriteableBitmap doBitmapLQgrey(byte[] imageData, data param)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
@@ -657,10 +656,7 @@ namespace raw2cdng_v2
             byte[] imageData8 = new byte[halfResx * halfResy * 3];
 
             int div = 64;
-            if (convert) div = 65536;
 
-            double gamma = 0.5;
-            
             // basic variables
             int rowBG = 0;
             int rowGR = 0;
@@ -669,7 +665,7 @@ namespace raw2cdng_v2
             int g2 = 0;
             int r1 = 0;
             int bitmapPos = 0;
-            int gNew = 0;
+            double grey = 0;
 
             for (var y = 0; y < halfResy; y++)
             {
@@ -679,34 +675,20 @@ namespace raw2cdng_v2
                     rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
                     b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)(imageData[rowBG + 2] | imageData[rowBG + 3] << 8);  /// ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)(imageData[rowGR] | imageData[rowGR + 1] << 8); /// ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
                     r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
-                    
-                    gNew = (g1 + g2) / 2;
 
-                    if (convert)
-                    {
-                        b1 = (int)((Math.Pow((double)b1 / div, gamma)) * 256);
-                        gNew = (int)((Math.Pow((double)gNew / div, gamma)) * 256);
-                        //g1 = (int)((Math.Pow((double)g1 / div, gamma)) * 256);
-                        //g2 = (int)((Math.Pow((double)g2 / div, gamma)) * 256);
-                        r1 = (int)((Math.Pow((double)r1 / div, gamma)) * 256);
-                    }
-                    else
-                    {
-                        b1 = (b1 / div);
-                        gNew = (gNew / div);
-                        //g1 = g1 / div;
-                        //g2 = g2 / div;
-                        r1 = (r1 / div);
-                    }
-                    
+                    // coeffs taken from rgb->y(uv) conversion
+                    grey = (g1 + g2) / 2 * 0.11 + b1*0.59 + r1*0.30;
+                    grey = (grey / div);
+                    grey = (byte)((grey > 255) ? 255 : grey);
+
                     bitmapPos = (x + y * halfResx) * 3;
                     
-                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
-                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
-                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                    imageData8[bitmapPos] = (byte)grey;
+                    imageData8[bitmapPos + 1] = (byte)grey;
+                    imageData8[bitmapPos + 2] = (byte)grey;
                 }
             }
             /* ------------------------ this is the debayered pic..
@@ -755,10 +737,201 @@ namespace raw2cdng_v2
                 //imageData8[bmPos + 1] = (byte)(greyValue * gMul);
                 //imageData8[bmPos + 2] = (byte)(greyValue * bMul);
             }*/
-        
+
+            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
+
+            //imageData8 = null;
+            return wbm;
+        }
+
+        public static WriteableBitmap doBitmapLQmullim(byte[] imageData, data param)
+        {
+            int halfResx = param.metaData.xResolution / 2;
+            int halfResy = param.metaData.yResolution / 2;
+            int whole = halfResx * halfResy;
+
+            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+
+            int div = 64;
+
+            // basic variables
+            int rowBG = 0;
+            int rowGR = 0;
+            int b1 = 0;
+            int g1 = 0;
+            int g2 = 0;
+            int r1 = 0;
+            int bitmapPos = 0;
+            int gNew = 0;
+
+            for (var y = 0; y < halfResy; y++)
+            {
+                for (var x = 0; x < halfResx; x++)
+                {
+                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    
+                    gNew = (g1 + g2) / 2;
+
+                        b1 = (b1 / div);
+                        gNew = (gNew / div);
+                        r1 = (r1 / div);
+                    
+                    bitmapPos = (x + y * halfResx) * 3;
+                    
+                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
+                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                }
+            }
             WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
             wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3*halfResx, 0);
             
+            //imageData8 = null;
+            return wbm;
+        }
+
+        public static WriteableBitmap doBitmapHQ(byte[] imageData, data param)
+        {
+            int halfResx = param.metaData.xResolution / 2;
+            int halfResy = param.metaData.yResolution / 2;
+            int whole = halfResx * halfResy;
+
+            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+
+            int div = 65536;
+
+            double gamma = 0.5;
+
+            // basic variables
+            int rowBG = 0;
+            int rowGR = 0;
+            int b1 = 0;
+            int g1 = 0;
+            int g2 = 0;
+            int r1 = 0;
+            int bitmapPos = 0;
+            int gNew = 0;
+
+            for (var y = 0; y < halfResy; y++)
+            {
+                for (var x = 0; x < halfResx; x++)
+                {
+                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+
+                    gNew = (g1 + g2) / 2;
+
+                        b1 = (int)((Math.Pow((double)b1 / div, gamma)) * 256);
+                        gNew = (int)((Math.Pow((double)gNew / div, gamma)) * 256);
+                        //g1 = (int)((Math.Pow((double)g1 / div, gamma)) * 256);
+                        //g2 = (int)((Math.Pow((double)g2 / div, gamma)) * 256);
+                        r1 = (int)((Math.Pow((double)r1 / div, gamma)) * 256);
+                    bitmapPos = (x + y * halfResx) * 3;
+
+                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
+                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                }
+            }
+            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
+
+            //imageData8 = null;
+            return wbm;
+        }
+
+        public static WriteableBitmap doBitmapHQ709(byte[] imageData, data param)
+        {
+            int halfResx = param.metaData.xResolution / 2;
+            int halfResy = param.metaData.yResolution / 2;
+            int whole = halfResx * halfResy;
+
+            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+
+            int div = 65536;
+
+            
+            // basic variables
+            int rowBG = 0;
+            int rowGR = 0;
+            double b1 = 0;
+            double g1 = 0;
+            double g2 = 0;
+            double r1 = 0;
+            int bitmapPos = 0;
+            double gNew = 0;
+
+            for (var y = 0; y < halfResy; y++)
+            {
+                for (var x = 0; x < halfResx; x++)
+                {
+                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+
+                    b1 = (imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]);
+                    g1 = (imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                    g2 = (imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                    r1 = (imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]);
+
+                    gNew = (g1 + g2) / 2;
+
+                    b1 = b1 / div;
+                    gNew = gNew / div;
+                    r1 = r1 / div;
+
+                    if (b1 < 0.018)
+                    {
+                        b1 = b1 * 4.5;
+                    }
+                    else
+                    {
+                        b1 = Math.Pow((b1 * 1.099), 0.45) - 0.099;
+                    }
+        
+                    if (gNew < 0.018)
+                    {
+                        gNew = gNew * 4.5;
+                    }
+                    else
+                    {
+                        gNew = Math.Pow((gNew * 1.099), 0.45) - 0.099;
+                    }
+                    
+                    if (r1 < 0.018)
+                    {
+                        r1 = r1 * 4.5;
+                    }
+                    else
+                    {
+                        r1 = Math.Pow((r1 * 1.099), 0.45) - 0.099;
+                    }
+
+                    r1 = r1 * 256;
+                    gNew = gNew * 256;
+                    b1 = b1 * 256;
+
+                    bitmapPos = (x + y * halfResx) * 3;
+
+                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
+                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                }
+            }
+            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
+
             //imageData8 = null;
             return wbm;
         }

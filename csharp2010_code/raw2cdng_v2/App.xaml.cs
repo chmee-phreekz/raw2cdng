@@ -17,13 +17,13 @@ namespace raw2cdng_v2
         //Add this method override
         protected void Application_Startup(object sender, StartupEventArgs e)
         {
-            debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
+            //debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
 
             string[] clArgs = e.Args;
 
             if (clArgs.Length == 1)
             {
-                debugging._saveDebug("[app.xaml.cs][startup] -- you wanna play a video?");
+                //debugging._saveDebug("[app.xaml.cs][startup] -- you wanna play a video?");
 
                 string file = clArgs[0];
                 /*                
