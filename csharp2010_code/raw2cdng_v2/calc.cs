@@ -23,7 +23,7 @@ namespace raw2cdng_v2
         public static int zero = 0;
         public static int full = 65535;
 
-        public static void reinitRAWEVArrays(int black, int white)
+        public static void calcRAWEV_Arrays(int black, int white)
         {
             for (var i = 0; i < 65536; i++) calc.raw2ev[i] = (int)(Math.Log(Math.Max(1, i - black))/Math.Log(2) * EV_RESOLUTION) ;
             for (var i = -10*EV_RESOLUTION; i < 0; i++)
@@ -45,6 +45,10 @@ namespace raw2cdng_v2
         }
 
         // --- bitdepth conversion ---
+        // 5DIII valuerange
+        // 14bit original - 2048-15.000 = ~12.900
+        // 16bit - 8192-60.000 - maximized 0-65535
+        // 12bit - 512-3750 = ~3.200 - maximized 0-4095 (
 
         public static byte[] to16(byte[] source, data rData)
         {
@@ -156,11 +160,7 @@ namespace raw2cdng_v2
             return Dest;
         }
 
-        // 5DIII valuerange
-        // 14bit original - 2048-15.000 = ~12.900
-        // 16bit - 8192-60.000 - maximized 0-65535
-        // 12bit - 512-3750 = ~3.200 - maximized 0-4095 (
-        
+        // not used anymore, because all adjuster work with 16bit values
         public static byte[] from16to12(byte[] source, data rData)
         {
             // preparing variables
@@ -500,7 +500,7 @@ namespace raw2cdng_v2
             
             // thats the value green and red/blue drifts in bmcc-premiere code.
             int whitelevel = 42000;
-            double maxRange = 1.8;
+            //double maxRange = 1.8;
 
             for (var y = 0; y < halfResy; y++)
             {
@@ -521,18 +521,19 @@ namespace raw2cdng_v2
                     //if (g1 > whitelevel) g1 = whitelevel; // whitelevel + (g1 - whitelevel) * 2;
                     //if (g2 > whitelevel) g2 = whitelevel; // whitelevel + (g2 - whitelevel) * 2;
                     if (b1 > whitelevel) b1 = whitelevel;
-
+/*
                     // ------- tried to higher the output, but gets pink, assume of overflow
                     r1 = (int)(r1 * (double)maxRange);
                     g1 = (int)(g1 * (double)maxRange);
                     g2 = (int)(g2 * (double)maxRange);
                     b1 = (int)(b1 * (double)maxRange);
+
                     // --- so simply doin a check on overflow
                     if(r1>65535)r1=65535;
                     if(g1>65535)g1=65535;
                     if(g2>65535)g2=65535;
                     if(b1>65535)b1=65535;
- 
+ */
                     pic[rowRG] = (byte)(r1 & 0xff);
                     pic[rowRG + 1] = (byte)(r1 >> 8);
                     pic[rowRG + 2] = (byte)(g1 & 0xff);
@@ -546,14 +547,61 @@ namespace raw2cdng_v2
             return pic;
         }
 
-        public static double[] calcVerticalCoeefs(byte[] picIn)
+        public static double[] calcVerticalBandingCoeff(byte[] pic, raw r)
         {
-            double[] coeffs = new double[8];
-            /*
-            compute Histograms
-            compute median correction factor
-            decide if correction needed (save it in coeffs[8])
-            */
+            int halfResx = r.data.metaData.xResolution / 2;
+            int halfResy = r.data.metaData.yResolution / 2;
+
+            double[] coeffs = new double[9];
+            int[][] histogram = new int[8][];
+            int column = 0;
+            for (var i = 0; i < 8; i++) histogram[i] = new int[65536];
+
+            // -- compute Histograms
+            // 8 histograms , assume green is enough
+            for (var x = 0; x < halfResy; x++)
+            {
+                column = (x*2) %  8;
+                for (var y = 0; y < halfResy; y++)
+                {
+                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
+                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+
+                    //int r1 = (pic[rowRG] | pic[rowRG + 1] << 8);
+                    int gOdd = (pic[rowRG + 2] | pic[rowRG + 3] << 8);
+                    int gEven = (pic[rowGB] | pic[rowGB + 1] << 8);
+                    //int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
+                    histogram[column][gEven]++;
+                    histogram[column+1][gOdd]++;
+                }
+            }
+
+            // calculate median per readout-channel (not rgb)
+            int[] median = new int[8];
+            double[] d_median = new double[8];
+            for (int i = 0; i < 8; i++)
+            {
+                median[i] = 0;
+                foreach (int value in histogram[i]) median[i] += value;
+                d_median[i] = (double)median[i] / (double)65536;
+            }
+
+            // find most frequent Value
+            // assuming this is the base value to be corrected to
+            double frequentVal = d_median.GroupBy(item => item).OrderByDescending(g => g.Count()).Select(g => g.Key).First();
+            
+            // -- compute median correction factor
+            // look for histogram difference
+            for (int i = 0; i < 8; i++) coeffs[i] = d_median[i] / frequentVal;
+            
+            // -- decide if correction needed 
+            // if any value differs more than 0.01
+            coeffs[8] = 0;
+            for (int i = 0; i < 8; i++) if (Math.Abs(coeffs[i] - 1) > 0.01) coeffs[8] = 1;
+
+            // finally draw a histogram as bitmap
+            r.histogram = createHistogramBMP(histogram[0]);
+
             return coeffs;
         }
 
@@ -674,10 +722,10 @@ namespace raw2cdng_v2
                     rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
 
                     // coeffs taken from rgb->y(uv) conversion
                     grey = (g1 + g2) / 2 * 0.11 + b1*0.59 + r1*0.30;
@@ -772,10 +820,10 @@ namespace raw2cdng_v2
                     rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
                     
                     gNew = (g1 + g2) / 2;
 
@@ -826,10 +874,10 @@ namespace raw2cdng_v2
                     rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
+                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
+                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
 
                     gNew = (g1 + g2) / 2;
 
@@ -857,12 +905,8 @@ namespace raw2cdng_v2
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
             int whole = halfResx * halfResy;
-
             byte[] imageData8 = new byte[halfResx * halfResy * 3];
 
-            int div = 65536;
-
-            
             // basic variables
             int rowBG = 0;
             int rowGR = 0;
@@ -880,53 +924,26 @@ namespace raw2cdng_v2
                     rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
                     rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
 
-                    b1 = (imageData[rowBG] | imageData[rowBG + 1] << 8) / ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]);
-                    g1 = (imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
-                    g2 = (imageData[rowGR] | imageData[rowGR + 1] << 8) / ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
-                    r1 = (imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]);
+                    b1 = (imageData[rowBG] | imageData[rowBG + 1] << 8) / param.metaData.wb_B; // ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]);
+                    g1 = (imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                    g2 = (imageData[rowGR] | imageData[rowGR + 1] << 8) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                    r1 = (imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / param.metaData.wb_R; // ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]);
 
-                    gNew = (g1 + g2) / 2;
+                    gNew = (g1 + g2)/2;
 
-                    b1 = b1 / div;
-                    gNew = gNew / div;
-                    r1 = r1 / div;
+                    if (r1 > 65535) r1 = 65535;
+                    if (gNew > 65535) gNew = 65535;
+                    if (b1 > 65535) b1 = 65535;
 
-                    if (b1 < 0.018)
-                    {
-                        b1 = b1 * 4.5;
-                    }
-                    else
-                    {
-                        b1 = Math.Pow((b1 * 1.099), 0.45) - 0.099;
-                    }
-        
-                    if (gNew < 0.018)
-                    {
-                        gNew = gNew * 4.5;
-                    }
-                    else
-                    {
-                        gNew = Math.Pow((gNew * 1.099), 0.45) - 0.099;
-                    }
-                    
-                    if (r1 < 0.018)
-                    {
-                        r1 = r1 * 4.5;
-                    }
-                    else
-                    {
-                        r1 = Math.Pow((r1 * 1.099), 0.45) - 0.099;
-                    }
-
-                    r1 = r1 * 256;
-                    gNew = gNew * 256;
-                    b1 = b1 * 256;
+                    r1 = calc.Rec709[(int)r1];
+                    gNew = calc.Rec709[(int)gNew];
+                    b1 = calc.Rec709[(int)b1];
 
                     bitmapPos = (x + y * halfResx) * 3;
 
-                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
-                    imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
-                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                    imageData8[bitmapPos] = (byte)r1;
+                    imageData8[bitmapPos + 1] = (byte)gNew;
+                    imageData8[bitmapPos + 2] = (byte)b1;
                 }
             }
             WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
@@ -936,8 +953,74 @@ namespace raw2cdng_v2
             return wbm;
         }
 
+        public static WriteableBitmap createHistogramBMP(int[] h, int x=256, int y=128)
+        {
+            byte[] imageData8 = new byte[256 * 128 * 3];
+            int[] mergeHist = new int[256];
+            int column = -1;
+
+            // first squeeze from 16^2 to 8^2 fields
+            for (int n = 0; n < 65536; n++)
+            {
+                if (n % 258 == 0)
+                {
+                    //if(n!=0) mergeHist[column] = (int)(mergeHist[column] / 256);
+                    column++;
+                }
+                else
+                {
+                    mergeHist[column] += h[n];
+                }
+            }
+            // rescale histogram logarithmic because of massive values
+            for (int n = 0; n < 256; n++) mergeHist[n] = (int)(Math.Log(mergeHist[n])*33);
+
+            //find maxval
+              int maxval = 0;
+            foreach (int v in mergeHist) if (v > maxval) maxval = v;
+            // factor to change inputdata to outputdata
+            double ySqueeze = 128 / (double)maxval;
+
+            // for simplicity, fill bmp with black
+            int bitmapPos; 
+            for (int pos = 0; pos < imageData8.Length; pos++) imageData8[pos] = 255;
+            // set the ELV lines
+            for (int elv = 0; elv < 8; elv++)
+            {
+                int dx = (1 << elv) - 1;
+                for (int dy = 0; dy < 128; dy++)
+                {
+                    bitmapPos = (dx + dy * 256) * 3;
+                    // e0ffe0
+                    imageData8[bitmapPos] = 0xb0;
+                    imageData8[bitmapPos + 1] = 0xcf;
+                    imageData8[bitmapPos + 2] = 0xb0;
+                }
+            }
+            byte colmul = 1;
+            // now draw the data into the bitmap
+            for (int dx=0; dx<256; dx++)
+            {
+                colmul = 0;
+                if (dx < 6 || dx > 245) colmul = 1;
+                for (int dy = 0; dy < 128; dy++)
+                {
+                    bitmapPos = (dx + (127-dy)*256) * 3;
+                    
+                    if ((mergeHist[dx]*ySqueeze) > dy)
+                    {
+                        imageData8[bitmapPos] = (byte)(0);
+                        imageData8[bitmapPos + 1] = (byte)(0);
+                        imageData8[bitmapPos + 2] = (byte)(255*colmul);
+                    }
+                }
+            }
+            WriteableBitmap wbm = new WriteableBitmap(256, 128, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, 256, 128), imageData8, 3 * 256, 0);
+            return wbm;
+        }
+
         // --- dng-tag helper ---
-        
         public static string setFilenameShort(string t)
         {
             t = Regex.Replace(t, @"[^0-9A-Za-z]+", "");
@@ -1101,12 +1184,8 @@ namespace raw2cdng_v2
 
         public static string frameToTC_s(int frame, double framerate)
         {
-            int frames = frame % (int)Math.Round(framerate);
-            int seconds = (int)Math.Floor((double)frame / framerate) % 60;
-            int minutes = (int)Math.Floor((double)frame / framerate / 60);
-            int hours = (int)Math.Floor((double)frame / framerate / 1440);
-            return String.Format("{0:d2}",(byte)hours)+":"+String.Format("{0:d2}",(byte)minutes)+":"+String.Format("{0:d2}",(byte)seconds)+":"+String.Format("{0:d2}",(byte)frames);
-
+            byte[] tc = frameToTC_b(frame, framerate);
+            return String.Format("{0:d2}",(byte)tc[0])+":"+String.Format("{0:d2}",(byte)tc[1])+":"+String.Format("{0:d2}",(byte)tc[2])+":"+String.Format("{0:d2}",(byte)tc[3]);
         }
 
         public static byte[] changeTimeCode(byte[] header, int frame, int offset, int framerate, bool dropFrame)
@@ -1128,13 +1207,21 @@ namespace raw2cdng_v2
             return header;
         }
 
-        public static double creationTime2Frame(DateTime dt, double framerate)
+        public static double dateTime2Frame(DateTime dt, double framerate)
         {
             TimeSpan ts = new TimeSpan(dt.Hour,dt.Minute,dt.Second);
             return ts.TotalSeconds* framerate;
         }
 
         // --- Helper ---
+
+        public static void setListviewStrings(raw r)
+        {
+            r.ListviewTitle = r.data.fileData.parentSourcePath + " / "+r.data.fileData.fileNameOnly+" - "+r.data.metaData.duration+(r.data.audioData.hasAudio?" (with Audio)":"");
+            r.ListviewPropA = r.data.metaData.modell + " | " + r.data.metaData.xResolution + "x" + r.data.metaData.yResolution + "px @ " + r.data.metaData.fpsString + "fps";
+            r.ListviewPropB = r.data.metaData.whiteBalance.ToString() + "°K | "+dng.WBpreset[r.data.metaData.whiteBalanceMode] +" - " + r.data.metaData.frames.ToString() + " frames in " + r.data.metaData.splitCount + (r.data.metaData.isMLV ? " mlv" : " raw") + (r.data.metaData.splitCount > 1 ? "-files" : "-file");
+            r.ListviewPropC = "recorded " +r.data.fileData.modificationTime +" - TC "+ calc.frameToTC_s((int)calc.dateTime2Frame(r.data.fileData.modificationTime, r.data.metaData.fpsNom / r.data.metaData.fpsDen), (r.data.metaData.fpsNom / r.data.metaData.fpsDen)); 
+        }
 
         public static byte setConvertedTC(int orig, bool dropFrame)
         {
@@ -1208,7 +1295,8 @@ namespace raw2cdng_v2
             return Dest;
         }
 
-        // helper written by ml-community
+        // ----- helper written by ml-community
+        // fpr chroma smoothing
 
         public static int opt_med5(ref int[] p)
         {
@@ -1238,5 +1326,30 @@ namespace raw2cdng_v2
         {
             return Math.Max(Math.Min(x, hi), lo);
         }
+
+        // ----- LUTS for faster playback and jpg-conversion
+ 
+        public static int[] Rec709 = new int[130000];
+
+        public static void calculatetRec709LUT()
+        {
+            double temp = 0;
+            for (int n = 0; n < Rec709.Length; n++)
+            {
+                temp = (double)n/65535;
+                if (temp < 0.018)
+                {
+                    temp = temp * 4.5;
+                }
+                else
+                {
+                    temp = Math.Pow((temp * 1.099), 0.45) - 0.099;
+                }
+                if (temp > 1) temp = 1;
+
+                Rec709[n] = (int)(temp * 255) ;
+            }
+        }
+
     }
 }

@@ -72,6 +72,8 @@ namespace raw2cdng_v2
             fd.sourcePath = Path.GetDirectoryName(fn);
             fd.fileNameShort = calc.setFilenameShort(fd.fileNameOnly);
             fd.fileNameNum = calc.setFilenameNum(fd.fileNameOnly);
+            fd.parentSourcePath = fd.sourcePath.Split(Path.DirectorySeparatorChar).Last();
+                    
             fd.outputFilename = "";
             if (debugging.debugLogEnabled) debugging._saveDebug("[setFileinfoData] set/changed Filedata");
             string errorString = "";
@@ -98,8 +100,7 @@ namespace raw2cdng_v2
                 }
             }
             // iterate thru all files
-            // and
-            // put into list
+            // and put the vidfblocks it into list
             if (debugging.debugLogEnabled) debugging._saveDebug("[createMLVBlocklist] splitFiles counted ("+raw.data.metaData.splitCount+")");
 
             long offset;
@@ -116,7 +117,7 @@ namespace raw2cdng_v2
                 FileInfo fi = new FileInfo(fn);
                 FileStream fs = fi.OpenRead();
                 long fl = fs.Length;
-                while ((fl - offset) >= 0)
+                while ( ((fl - offset) > 0) && (offset>=0) && (bl>=0) )
                 {
                     try
                     {
@@ -139,10 +140,11 @@ namespace raw2cdng_v2
                         if (debugging.debugLogEnabled)
                         {
                             debugging._saveDebug("[createMLVBlocklist] --- exception(!) --- ");
+                            debugging._saveDebug("[createMLVBlocklist] maybe you ve lost some frames.");
                             debugging._saveDebug("[createMLVBlocklist] blockTag|offset|fileNo : " + Encoding.ASCII.GetString(new byte[4] { chunk[0], chunk[1], chunk[2], chunk[3] })+"|"+offset.ToString()+"|"+j.ToString());
                             debugging._saveDebug(debugging.getExceptionDetails(e));
                         }
-                        throw;
+                        //throw;
                     }
 
                 }
@@ -298,6 +300,9 @@ namespace raw2cdng_v2
             mData.data.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { MLVIArray[44], MLVIArray[45], MLVIArray[46], MLVIArray[47] }, 0);
             mData.data.metaData.fpsDen = BitConverter.ToInt32(new byte[4] { MLVIArray[48], MLVIArray[49], MLVIArray[50], MLVIArray[51] }, 0);
             mData.data.metaData.dropFrame = false;
+            
+            //small exception: if fps is lower than 1fps, set it to 1fps. for functional TC. 
+            if (mData.data.metaData.fpsNom < 1000) mData.data.metaData.fpsNom = 1000;
 
             Single fps_out = (Single)mData.data.metaData.fpsNom / (Single)mData.data.metaData.fpsDen;
             mData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
@@ -434,9 +439,9 @@ namespace raw2cdng_v2
             }
 
             // used them only for tests - leaving for further checking..
-            mData.data.metaData.jpgConvertR = (double)mData.data.metaData.RGBfraction[0] / (double)mData.data.metaData.RGBfraction[1];
-            mData.data.metaData.jpgConvertG = (double)mData.data.metaData.RGBfraction[2] / (double)mData.data.metaData.RGBfraction[3];
-            mData.data.metaData.jpgConvertB = (double)mData.data.metaData.RGBfraction[4] / (double)mData.data.metaData.RGBfraction[5];
+            mData.data.metaData.wb_R = (double)mData.data.metaData.RGBfraction[0] / (double)mData.data.metaData.RGBfraction[1];
+            mData.data.metaData.wb_G = (double)mData.data.metaData.RGBfraction[2] / (double)mData.data.metaData.RGBfraction[3];
+            mData.data.metaData.wb_B = (double)mData.data.metaData.RGBfraction[4] / (double)mData.data.metaData.RGBfraction[5];
 
 
             // exposure data from EXPO
@@ -517,6 +522,7 @@ namespace raw2cdng_v2
             {
                 mData.data.audioData.hasAudio = false;
             }
+            mData.data.metaData.duration = calc.frameToTC_s(mData.data.metaData.frames, ((double)mData.data.metaData.fpsNom / (double)mData.data.metaData.fpsDen)).Substring(3);
 
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] metaData Object:", mData.data.metaData);
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] fileData Object:", mData.data.fileData);
@@ -545,6 +551,20 @@ namespace raw2cdng_v2
             }
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib] found "+rData.data.metaData.splitCount+" Files");
 
+            // setting RAW WB to fix 4500°K
+            rData.data.metaData.whiteBalance = dng.whitebalancePresets[0][0];
+            rData.data.metaData.RGGBValues = new int[4]{
+                dng.whitebalancePresets[0][1],
+                dng.whitebalancePresets[0][2],
+                dng.whitebalancePresets[0][3],
+                dng.whitebalancePresets[0][4]
+            };
+            rData.data.metaData.RGBfraction = calc.convertToFraction(rData.data.metaData.RGGBValues);
+            // used them only for tests - leaving for further checking..
+            rData.data.metaData.wb_R = (double)rData.data.metaData.RGBfraction[0] / (double)rData.data.metaData.RGBfraction[1];
+            rData.data.metaData.wb_G = (double)rData.data.metaData.RGBfraction[2] / (double)rData.data.metaData.RGBfraction[3];
+            rData.data.metaData.wb_B = (double)rData.data.metaData.RGBfraction[4] / (double)rData.data.metaData.RGBfraction[5];
+            
             string PhotoRAWFile = rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + rData.data.fileData.fileNameOnly + ".CR2";
             string allRAWFile = rData.data.fileData.sourcePath + Path.DirectorySeparatorChar + "ALL.CR2";
             if (File.Exists(PhotoRAWFile) == true)
@@ -594,8 +614,14 @@ namespace raw2cdng_v2
             rData.data.metaData.fpsNom = BitConverter.ToInt32(new byte[4] { ByteArray[20], ByteArray[21], ByteArray[22], ByteArray[23] }, 0);
             if (rData.data.metaData.fpsNom == 0) rData.data.metaData.fpsNom = 24000;
             rData.data.metaData.fpsDen = 1000;
+
+            //small exception: if fps is lower than 1fps, set it to 1fps. for functional TC. 
+            if (rData.data.metaData.fpsNom < 1000) rData.data.metaData.fpsNom = 1000;
+
             Single fps_out = (Single)rData.data.metaData.fpsNom / 1000;
             rData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
+            rData.data.metaData.duration = calc.frameToTC_s(rData.data.metaData.frames, (rData.data.metaData.fpsNom / rData.data.metaData.fpsDen));
+
             rData.data.metaData.blackLevelOld = BitConverter.ToInt32(new byte[4] { ByteArray[60], ByteArray[61], ByteArray[62], ByteArray[63] }, 0);
             if (rData.data.metaData.blackLevelOld == 0)
             {
@@ -692,7 +718,7 @@ namespace raw2cdng_v2
             else
             {
             // if frame is splitted
-                FileInfo fi = new FileInfo(param.fileData.sourcePath + Path.PathSeparator + param.fileData.fileNameOnly + "." + RAWFileEnding[usedFile]);
+                FileInfo fi = new FileInfo(param.fileData.sourcePath + Path.DirectorySeparatorChar + param.fileData.fileNameOnly + "." + RAWFileEnding[usedFile]);
                 FileStream fs = fi.OpenRead();
 
                 int chunkALength = (int)(fs.Length-param.fileData.RAWBlock.fileOffset);
@@ -701,9 +727,9 @@ namespace raw2cdng_v2
 
                 fs.Position = (long)param.fileData.RAWBlock.fileOffset;
                 fs.Read(param.rawData, 0, chunkALength);
-                fs.Close();
-
                 int chunkBLength = (int)(param.metaData.stripByteCountReal - (fs.Length - param.fileData.RAWBlock.fileOffset));
+                fs.Close(); 
+                
                 byte[] chunkB = new byte[chunkBLength];
      
                 FileInfo sfi = new FileInfo(param.fileData.sourcePath + Path.PathSeparator + param.fileData.fileNameOnly + "." + RAWFileEnding[usedFile+1]);
@@ -751,28 +777,30 @@ namespace raw2cdng_v2
                     return calc.doBitmapLQmullim(calc.to16(imageArray, rawFile.data), rawFile.data);
             }
         }
-
-
         public static void saveProxy(data r, byte[] imageArray)
         {
-            //if (debugging.debugLogEnabled) debugging._saveDebug("[saveProxy] started");
+            
+            // til now its all 8bit and based on jpg-pictures
+            if (r.convertData.proxyKind < 3)
+            {
+                BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
+                BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
 
-            BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
-            BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
+                String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
+                FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create);
+                JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
+                jpgEncoder.Frames.Add(bitmapframe);
+                jpgEncoder.Save(jpgStream);
+                jpgStream.Close();
 
-            String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
-            FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create);
-            JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
-            jpgEncoder.Frames.Add(bitmapframe);
-            jpgEncoder.Save(jpgStream);
-            jpgStream.Close();
+                imageArray = null;
+                jpgEncoder = null;
+                jpgStream = null;
+                bitmapframe = null;
+                bitmapsource = null;
+            }   
 
-            imageArray = null;
-            jpgEncoder = null;
-            jpgStream = null;
-            bitmapframe = null;
-            bitmapsource = null;
-                
+            // when we write debayered full resolution output, 10, 12 and 16bit will come  
         }
 
         public static bool saveAudio(string filename, raw mData)
@@ -830,7 +858,7 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] timeRefMultiplier: " + timeRefMultiplier);
    
             // set TimeRef (long)
-            double time2frame = calc.creationTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier);
+            double time2frame = calc.dateTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier);
             long timeRef = (long)(mData.data.audioData.audioSamplingRate * time2frame);
             Array.Copy(BitConverter.GetBytes(timeRef), 0, wavFile[0], 0x18a, 8);
 
@@ -918,7 +946,5 @@ namespace raw2cdng_v2
 
             return success;
         }
-
-
     }
 }

@@ -9,6 +9,9 @@ namespace raw2cdng_v2
     {
         public static byte[] DNGtemplate = Properties.Resources.dngtemplate20;
 
+        // strings to the WB-presets
+        public static string[] WBpreset = new string[] { "AWB", "Daylight", "Cloudy", "Tungsten", "Fluorescent", "Flash", "Manual WB", "", "Shade", "Manual °K" };
+
         // Whitebalance Data are extracted from 5DIII
         public static UInt16[][] whitebalancePresets = new UInt16[][] {
             new UInt16[]{4500,1896,1024,1024,1872}, // 0=Auto (took 4500°K) r and b are nearly same

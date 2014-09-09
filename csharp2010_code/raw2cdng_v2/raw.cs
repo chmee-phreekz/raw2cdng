@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,16 +12,32 @@ namespace raw2cdng_v2
 {
     public enum quality
     {
+        // used for the playback-algorithm
         lowgrey = 0,
         lowmullim = 1,
         highgamma2 = 2,
         high709 =3
     }
+    public enum codec
+    {
+        // used for the UI-Button and the convertprocess
+        mpeg2 = 0,
+        mpeg4 = 1,
+        prores = 2,
+        prores444 = 3
+    }
+
     public class raw
     {
+        public bool convert { get; set; }
+        public BitmapSource thumbnail { get; set; }
+        public BitmapSource histogram { get; set; }
+        public string ListviewTitle { get; set; }
+        public string ListviewPropA { get; set; }
+        public string ListviewPropB { get; set; }
+        public string ListviewPropC { get; set; }
+
         public data data { get; set; }
-        public double[] verticalStripes{get;set;}
-        public bool verticalBandingNeeded { get; set; }
         public List<Blocks.rawBlock> RAWBlocks { get; set; }
         public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
         public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
@@ -49,6 +66,7 @@ namespace raw2cdng_v2
         public int lostFrames { get; set; }
         public int fpsNom { get; set; }
         public int fpsDen { get; set; }
+        public string duration { get; set; }
         public bool dropFrame { get; set; }
         public string fpsString { get; set; }
         public int stripByteCount { get; set; }
@@ -61,9 +79,9 @@ namespace raw2cdng_v2
         public bool photoRAWe { get; set; }
         public int[] RGGBValues { get; set; }
         public int[] RGBfraction { get; set; }
-        public double jpgConvertR { get; set; }
-        public double jpgConvertG { get; set; }
-        public double jpgConvertB { get; set; }
+        public double wb_R { get; set; }
+        public double wb_G { get; set; }
+        public double wb_B { get; set; }
         public int whiteBalance { get; set; }
         public int whiteBalanceMode { get; set; }
         public int whiteBalanceGM { get; set; }
@@ -88,6 +106,8 @@ namespace raw2cdng_v2
         public string version { get; set; }
         public byte[] versionString { get; set; }
         public string propertiesString { get; set; }
+        public double[] verticalBandingCoeffs { get; set; }
+        public bool verticalBandingNeeded { get; set; }
     }
 
     public class audiodata 
@@ -104,13 +124,13 @@ namespace raw2cdng_v2
 
     public class filedata
     {
-        public bool convertIt { get; set; }
         public string fileName { get; set; }
         public string fileNameOnly { get; set; }
         public string fileNameShort { get; set; }
         public string fileNameNum { get; set; }
         public string tempPath { get; set; }
         public string sourcePath { get; set; }
+        public string parentSourcePath { get; set; }
         public string basePath { get; set; }
         public string destinationPath { get; set; }
         public string extraPathInfo { get; set; }
@@ -136,6 +156,20 @@ namespace raw2cdng_v2
         public int isoValue { get; set; }
         public string shutter { get; set; }
     }
+    public class convertSettings
+    {
+        public int bitdepth { get; set; }
+        public bool maximize { get; set; }
+        public double maximizeValue { get; set; }
+        public string format { get; set; }
+        public bool pinkHighlight { get; set; }
+        public bool chromaSmoothing { get; set; }
+        public bool verticalBanding { get; set; }
+        public bool isProxy { get; set; }
+        public int proxyKind { get; set; }
+        public bool videoProxy { get; set; }
+        public int videoCodec { get; set; }
+    }
 
     public class Blocks
     {
@@ -160,18 +194,4 @@ namespace raw2cdng_v2
         public static List<rawBlock> rawBlockList = new List<rawBlock>();
     }
 
-    public class convertSettings
-    {
-        public int bitdepth { get; set; }
-        public bool maximize { get; set; }
-        public double maximizeValue { get; set; }
-        public string format { get; set; }
-        public bool pinkHighlight { get; set; }
-        public bool chromaSmoothing { get; set; }
-        public bool verticalBanding { get; set; }
-        public bool proxyJpegs { get; set; }
-
-    }
-
- 
 }

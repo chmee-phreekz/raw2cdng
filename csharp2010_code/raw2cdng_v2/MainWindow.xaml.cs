@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
 using System.Text;
@@ -57,12 +59,12 @@ namespace raw2cdng_v2
         // -- old folderBrowserdialog
         System.Windows.Forms.FolderBrowserDialog _selectFolder = new System.Windows.Forms.FolderBrowserDialog();
 
-        List<raw> rawFiles = new List<raw>();
+        ObservableCollection<raw> rawFiles = new ObservableCollection<raw>();
 
         int allFramesCount;
         int CPUcores;
 
-        string version = "1.5.0 BETA8";
+        string version = "1.6.0";
 
         // baseSettings for convert
         convertSettings convertData = new convertSettings()
@@ -73,9 +75,13 @@ namespace raw2cdng_v2
             maximize = false,
             maximizeValue = 1,
             pinkHighlight = false,
-            proxyJpegs = false,
+            isProxy = false,
+            proxyKind = 0,
             verticalBanding = false
         };
+        bool ffmpegExists = false;
+
+        List<string> proxyKind = new List<string>();
 
         // settings load/save/change
         appSettings settings = new appSettings();
@@ -88,7 +94,12 @@ namespace raw2cdng_v2
         public MainWindow()
         {
             InitializeComponent();
-            //if(mlvplay.FocusableProperty = IsFocused)
+            //_batchList.DataContext = rawFiles;
+            _batchList.ItemsSource = rawFiles;
+
+            // calculate LUTs
+            calc.calculatetRec709LUT();
+            int[] test = calc.Rec709;
 
             //colors
             green = new SolidColorBrush(Color.FromRgb(0, 255, 0));
@@ -102,7 +113,7 @@ namespace raw2cdng_v2
 
             // -- init _preview Tick and small frameProgressLine
             previewTimer.Tick += new EventHandler(previewTimer_Tick);
-            previewTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
+            previewTimer.Interval = new TimeSpan(0, 0, 0, 0, 25);
             
             progressDragDrop.Tick += new EventHandler(progressDragDrop_Tick);
             progressDragDrop.Interval = new TimeSpan(0, 0, 0, 0, 20);
@@ -117,22 +128,29 @@ namespace raw2cdng_v2
             _progressOne.Value = 0;
 
             // ---- load settings from file ----
-            loadSettings();
-            debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
+            
+            // standard proxy
+            proxyKind.Add("jpg");
 
             // ask for ffmpeg in same directory, if - proxy will be mpeg2 as well
             if (winIO.File.Exists(Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "ffmpeg.exe"))
             {
-                settings.ffmpegExists = true;
-                _jpegs.Content = "proxy jpeg/mpeg2";
+                ffmpegExists = true;
+                proxyKind.Add("mpg2");
+                proxyKind.Add("mpeg4");
             }
-            else settings.ffmpegExists = false;
+            else ffmpegExists = false;
+
+            loadSettings();
+            debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
+
+            _proxyKind.Content = proxyKind[settings.proxyKind];
 
             // debug log
             if (settings.debugLogEnabled)
             {
                 debugging._startNewDebug(" ------------- " + version + " started at " + String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now)+"\r\n");
-                debugging._saveDebug("[init][settings] -- ffmpeg Exists: " + (settings.ffmpegExists?"true":"false"));
+                debugging._saveDebug("[init][settings] -- ffmpeg Exists: " + (ffmpegExists?"true":"false"));
             }
         }
 
@@ -155,7 +173,6 @@ namespace raw2cdng_v2
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 
                 // do it in a task because of progress
-                List<lvItem> batchListItems = new List<lvItem>();
                 Task dragDropDataTask = Task.Factory.StartNew(() => dragDropData(files));
             }
         }
@@ -166,8 +183,6 @@ namespace raw2cdng_v2
             {
                 debugging._saveDebug("[drop] started");
                 debugging._saveDebug("[drop] Files dropped:");
-                debugging._saveDebug("[drop] ------");
-                foreach(string file in files) debugging._saveDebug("[drop] "+file);
                 debugging._saveDebug("[drop] ------");
             }
 
@@ -186,10 +201,11 @@ namespace raw2cdng_v2
                     fileList.Add(file);
                 }
             }
+            debugging._saveDebug("[drop] ------");
 
             // --- list of dropped files
             fileList.Sort();
-
+                        
             foreach (string file in fileList)
             {
             
@@ -240,7 +256,7 @@ namespace raw2cdng_v2
                     // correct frameCount
                     importRaw.data.metaData.frames = importRaw.VIDFBlocks.Count;
 
-                    importRaw.data.fileData.convertIt = true;
+                    importRaw.convert = true;
                 }
                 if (io.isRAW(file))
                 {
@@ -256,35 +272,50 @@ namespace raw2cdng_v2
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.RAWBlocks.Count);
                            
                     // then Framelist
-                    importRaw.data.fileData.convertIt = true;
+                    importRaw.convert = true;
                 }
                 // check errors
                 // lookinto errorString and decide if !=""
                 if (importRaw.data.metaData.errorString == "")
                 {
+                    calc.setListviewStrings(importRaw);
+
                     // now set item
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] adding " + importRaw.data.fileData.fileNameOnly + " to batchList");
-
+                    
+                    // and save raw into list
                     this.Dispatcher.Invoke((Action)(() =>
                     {
-                        _batchList.Items.Add(new lvItem
+                        // create thumbnail
+                        importRaw.thumbnail = io.showPicture(importRaw, quality.lowmullim);
+
+                        // calculate coeffs and histograms
+                        if (importRaw.data.metaData.isMLV)
                         {
-                            convert = new CheckBox(),
-                            type = importRaw.data.metaData.isMLV ? "MLV" : "RAW",
-                            filename = importRaw.data.fileData.fileNameOnly,
-                            files = importRaw.data.metaData.splitCount.ToString(),
-                            frames = importRaw.data.metaData.frames.ToString(),
-                            duration = calc.frameToTC_s(importRaw.data.metaData.frames, (importRaw.data.metaData.fpsNom / importRaw.data.metaData.fpsDen)),
-                            resolution = importRaw.data.metaData.xResolution.ToString() + "x" + importRaw.data.metaData.yResolution.ToString(),
-                            fps = importRaw.data.metaData.fpsString,
-                            cr2 = importRaw.data.metaData.photoRAW ? (importRaw.data.metaData.photoRAWe ? "\u2714" : "\u2714|") : "\u2715",
-                            audio = importRaw.data.audioData.hasAudio ? "\u2714" : "\u2715"
-                        });
+                            importRaw.data.fileData.VIDFBlock = importRaw.VIDFBlocks[0];
+                            importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.to16(io.readMLV(importRaw.data), importRaw.data), importRaw);
+                        }
+                        else
+                        {
+                            importRaw.data.fileData.RAWBlock = importRaw.RAWBlocks[0];
+                            importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.to16(io.readRAW(importRaw.data), importRaw.data), importRaw);
+                        }
+                        
+
+                        if (importRaw.data.metaData.verticalBandingCoeffs[8] == 1) importRaw.data.metaData.verticalBandingNeeded = true;
+                        else importRaw.data.metaData.verticalBandingNeeded = false;
+
+                        if (settings.debugLogEnabled) debugging._saveDebug("[drop] verticalBanding enabled. decision: " + (importRaw.data.metaData.verticalBandingNeeded ? "do it" : "not needed"));
+                        if (settings.debugLogEnabled)
+                        {
+                            string tmpCoeffs = "";
+                            foreach (double v in importRaw.data.metaData.verticalBandingCoeffs) tmpCoeffs += v.ToString() + " "; 
+                            debugging._saveDebug("[drop] verticalBanding CoEffs: " + tmpCoeffs);
+                        }
+                        
+                        rawFiles.Add(importRaw);
+//                      cr2 = importRaw.data.metaData.photoRAW ? (importRaw.data.metaData.photoRAWe ? "\u2714" : "\u2714|") : "\u2715",
                     }));
-
-                    // and save raw into list
-                    rawFiles.Add(importRaw);
-
                 }       
                 if (settings.debugLogEnabled)
                 {
@@ -322,6 +353,34 @@ namespace raw2cdng_v2
                 previewTimer.Stop();
                 previewTimer.IsEnabled = false;
             }
+            allFramesCount = 0;
+            // -- count all frames for progressbarAll --
+            foreach (raw file in rawFiles)
+            {
+                if (file.convert) allFramesCount += file.data.metaData.frames;
+            }
+            if (settings.debugLogEnabled) debugging._saveDebug("[convert_Click] all in all there are " + allFramesCount + " frames to convert");
+
+            // disable GUI
+            this.Dispatcher.Invoke((Action)(() =>
+            {
+                _progressAll.Maximum = allFramesCount;
+                _progressAll.Value = 0;
+                _convert.Content = "converting";
+                _batchList.IsEnabled = false;
+                _convert.IsEnabled = false;
+                _format12.IsEnabled = false;
+                _format12max.IsEnabled = false;
+                _format16.IsEnabled = false;
+                _format16max.IsEnabled = false;
+                _highlights.IsEnabled = false;
+                _takePath.IsEnabled = false;
+                _noPath.IsEnabled = false;
+                _proxy.IsEnabled = false;
+                _proxyKind.IsEnabled = false;
+                _banding.IsEnabled = false;
+            }));
+            
             // doing the work as a thread, leave GUI fluid
             ThreadPool.QueueUserWorkItem(doWork);
         }
@@ -329,35 +388,8 @@ namespace raw2cdng_v2
         private void doWork(object state)
         {
             if (settings.debugLogEnabled) debugging._saveDebug("[doWork] started");
-
             allFramesCount = 0;
-            // -- count all frames for progressbarAll --
-            foreach (raw file in rawFiles)
-            {
-                allFramesCount += file.data.metaData.frames;
-            }
 
-            if (settings.debugLogEnabled) debugging._saveDebug("[doWork] all in all there are " + allFramesCount + " frames to convert");
-
-            // some GUI-Things - progressbar
-            this.Dispatcher.Invoke((Action)(() =>
-               {
-                   _progressAll.Maximum = allFramesCount;
-                   _progressAll.Value = 0;
-                   _convert.Content = "converting";
-                   _batchList.IsEnabled = false;
-                   _convert.IsEnabled = false;
-                   _format12.IsEnabled = false;
-                   _format12max.IsEnabled = false;
-                   _format16.IsEnabled = false;
-                   _format16max.IsEnabled = false;
-                   _highlights.IsEnabled = false;
-                   _takePath.IsEnabled = false;
-                   _noPath.IsEnabled = false;
-                   _jpegs.IsEnabled = false;
-               }));
-            allFramesCount = 0;
-            
             // set threadpool properties
             ThreadPool.SetMaxThreads(CPUcores, CPUcores);
 
@@ -368,253 +400,255 @@ namespace raw2cdng_v2
             int convertAmount = rawFiles.Count();
 
             // and go.
-            foreach (raw file in rawFiles)
+            while(rawFiles.Count!=0)
             {
-
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] -> converting item " + file.data.fileData.fileNameOnly);
-
-                this.Dispatcher.Invoke((Action)(() =>
+                raw file = rawFiles[0]; 
+                if (file.convert)
                 {
-                    // -- refresh _progressbar.One
-                    _progressOne.Value = 0;
-                    _progressOne.Maximum = file.data.metaData.frames;
-                    convertPosition++;
-                    _actionOutput.Content = "converting " + convertPosition+"/"+convertAmount+" - "+file.data.fileData.fileNameOnly;
-                    
-                    // -- to be done - mark item as converting (red)
-                    //_batchList.SelectedItem = itemList;
-                    // does not work, wpf styles and containerchange-refreshes i think..
-                }));
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] -> converting item " + file.data.fileData.fileNameOnly);
 
-                // copy properties from GUI into rawobject
-                file.data.convertData = convertData;
-                // empty rawData - while preview it was filled. lead to "out of memory" exception.
-                file.data.rawData = null;
-
-                // if maximized use the multiplier
-                file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
-
-                // if verticalBanding, calculate the coeffs from only first frame
-                if (file.data.convertData.verticalBanding)
-                {
-                    file.data.fileData.VIDFBlock = file.VIDFBlocks[0];
-                    file.verticalStripes = calc.calcVerticalCoeefs(calc.to16(io.readMLV(file.data),file.data));
-                }
-
-                if(file.data.convertData.chromaSmoothing)
-                {
-                    //if using chroma Smoothing, recalculate ev2raw/raw2ev
-                    calc.reinitRAWEVArrays(file.data.metaData.blackLevelNew, file.data.metaData.blackLevelNew);
-                }
-
-                // set new blacklevel whitelevel and bitdepth
-                switch (settings.format)
-                {
-                    case 1:
-                        // 16 bit normal
-                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
-                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
-                        file.data.metaData.bitsperSampleChanged = 16;
-                        file.data.metaData.maximize = false;
-                        break;
-                    case 2:
-                        // 16 bit maximized
-                        file.data.metaData.blackLevelNew = 0;
-                        file.data.metaData.whiteLevelNew = 65535;
-                        file.data.metaData.bitsperSampleChanged = 16;
-                        file.data.metaData.maximize = true;
-                        file.data.metaData.maximizer = file.data.metaData.whiteLevelNew / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
-                        break;
-                    case 3:
-                        // 12bit normal - is disabled - now ARRIRAW tbd!
-                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld / 4;
-                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld / 4;
-                        file.data.metaData.bitsperSampleChanged = 12;
-                        file.data.metaData.maximize = false;
-                        break;
-                    case 4:
-                        // 12 bit maximized
-                        file.data.metaData.blackLevelNew = 0;
-                        file.data.metaData.whiteLevelNew = 4095;
-                        file.data.metaData.bitsperSampleChanged = 12;
-                        file.data.metaData.maximize = true;
-                        file.data.metaData.maximizer = 65535 / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
-                        break;
-                    default:
-                        file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
-                        file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
-                        file.data.metaData.bitsperSampleChanged = 16;
-                        file.data.metaData.maximize = false;
-                        break;
-                }
-
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] settings format " + settings.format + " with BL" + file.data.metaData.blackLevelNew + " WL" + file.data.metaData.whiteLevelNew + " with+" + (file.data.metaData.maximize ? "" : "out") + " maximizingvalue " + file.data.metaData.maximizer);
-
-                // prepare prefix variables
-                string date = string.Format("{0:yyMMdd}", file.data.fileData.creationTime);
-                string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.creationTime);
-                string modifiedDate = string.Format("{0:yyMMdd}", file.data.fileData.modificationTime);
-                string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.modificationTime);
-
-                string time = string.Format("{0:HHmmss}", file.data.fileData.creationTime);
-                string modifiedTime = string.Format("{0:HHmmss}", file.data.fileData.modificationTime);
-
-                string parentSourcePath = file.data.fileData.sourcePath.Split(winIO.Path.DirectorySeparatorChar).Last();
-                string bitdepth = file.data.metaData.bitsperSampleChanged.ToString();
-
-                // set filename from prefix-generator
-                file.data.fileData.outputFilename = settings.prefix.
-                    Replace("[D]", date).
-                    Replace("[D2]", datetime).
-                    Replace("[M]", modifiedDate).
-                    Replace("[M2]", modifiedDatetime).
-                    Replace("[T]", time).
-                    Replace("[T2]", modifiedTime).
-                    Replace("[S]", file.data.fileData.fileNameShort).
-                    Replace("[C]", file.data.fileData.fileNameNum).
-                    Replace("[P]", parentSourcePath).
-                    Replace("[B]", bitdepth).
-                    Replace("[F]", file.data.fileData.fileNameOnly);
-                // cut parenthesis-content
-                // its for the filesequences
-                if (file.data.fileData.outputFilename.IndexOf("(") > -1)
-                {
-                    file.data.fileData.destinationPath = file.data.fileData.outputFilename.Substring(0, file.data.fileData.outputFilename.IndexOf("("));
-                    file.data.fileData.outputFilename = file.data.fileData.outputFilename.Replace("(", "").Replace(")", "");
-                }
-                else
-                {
-                    file.data.fileData.destinationPath = file.data.fileData.outputFilename;
-                }
-
-                // source or selected Path?
-                if (settings.sourcePath)
-                {
-                    file.data.fileData.basePath = file.data.fileData.sourcePath;
-                }
-                else
-                {
-                    file.data.fileData.basePath = settings.outputPath;
-                }
-                if (settings.debugLogEnabled)
-                {
-                    debugging._saveDebug("[doWork] prefix - filename generator " + settings.prefix);
-                    debugging._saveDebug("[doWork] destinationPath -> " + file.data.fileData.destinationPath);
-                    debugging._saveDebug("[doWork] outputFilename  -> " + file.data.fileData.outputFilename);
-                }
-            
-                // check/make destination path
-                winIO.Directory.CreateDirectory(file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath);
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + " created");
-                            
-                // set dngheader
-                // dngheader is a fileresource (DNGtemplate20)
-                file.data.metaData.DNGHeader = dng.setDNGHeader(file.data);
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
-
-                // destinationPath as its used in the threads
-                file.data.fileData._changedPath = file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
-
-                // init for multithreading
-                int frameCount;
-                frameCount = file.data.metaData.frames;
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
-                
-                int taskCount = frameCount;
-                var cde = new CountdownEvent(taskCount);
-
-                // init strings for debugging
-                string debugString = "";
-
-                // start frameconvert
-                for (int f = 0; f < frameCount; f++)
-                {
-                    //multithread
-                    if (file.data.metaData.isMLV)
+                    this.Dispatcher.Invoke((Action)(() =>
                     {
-                        //its MLV
-                        file.data.fileData.VIDFBlock = file.VIDFBlocks[f];
-                        file.data.threadData.frame = file.data.fileData.VIDFBlock.MLVFrameNo;
-                        if (settings.debugLogEnabled)
-                        {
-                            debugString += "[" + f + "]";
-                            if (f % 25 == 0)
-                            {
-                                debugging._saveDebug("[doWork][for] read/convert MLV VIDF: " + debugString);
-                                debugString = "";
-                            }
-                        }
+                        // -- refresh _progressbar.One
+                        _progressOne.Value = 0;
+                        _progressOne.Maximum = file.data.metaData.frames;
+                        convertPosition++;
+                        _actionOutput.Content = "converting " + convertPosition + "/" + convertAmount + " - " + file.data.fileData.fileNameOnly;
+                        _batchList.SelectedItem = file;
+                        _batchList.ScrollIntoView(file);
+                    }));
+
+                    // copy properties from GUI into rawobject
+                    file.data.convertData = convertData;
+                    // empty rawData - while preview it was filled. lead to "out of memory" exception.
+                    file.data.rawData = null;
+
+                    // if maximized use the multiplier
+                    file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
+
+                    if (file.data.convertData.chromaSmoothing)
+                    {
+                        //if using chroma Smoothing, recalculate ev2raw/raw2ev
+                        calc.calcRAWEV_Arrays(file.data.metaData.blackLevelNew, file.data.metaData.blackLevelNew);
+                    }
+
+                    // set new blacklevel whitelevel and bitdepth
+                    switch (settings.format)
+                    {
+                        case 1:
+                            // 16 bit normal
+                            file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
+                            file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
+                            file.data.metaData.bitsperSampleChanged = 16;
+                            file.data.metaData.maximize = false;
+                            break;
+                        case 2:
+                            // 16 bit maximized
+                            file.data.metaData.blackLevelNew = 0;
+                            file.data.metaData.whiteLevelNew = 65535;
+                            file.data.metaData.bitsperSampleChanged = 16;
+                            file.data.metaData.maximize = true;
+                            file.data.metaData.maximizer = file.data.metaData.whiteLevelNew / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
+                            break;
+                        case 3:
+                            // 12bit normal - is disabled - now ARRIRAW tbd!
+                            file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld / 4;
+                            file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld / 4;
+                            file.data.metaData.bitsperSampleChanged = 12;
+                            file.data.metaData.maximize = false;
+                            break;
+                        case 4:
+                            // 12 bit maximized
+                            file.data.metaData.blackLevelNew = 0;
+                            file.data.metaData.whiteLevelNew = 4095;
+                            file.data.metaData.bitsperSampleChanged = 12;
+                            file.data.metaData.maximize = true;
+                            file.data.metaData.maximizer = 65535 / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
+                            break;
+                        default:
+                            file.data.metaData.blackLevelNew = file.data.metaData.blackLevelOld;
+                            file.data.metaData.whiteLevelNew = file.data.metaData.whiteLevelOld;
+                            file.data.metaData.bitsperSampleChanged = 16;
+                            file.data.metaData.maximize = false;
+                            break;
+                    }
+
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] settings format " + settings.format + " with BL" + file.data.metaData.blackLevelNew + " WL" + file.data.metaData.whiteLevelNew + " with+" + (file.data.metaData.maximize ? "" : "out") + " maximizingvalue " + file.data.metaData.maximizer);
+
+                    // prepare prefix variables
+                    string date = string.Format("{0:yyMMdd}", file.data.fileData.creationTime);
+                    string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.creationTime);
+                    string modifiedDate = string.Format("{0:yyMMdd}", file.data.fileData.modificationTime);
+                    string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.modificationTime);
+
+                    string time = string.Format("{0:HHmmss}", file.data.fileData.creationTime);
+                    string modifiedTime = string.Format("{0:HHmmss}", file.data.fileData.modificationTime);
+
+                    string bitdepth = file.data.metaData.bitsperSampleChanged.ToString();
+
+                    // set filename from prefix-generator
+                    file.data.fileData.outputFilename = settings.prefix.
+                        Replace("[D]", date).
+                        Replace("[D2]", datetime).
+                        Replace("[M]", modifiedDate).
+                        Replace("[M2]", modifiedDatetime).
+                        Replace("[T]", time).
+                        Replace("[T2]", modifiedTime).
+                        Replace("[S]", file.data.fileData.fileNameShort).
+                        Replace("[C]", file.data.fileData.fileNameNum).
+                        Replace("[P]", file.data.fileData.parentSourcePath).
+                        Replace("[B]", bitdepth).
+                        Replace("[F]", file.data.fileData.fileNameOnly);
+                    // cut parenthesis-content
+                    // its for the filesequences
+                    if (file.data.fileData.outputFilename.IndexOf("(") > -1)
+                    {
+                        file.data.fileData.destinationPath = file.data.fileData.outputFilename.Substring(0, file.data.fileData.outputFilename.IndexOf("("));
+                        file.data.fileData.outputFilename = file.data.fileData.outputFilename.Replace("(", "").Replace(")", "");
                     }
                     else
                     {
-                        // its RAW
-                        file.data.fileData.RAWBlock = file.RAWBlocks[f];
-                        file.data.threadData.frame = f;
-                        if (settings.debugLogEnabled)
+                        file.data.fileData.destinationPath = file.data.fileData.outputFilename;
+                    }
+
+                    // source or selected Path?
+                    if (settings.sourcePath)
+                    {
+                        file.data.fileData.basePath = file.data.fileData.sourcePath;
+                    }
+                    else
+                    {
+                        file.data.fileData.basePath = settings.outputPath;
+                    }
+                    if (settings.debugLogEnabled)
+                    {
+                        debugging._saveDebug("[doWork] prefix - filename generator " + settings.prefix);
+                        debugging._saveDebug("[doWork] destinationPath -> " + file.data.fileData.destinationPath);
+                        debugging._saveDebug("[doWork] outputFilename  -> " + file.data.fileData.outputFilename);
+                    }
+
+                    // check/make destination path
+                    winIO.Directory.CreateDirectory(file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + " created");
+
+                    // set dngheader
+                    // dngheader is a fileresource (DNGtemplate20)
+                    file.data.metaData.DNGHeader = dng.setDNGHeader(file.data);
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
+
+                    // destinationPath as its used in the threads
+                    file.data.fileData._changedPath = file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
+
+                    // init for multithreading
+                    int frameCount;
+                    frameCount = file.data.metaData.frames;
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
+
+                    int taskCount = frameCount;
+                    var cde = new CountdownEvent(taskCount);
+
+                    // init strings for debugging
+                    string debugString = "";
+
+                    // start frameconvert
+                    for (int f = 0; f < frameCount; f++)
+                    {
+                        //multithread
+                        if (file.data.metaData.isMLV)
                         {
-                            debugString += "[" + f + "]";
-                            if (f % 25 == 0)
+                            //its MLV
+                            file.data.fileData.VIDFBlock = file.VIDFBlocks[f];
+                            file.data.threadData.frame = file.data.fileData.VIDFBlock.MLVFrameNo;
+                            if (settings.debugLogEnabled)
                             {
-                                debugging._saveDebug("[doWork][for] read/convert RAW: " + debugString);
-                                debugString = "";
+                                debugString += "[" + f + "]";
+                                if (f % 25 == 0)
+                                {
+                                    debugging._saveDebug("[doWork][for] read/convert MLV VIDF: " + debugString);
+                                    debugString = "";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // its RAW
+                            file.data.fileData.RAWBlock = file.RAWBlocks[f];
+                            file.data.threadData.frame = f;
+                            if (settings.debugLogEnabled)
+                            {
+                                debugString += "[" + f + "]";
+                                if (f % 25 == 0)
+                                {
+                                    debugging._saveDebug("[doWork][for] read/convert RAW: " + debugString);
+                                    debugString = "";
+                                }
+                            }
+                        }
+                        data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
+                        para.threadData.CDEvent = cde;
+
+                        // start convert thread here
+                        ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
+                        para = null;
+
+                    }
+                    // wait till all threads has ended
+                    cde.Wait();
+
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
+
+                    // now audio if existent
+                    if (file.data.audioData.hasAudio)
+                    {
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.data.fileData.destinationPath + ".wav");
+                        io.saveAudio(file.data.fileData._changedPath + file.data.fileData.destinationPath + ".wav", file);
+                    }
+
+                    // proxy clicked and ffmpeg existent. ok. lets do.
+                    // new: if videoproxy, jpgs will be deleted.
+                    if (ffmpegExists && settings.isProxy)
+                    {
+                        if ((settings.proxyKind != 0) && (settings.proxyKind < 3))
+                        {
+                            executeFFMPEG(file);
+                            foreach (winIO.FileInfo f in new winIO.DirectoryInfo(file.data.fileData._changedPath).GetFiles("*.jpg"))
+                            {
+                                f.Delete();
                             }
                         }
                     }
-                    data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
-                    para.threadData.CDEvent = cde;
-
-                    // start convert thread here
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
-                    para = null;
-                    
                 }
-                // wait till all threads has ended
-                cde.Wait();
-
-                if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
-
-                // now audio if existent
-                if (file.data.audioData.hasAudio)
-                {
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.data.fileData.destinationPath + ".wav");
-                    io.saveAudio(file.data.fileData._changedPath + file.data.fileData.destinationPath + ".wav", file);
-                }
-                // proxy clicked and ffmpeg existent. ok. lets do mpeg2.
-                if (settings.ffmpegExists&&settings.proxyJpeg)
-                {
-                    executeFFMPEG(file);
-                }
-                
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    // -- mark item as converted (green)
-                    //_batchList.SelectedItem = itemList;
-                    // does not work, wpf styles and containerchange-refreshes i think..
+                    rawFiles.Remove(file);
                 }));
             }
+
             // clear GUI and some variables
             // re enable buttons
             this.Dispatcher.Invoke((Action)(() =>
-                {
-                    _batchList.Items.Clear();
-                    rawFiles.Clear();
-                    _preview.Source = null;
+            {
+                rawFiles.Clear();
+                _preview.Source = null;
 
-                    _progressOne.Value = 0;
-                    _progressAll.Value = 0;
-                    _convert.IsEnabled = false;
-                    _convert.Content = "convert";
+                _progressOne.Value = 0;
+                _progressAll.Value = 0;
+                _convert.IsEnabled = false;
+                _convert.Content = "convert";
 
-                    _batchList.IsEnabled = true;
-                    _format12.IsEnabled = true;
-                    _format12max.IsEnabled = true;
-                    _format16.IsEnabled = true;
-                    _format16max.IsEnabled = true;
-                    _highlights.IsEnabled = true;
-                    _takePath.IsEnabled = true;
-                    _noPath.IsEnabled = true;
-                    _jpegs.IsEnabled = true;
-                }));
+                _batchList.IsEnabled = true;
+                //_format12.IsEnabled = true;
+                _format12max.IsEnabled = true;
+                _format16.IsEnabled = true;
+                _format16max.IsEnabled = true;
+                _highlights.IsEnabled = true;
+                _takePath.IsEnabled = true;
+                _noPath.IsEnabled = true;
+
+                _proxy.IsEnabled = true;
+                if (settings.isProxy) _proxyKind.IsEnabled = true;
+
+            }));
         }
 
         private void doFrame_Thread(object state)
@@ -634,7 +668,7 @@ namespace raw2cdng_v2
             string finalOutputFilename = justFilename + ".dng";
 
             // write Timecode into dng
-            int timestamp = param.threadData.frame + (int)calc.creationTime2Frame( param.fileData.creationTime, (double)(param.metaData.fpsNom/param.metaData.fpsDen) );
+            int timestamp = param.threadData.frame + (int)calc.dateTime2Frame( param.fileData.creationTime, (double)(param.metaData.fpsNom/param.metaData.fpsDen) );
             param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1dba, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
 
 /*            // workaround for 12bit, because first module needs 16bit-data
@@ -654,23 +688,21 @@ namespace raw2cdng_v2
 */
 
             // ------- here's the magic - converting the data --------
+            // -------------------------------------------------------
             rawDataChanged = calc.to16(param.rawData, param);
-
-            // if proxy jpeg
-            if (param.convertData.proxyJpegs) io.saveProxy(param, rawDataChanged);
             
-            // if verticalBanding
-            if (param.convertData.verticalBanding)
+            // if verticalBanding (and if its needed. delta >0.01)
+            if (param.convertData.verticalBanding && param.metaData.verticalBandingNeeded)
             {
-                if (param.threadData.frame == 0)
-                {
-
-                }
+                //coeffs calculated in [dowork]
                 // raw2ev/ev2raw-tables are calculated in _doWork
                 rawDataChanged = calc.fixVerticalBanding(rawDataChanged, param);
             }
             // if chroma Smoothing
             if (param.convertData.chromaSmoothing) rawDataChanged = calc.chromaSmoothing(rawDataChanged, param);
+
+            // if proxy jpeg
+            if (param.convertData.isProxy) io.saveProxy(param, rawDataChanged);
 
             // if pink Highlights
             if (param.convertData.pinkHighlight) rawDataChanged = calc.pinkHighlight(rawDataChanged, param);
@@ -686,7 +718,9 @@ namespace raw2cdng_v2
                 rawDataChanged = calc.from16to12(tempRaw, param);
                 tempRaw = null;
             }
-            // -------- write the dng-header --
+
+            // ----- dng IO operations header and rawdata -----
+            // ------------------------------------------------
             using (System.IO.FileStream stream = new System.IO.FileStream(finalOutputFilename, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
             {
                 stream.Write(param.metaData.DNGHeader, 0, param.metaData.DNGHeader.Length);
@@ -740,37 +774,32 @@ namespace raw2cdng_v2
         private void batchList_Click(object sender, RoutedEventArgs e)
         {
             if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] showPicture");
-            
-            int item = (sender as ListView).Items.IndexOf((sender as ListView).SelectedItems[0]);
-            if (item > -1)
-            {
-                // if on zero was a bad idea - the first entry is 0 ;)
-                // maybe deleting the if
+            if ((sender as ListView).SelectedItems.Count == 0) return;
+            object itemSender = (sender as ListView).SelectedItems[0];
+            int item = (sender as ListView).Items.IndexOf(itemSender);
+            // if on zero was a bad idea - the first entry is 0 ;)
+            // maybe deleting the if
 
-                // read picture and show
-                WriteableBitmap im = io.showPicture(rawFiles[item],quality.high709);
-                _preview.Source = im;
-                _lensLabel.Content = String.Format(
-                    "{0} | {1} | ISO{2} | f/{3} | {4}°K",
-                    rawFiles[item].data.lensData.lens,
-                    rawFiles[item].data.lensData.shutter,
-                    rawFiles[item].data.lensData.isoValue,
-                    ((double)rawFiles[item].data.lensData.aperture / (double)100),
-                    rawFiles[item].data.metaData.whiteBalance,
-                    CultureInfo.InvariantCulture
-                    );
-                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].data.fileData.fileNameOnly + " frame " + rawFiles[item].data.threadData.frame);
-                if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].data.fileData.fileNameOnly);
-
-            }
+            // read picture and show
+            WriteableBitmap im = io.showPicture(rawFiles[item],quality.high709);
+            _preview.Source = im;
+            _lensLabel.Content = String.Format(
+                "{0} | {1} | ISO{2} | f/{3} | {4}°K",
+                rawFiles[item].data.lensData.lens,
+                rawFiles[item].data.lensData.shutter,
+                rawFiles[item].data.lensData.isoValue,
+                ((double)rawFiles[item].data.lensData.aperture / (double)100),
+                rawFiles[item].data.metaData.whiteBalance,
+                CultureInfo.InvariantCulture
+                );
+            if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].data.fileData.fileNameOnly + " frame " + rawFiles[item].data.threadData.frame);
+            if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].data.fileData.fileNameOnly);
         }
 
         private void _preview_MouseEnter(object sender, MouseEventArgs e)
         {
-                        
             previewTimer.Start();
             _previewProgressBar.Stroke = green;
-
         }
 
         private void _preview_MouseLeave(object sender, MouseEventArgs e)
@@ -873,14 +902,25 @@ namespace raw2cdng_v2
             saveGUIsettings();
         }
 
-        private void _jpegs_Checked(object sender, RoutedEventArgs e)
+        private void _proxy_Checked(object sender, RoutedEventArgs e)
         {
-            convertData.proxyJpegs = true;
+            convertData.isProxy = true;
+            _proxyKind.IsEnabled = true;
+            _proxy.Content = "proxy enabled";
             saveGUIsettings();
         }
-        private void _jpegs_Unchecked(object sender, RoutedEventArgs e)
+        private void _proxy_Unchecked(object sender, RoutedEventArgs e)
         {
-            convertData.proxyJpegs = false;
+            convertData.isProxy = false;
+            _proxyKind.IsEnabled = false;
+            _proxy.Content = "proxy disabled";
+            saveGUIsettings();
+        }
+        private void _proxyKind_Click(object sender, RoutedEventArgs e)
+        {
+            convertData.proxyKind++;
+            if (convertData.proxyKind == proxyKind.Count()) convertData.proxyKind = 0;
+            _proxyKind.Content = proxyKind[convertData.proxyKind];
             saveGUIsettings();
         }
 
@@ -919,6 +959,20 @@ namespace raw2cdng_v2
             saveGUIsettings();
         }
 
+        // ------- helper for listview items
+        private void convert_Checked(object sender, RoutedEventArgs e)
+        {
+            var cb = sender as CheckBox;
+            var item = cb.DataContext;
+            //_batchList.SelectedItem = item;
+        }
+        private void convert_Unchecked(object sender, RoutedEventArgs e)
+        {
+            var cb = sender as CheckBox;
+            var item = cb.DataContext;
+            //_batchList.SelectedItem = item;
+        }
+
         // ------- Helper ------------
         
         private void saveGUIsettings()
@@ -926,7 +980,8 @@ namespace raw2cdng_v2
             if (toggleSettingsSave == true)
             {
                 settings.verticalBanding = convertData.verticalBanding;
-                settings.proxyJpeg = convertData.proxyJpegs;
+                settings.isProxy = convertData.isProxy;
+                settings.proxyKind = convertData.proxyKind;
                 settings.chromaSmooth = convertData.chromaSmoothing;
                 settings.highlightFix = convertData.pinkHighlight;
                 settings.outputPath = _takePath.Content.ToString();
@@ -937,32 +992,16 @@ namespace raw2cdng_v2
             }
         }
 
-        public class lvItem
-        {
-            public CheckBox convert { get; set; }
-            public string type { get; set; }
-            public string filename { get; set; }
-            public string files { get; set; }
-            public string frames { get; set; }
-            public string duration { get; set; }
-            public string resolution { get; set; }
-            public string fps { get; set; }
-            public string cr2 { get; set; }
-            public string audio { get; set; }
-        }
-
         private void previewTimer_Tick(object sender, EventArgs e)
         {
-            if (_batchList.SelectedItems.Count != null)
-            {
-                int item = _batchList.Items.IndexOf(_batchList.SelectedItems[0]);
-                raw r = rawFiles[item];
-                r.data.metaData.previewFrame++;
-                r.data.metaData.maximize = true;
-                r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
-                Task.Factory.StartNew(() => previewBackground(r));
-                if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
-            }
+            if (_batchList.SelectedItems.Count < 1) return;
+            int item = _batchList.Items.IndexOf(_batchList.SelectedItems[0]);
+            raw r = rawFiles[item];
+            r.data.metaData.previewFrame++;
+            r.data.metaData.maximize = true;
+            r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
+            Task.Factory.StartNew(() => previewBackground(r));
+            if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
         }
 
         private void progressDragDrop_Tick(object sender, EventArgs e)
@@ -989,16 +1028,16 @@ namespace raw2cdng_v2
             if (frame > -1)
             {
                 var maxFrames = r.data.metaData.frames;
-                var progressPosX = 564 + 320 * frame / maxFrames;
+                var progressPosX = 540 + 705 * frame / maxFrames;
                 // read picture and show
                 r.data.threadData.frame = frame;
 
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    _preview.Source = io.showPicture(r,quality.lowmullim);
+                    _preview.Source = io.showPicture(r,quality.high709);
                     _lensLabel.Content = String.Format("{0:d5}", frame);
-                    _previewProgressBar.Margin = new Thickness(progressPosX, 243, 0, 0);
+                    _previewProgressBar.Margin = new Thickness(progressPosX, 436, 0, 0);
                     _preview.InvalidateVisual();
                     _lensLabel.InvalidateVisual();
                 }));
@@ -1093,17 +1132,27 @@ namespace raw2cdng_v2
                 _highlights.IsChecked = false;
                 convertData.pinkHighlight = false;
             }
-            if (settings.proxyJpeg == true)
+
+            if (settings.proxyKind == null) settings.proxyKind = 0;
+            
+            if (!ffmpegExists) settings.proxyKind = 0;
+            convertData.proxyKind = settings.proxyKind; 
+            
+                if (settings.isProxy == true)
             {
-                _jpegs.IsChecked = true;
-                convertData.proxyJpegs = true;
+                _proxy.IsChecked = true;
+                _proxyKind.IsEnabled = true;
+                _proxyKind.Content = proxyKind[settings.proxyKind];
+                convertData.isProxy = true;
             }
             else
             {
-                _jpegs.IsChecked = false;
-                convertData.proxyJpegs = false;
+                _proxy.IsChecked = false;
+                _proxyKind.IsEnabled = false;
+                _proxyKind.Content = proxyKind[settings.proxyKind];
+                convertData.isProxy = false;
             }
-            
+
             if (settings.prefix == null) settings.prefix = "";
             if (settings.prefix != "")
             {
@@ -1134,21 +1183,45 @@ namespace raw2cdng_v2
             {
                 string inputjpgFiles = r.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar + r.data.fileData.outputFilename + "%05d.jpg";
                 string inputAudioFile = r.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + ".wav";
-                string outputFile = r.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + ".mpg";
+                string outputFile = r.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar + r.data.fileData.destinationPath;
                 string commandline = "";
-                
-                if (winIO.File.Exists(outputFile)) winIO.File.Delete(outputFile);
 
                 // ffmpegprocess - if existent
                 Process ffmpegprocess = new Process();
+                commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles;
                 
-                if (r.data.audioData.hasAudio)
+                // if proxyKind==1 -> mpg2
+                if (r.data.convertData.proxyKind == 1)
                 {
-                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 2 -codec:a mp2 -b:a 192k -shortest " + outputFile;
+                    if (winIO.File.Exists(outputFile+".mpg")) winIO.File.Delete(outputFile+".mpg");
+                    if (r.data.audioData.hasAudio)
+                    {
+                        commandline += " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 2 -codec:a mp2 -b:a 192k -shortest " + outputFile+".mpg";
+                    }
+                    else
+                    {
+                        commandline += " -codec:v mpeg2video -qscale:v 2 " + outputFile + ".mpg";
+                    }
                 }
-                else
+
+                // if proxyKind==2 -> mpeg4
+                if (r.data.convertData.proxyKind == 2)
                 {
-                    commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles + " -codec:v mpeg2video -qscale:v 2 " + outputFile;
+                    if (winIO.File.Exists(outputFile+".mp4")) winIO.File.Delete(outputFile+".mp4");
+                    if (r.data.audioData.hasAudio)
+                    {
+                        commandline += " -i " + inputAudioFile + " -c:v h264 -preset veryfast -crf 20 -codec:a mp3 -b:a 192k -shortest " + outputFile + ".mp4";
+                    }
+                    else
+                    {
+                        commandline += " -c:v h264 -preset slow -crf 20 " + outputFile + ".mp4";
+                    }
+                }
+
+                if (settings.debugLogEnabled)
+                {
+                    commandline += " -loglevel debug";
+                    debugging._saveDebug("[execute_FFMPEG] commandline-output: ffmpeg.exe " + commandline);
                 }
 
                 ProcessStartInfo info = new ProcessStartInfo("ffmpeg.exe",commandline);
@@ -1197,8 +1270,7 @@ namespace raw2cdng_v2
             if (settings.debugLogEnabled) debugging._saveDebug("[ffmpeg]: "+e.Data);
             //Console.WriteLine(e.Data);
         }
-
-
+        
         // ------- EOF ----------
     }
 }

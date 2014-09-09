@@ -18,12 +18,12 @@ namespace raw2cdng_v2
         public string debugLogFile = "";
 
         public bool chromaSmooth;
-        public bool proxyJpeg;
+        public bool isProxy;
+        public int proxyKind;
         public bool highlightFix;
         public bool verticalBanding;
         public int format;
         public string prefix;
-        public bool ffmpegExists;
     }
 
     public class AppSettings<T> where T : new()
@@ -72,7 +72,7 @@ namespace raw2cdng_v2
             catch
             {
                 // leaving it empty is better than a throw
-                // it "only" cant write into the logfile (on mutlithreads fi)
+                // it "only" not able to write into the logfile (on multithreads fi)
             }
         }
 
