@@ -12,7 +12,8 @@
         HorizontalAlignment="Left" VerticalAlignment="Top" 
         BorderThickness="1" 
         MouseLeftButtonDown="Window_MouseLeftButtonDown" 
-        Icon="/raw2cdng_v2;component/appicon.ico" SizeToContent="WidthAndHeight">
+        Icon="/raw2cdng_v2;component/appicon.ico" SizeToContent="WidthAndHeight"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.Resources>
         <Style TargetType="{x:Type GridViewColumnHeader}">
@@ -64,8 +65,8 @@
     </Window.Resources>
 
     <Grid Width="1257" HorizontalAlignment="Left" VerticalAlignment="Top" Height="660" MaxWidth="1257">
-        <TextBlock Height="23" HorizontalAlignment="Left" Margin="10,7,0,0" Name="_title" Text="raw2cdng 1.6.0" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Foreground="#FF666666" />
-        <ToggleButton Content="debug" Height="23" HorizontalAlignment="Left" Margin="1056,7,0,0" Name="_logDebug" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="51" Unchecked="_logDebug_Unchecked" Checked="_logDebug_Checked" />
+        <TextBlock Height="23" HorizontalAlignment="Left" Margin="10,7,0,0" Name="_title" Text="{Binding Version, StringFormat={}raw2cdng {0}}" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Foreground="#FF666666" />
+        <ToggleButton Content="debug" Height="23" HorizontalAlignment="Left" Margin="1056,7,0,0" Name="_logDebug" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="51" Unchecked="_logDebug_Unchecked" Checked="_logDebug_Checked" IsChecked="{Binding LogDebugIsChecked}" />
         <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="exit" Height="23" HorizontalAlignment="Left" Margin="1194,7,0,0" Name="_exit" VerticalAlignment="Top" Width="51" Click="_exit_Click" />
         <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="info" Height="23" HorizontalAlignment="Left" Margin="1125,7,0,0" Name="_info" VerticalAlignment="Top" Width="51" Click="_info_Click" />
 
@@ -80,15 +81,15 @@
                 </ToolTip>
             </Label.ToolTip>
         </Label>
-        <ListView SelectedItem="{Binding rawFiles}" ItemsSource="{Binding rawFiles}" Height="534" HorizontalAlignment="Left" Margin="8,71,0,0" Name="_batchList" VerticalAlignment="Top" Width="526" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" HorizontalContentAlignment="Center">
+        <ListView ItemsSource="{Binding RawFiles}" Height="534" HorizontalAlignment="Left" Margin="8,71,0,0" Name="_batchList" VerticalAlignment="Top" Width="526" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" HorizontalContentAlignment="Center">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="do" Width="22">
-                    <GridViewColumn.CellTemplate>
-                        <DataTemplate>
-                                <CheckBox Margin="-4,0,-4,0" IsChecked="{Binding Path=convert}" Checked="convert_Checked" Unchecked="convert_Unchecked"/>
-                        </DataTemplate>
-                    </GridViewColumn.CellTemplate>
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox Margin="-4,0,-4,0" IsChecked="{Binding convert}" Checked="convert_Checked" Unchecked="convert_Unchecked"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="thumbnail" Width="160">
                         <GridViewColumn.CellTemplate>
@@ -142,13 +143,25 @@
                 </ToolTip>
             </Label.ToolTip>
         </Label>
+
         <Image Height="396" Margin="540,71,0,0" Name="_preview" Stretch="Uniform" VerticalAlignment="Top" MouseEnter="_preview_MouseEnter" MouseLeave="_preview_MouseLeave" HorizontalAlignment="Left" Width="705" />
         <Label Content="" Height="24" HorizontalAlignment="Left" Margin="540,444,0,0" Name="_lensLabel" VerticalAlignment="Top" Background="#7FFFFFFF" FontSize="10" />
-        <Rectangle Height="8" HorizontalAlignment="Left" Margin="540,436,0,0" Name="_previewProgressBar" Stroke="Green" VerticalAlignment="Top" Width="1" />
+        <Rectangle Height="8" HorizontalAlignment="Left" Margin="540,436,0,0" Name="_previewProgressBar" VerticalAlignment="Top" Width="1" >
+            <Rectangle.Style>
+                <Style TargetType="{x:Type Rectangle}">
+                    <Setter Property="Stroke" Value="White" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=_preview}" Value="True">
+                            <Setter Property="Stroke" Value="Green" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Rectangle.Style>
+        </Rectangle>
 
         <Label Background="#FFDEDEDE" Content="output settings" Height="28" HorizontalAlignment="Left" Margin="540,473,0,0" Name="_labelSettings" VerticalAlignment="Top" Width="705" FontSize="14" FontWeight="Bold" Foreground="#FF505050" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Content="select destination path" Height="23" HorizontalAlignment="Left" Margin="540,509,0,0" Name="_takePath" VerticalAlignment="Top" Width="213" Click="_takePath_Click"/>
-        <ToggleButton Template="{StaticResource chmeeButton}" Content="same as source" Height="23" HorizontalAlignment="Left" Margin="759,509,0,0" Name="_noPath" VerticalAlignment="Top" Width="101" Checked="_noPath_Checked" Unchecked="_noPath_Unchecked" Click="_noPath_Click" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Content="{Binding TakePath}" Height="23" HorizontalAlignment="Left" Margin="540,509,0,0" Name="_takePath" VerticalAlignment="Top" Width="213" Click="_takePath_Click" IsChecked="{Binding TakePathIsChecked}"/>
+        <ToggleButton Template="{StaticResource chmeeButton}" Content="same as source" Height="23" HorizontalAlignment="Left" Margin="759,509,0,0" Name="_noPath" VerticalAlignment="Top" Width="101" Checked="_noPath_Checked" Unchecked="_noPath_Unchecked" Click="_noPath_Click" IsChecked="{Binding NoPathIsChecked}" />
 
         <RadioButton GroupName="convertFormat" Content="CDNG 16bit" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}"  Height="23" HorizontalAlignment="Left" Margin="717,545,0,0" VerticalAlignment="Top" Width="172"  Name="_format16" Click="formatSelect_Click"/>
         <RadioButton GroupName="convertFormat" Content="CDNG 16bit maximized" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}" Height="23" HorizontalAlignment="Left" Margin="895,545,0,0" VerticalAlignment="Top" Width="172"  Name="_format16max" Click="formatSelect_Click"/>
@@ -158,7 +171,7 @@
         <Rectangle Height="1" HorizontalAlignment="Left" Margin="540,538,0,0" Name="trenner" Stroke="WhiteSmoke" VerticalAlignment="Top" Width="705" />
         <Rectangle Height="1" HorizontalAlignment="Left" Margin="540,575,0,0" Name="trenner2" Stroke="WhiteSmoke" VerticalAlignment="Top" Width="705"/>
 
-        <TextBox ToolTipService.ShowDuration="12000" Height="23" HorizontalAlignment="Right" Margin="0,509,12,0" Name="_prefix" VerticalAlignment="Top" Width="378" Background="White" BorderBrush="#FFDEDEDE" Foreground="#FF339933" Text="Cam01_[D]_[T]_[S](_F)" HorizontalContentAlignment="Center" TextChanged="_prefix_TextChanged">
+        <TextBox ToolTipService.ShowDuration="12000" Height="23" HorizontalAlignment="Right" Margin="0,509,12,0" Name="_prefix" VerticalAlignment="Top" Width="378" Background="White" BorderBrush="#FFDEDEDE" Foreground="#FF339933" Text="{Binding Prefix}" HorizontalContentAlignment="Center" TextChanged="_prefix_TextChanged">
             <TextBox.ToolTip>
                 <ToolTip>
                     <StackPanel>
@@ -173,7 +186,7 @@
                         <TextBlock>[F] - filename without ending</TextBlock>
                         <TextBlock>[S] - shortened filename [0-9a-z]</TextBlock>
                         <TextBlock>[C] - shortened filename only [0-9]</TextBlock>
-                       <TextBlock>[P] - source pathname</TextBlock>
+                        <TextBlock>[P] - source pathname</TextBlock>
                         <TextBlock>[B] - destination bitdepth</TextBlock>
                         <TextBlock>(..) - filesequence substring (on the end)</TextBlock>
                         <TextBlock>Sequencenumber is static on the end. length 5 digits</TextBlock>
@@ -186,17 +199,17 @@
                 </ToolTip>
             </TextBox.ToolTip>
         </TextBox>
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="vertical banding" Height="23" HorizontalAlignment="Left" Margin="895,582,0,0" Name="_banding" VerticalAlignment="Top" Width="172" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="chroma smoothing 2x2" Height="23" HorizontalAlignment="Right" Margin="0,582,12,0" Name="_smoothing" VerticalAlignment="Top" Width="172" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy disabled" Height="23" HorizontalAlignment="Left" Margin="717,582,0,0" Name="_proxy" VerticalAlignment="Top" Width="103" Unchecked="_proxy_Unchecked" Checked="_proxy_Checked" IsEnabled="True" />
-        <Button Background="WhiteSmoke" Content="jpg" Height="23" HorizontalAlignment="Left" IsEnabled="False" Margin="826,582,0,0" Name="_proxyKind" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="63" Click="_proxyKind_Click" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="premiere highlight fix" Height="23" HorizontalAlignment="Left" Margin="540,582,0,0" Name="_highlights" VerticalAlignment="Top" Width="172" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="vertical banding" Height="23" HorizontalAlignment="Left" Margin="895,582,0,0" Name="_banding" VerticalAlignment="Top" Width="172" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" IsChecked="{Binding BandingIsChecked}" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="chroma smoothing 2x2" Height="23" HorizontalAlignment="Right" Margin="0,582,12,0" Name="_smoothing" VerticalAlignment="Top" Width="172" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" IsChecked="{Binding SmoothingIsChecked}" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy disabled" Height="23" HorizontalAlignment="Left" Margin="717,582,0,0" Name="_proxy" VerticalAlignment="Top" Width="103" Unchecked="_proxy_Unchecked" Checked="_proxy_Checked" IsEnabled="True" IsChecked="{Binding ProxyIsChecked}" />
+        <Button Background="WhiteSmoke" Content="{Binding ProxyKind}" Height="23" HorizontalAlignment="Left" IsEnabled="{Binding ProxyKindIsEnabled}" Margin="826,582,0,0" Name="_proxyKind" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="63" Click="_proxyKind_Click" />
+        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="premiere highlight fix" Height="23" HorizontalAlignment="Left" Margin="540,582,0,0" Name="_highlights" VerticalAlignment="Top" Width="172" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" IsChecked="{Binding HighlightsIsChecked}" />
         <Button Template="{StaticResource chmeeButton}" Content="convert" Height="28" HorizontalAlignment="Left" Margin="540,611,0,0" Name="_convert" VerticalAlignment="Top" Width="705" FontSize="14" FontWeight="Bold" HorizontalContentAlignment="Center" Padding="2" Click="_convert_Click" IsEnabled="False" />
 
-        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,611,0,0" Name="_progressOne" VerticalAlignment="Top" Width="482" Orientation="Horizontal" BorderBrush="#FFC8C8C8" Background="#FFEEEEEE" Foreground="#FF0064EE" Value="25" FontSize="8"/>
-        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,627,0,0" Name="_progressAll" Orientation="Horizontal" VerticalAlignment="Top" Width="482" Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Value="75" FontSize="8" />
-        <Label Background="#FFDEDEDE" Content="4" Height="28" HorizontalAlignment="Left" Margin="8,611,0,0" Name="_cores" VerticalAlignment="Top" Width="38" HorizontalContentAlignment="Center" FontWeight="Bold" FontSize="14" />
-        <ProgressBar Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Height="12" HorizontalAlignment="Left" Margin="148,305,0,0" Name="_dragDropProgressBar" Orientation="Horizontal" Template="{StaticResource chmeeProgress}" Value="75" VerticalAlignment="Top" Width="200" IsEnabled="True" />
+        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,611,0,0" Name="_progressOne" VerticalAlignment="Top" Width="482" Orientation="Horizontal" BorderBrush="#FFC8C8C8" Background="#FFEEEEEE" Foreground="#FF0064EE" Value="0" FontSize="8"/>
+        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,627,0,0" Name="_progressAll" Orientation="Horizontal" VerticalAlignment="Top" Width="482" Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Value="0" FontSize="8" />
+        <Label Background="#FFDEDEDE" Content="{Binding CPUcores}" Height="28" HorizontalAlignment="Left" Margin="8,611,0,0" Name="_cores" VerticalAlignment="Top" Width="38" HorizontalContentAlignment="Center" FontWeight="Bold" FontSize="14" />
+        <ProgressBar Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Height="0" HorizontalAlignment="Left" Margin="148,305,0,0" Name="_dragDropProgressBar" Orientation="Horizontal" Template="{StaticResource chmeeProgress}" Value="75" VerticalAlignment="Top" Width="0" IsEnabled="True" />
         <Label Background="#7FFFFFFF" FontSize="8" Height="18" HorizontalAlignment="Left" Margin="311,12,0,0" Name="_actionOutput" VerticalAlignment="Top" Width="727" Foreground="#FFA0A0A0" Padding="2" />
     </Grid>
 </Window>
