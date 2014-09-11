@@ -54,7 +54,7 @@ namespace raw2cdng_v2
         // -- timertick for _preview
         DispatcherTimer previewTimer = new DispatcherTimer();
         // -- timertick for _draggedProgress
-        DispatcherTimer progressDragDrop = new DispatcherTimer();
+        //DispatcherTimer progressDragDrop = new DispatcherTimer();
 
         // -- old folderBrowserdialog
         System.Windows.Forms.FolderBrowserDialog _selectFolder = new System.Windows.Forms.FolderBrowserDialog();
@@ -318,6 +318,139 @@ namespace raw2cdng_v2
                 RaisePropertyChanged("Prefix");
             }
         }
+        
+        private bool loadingDroppedData = false;
+        public bool LoadingDroppedData
+        {
+            get
+            {
+                return loadingDroppedData;
+            }
+
+            set
+            {
+                if (loadingDroppedData == value)
+                    return;
+
+                RaisePropertyChanging("LoadingDroppedData");
+                loadingDroppedData = value;
+                RaisePropertyChanged("LoadingDroppedData");
+            }
+        }
+        
+        private int droppedDataCount = 0;
+        public int DroppedDataCount
+        {
+            get
+            {
+                return droppedDataCount;
+            }
+
+            set
+            {
+                if (droppedDataCount == value)
+                    return;
+
+                RaisePropertyChanging("DroppedDataCount");
+                droppedDataCount = value;
+                RaisePropertyChanged("DroppedDataCount");
+            }
+        }
+
+        private int progressedDroppedDataCount = 0;
+        public int ProgressedDroppedDataCount
+        {
+            get
+            {
+                return progressedDroppedDataCount;
+            }
+
+            set
+            {
+                if (progressedDroppedDataCount == value)
+                    return;
+
+                RaisePropertyChanging("ProgressedDroppedDataCount");
+                progressedDroppedDataCount = value;
+                RaisePropertyChanged("ProgressedDroppedDataCount");
+            }
+        }
+
+        private int framesToProgress = 1;
+        public int FramesToProgress
+        {
+            get
+            {
+                return framesToProgress;
+            }
+
+            set
+            {
+                if (framesToProgress == value)
+                    return;
+
+                RaisePropertyChanging("FramesToProgress");
+                framesToProgress = value;
+                RaisePropertyChanged("FramesToProgress");
+            }
+        }
+
+        private int framesProgressed = 0;
+        public int FramesProgressed
+        {
+            get
+            {
+                return framesProgressed;
+            }
+
+            set
+            {
+                if (framesProgressed == value)
+                    return;
+
+                RaisePropertyChanging("FramesProgressed");
+                framesProgressed = value;
+                RaisePropertyChanged("FramesProgressed");
+            }
+        }
+
+        private int totalFramesToProgress = 1;
+        public int TotalFramesToProgress
+        {
+            get
+            {
+                return totalFramesToProgress;
+            }
+
+            set
+            {
+                if (totalFramesToProgress == value)
+                    return;
+
+                RaisePropertyChanging("TotalFramesToProgress");
+                totalFramesToProgress = value;
+                RaisePropertyChanged("TotalFramesToProgress");
+            }
+        }
+
+        private int totalFramesProgressed = 0;
+        public int TotalFramesProgressed
+        {
+            get
+            {
+                return totalFramesProgressed;
+            }
+
+            set
+            {
+                if (totalFramesProgressed == value)
+                    return;
+
+                RaisePropertyChanging("TotalFramesProgressed");
+                totalFramesProgressed = value;
+                RaisePropertyChanged("TotalFramesProgressed");
+            }
+        }
 
         public MainWindow()
         {
@@ -343,8 +476,8 @@ namespace raw2cdng_v2
             previewTimer.Tick += previewTimer_Tick;
             previewTimer.Interval = TimeSpan.FromMilliseconds(25);
 
-            progressDragDrop.Tick += progressDragDrop_Tick;
-            progressDragDrop.Interval = TimeSpan.FromMilliseconds(20);
+            //progressDragDrop.Tick += progressDragDrop_Tick;
+            //progressDragDrop.Interval = TimeSpan.FromMilliseconds(20);
 
 
             //_previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
@@ -394,9 +527,9 @@ namespace raw2cdng_v2
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
                 // draggedProgress Start
-                _dragDropProgressBar.Height = 12;
-                _dragDropProgressBar.Width = 200;
-                progressDragDrop.Start();
+                //_dragDropProgressBar.Height = 12;
+                //_dragDropProgressBar.Width = 200;                
+                //progressDragDrop.Start();
 
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 
@@ -433,6 +566,14 @@ namespace raw2cdng_v2
 
             // --- list of dropped files
             fileList.Sort();
+
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(new Action(()=>{
+
+                this.LoadingDroppedData = true;
+                this.DroppedDataCount = fileList.Count;
+
+            }), DispatcherPriority.Normal, null);
+            
 
             foreach (string file in fileList)
             {
@@ -558,13 +699,20 @@ namespace raw2cdng_v2
                     }
 
                 }
+                                
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(new Action(progressedDroppedFile), DispatcherPriority.Normal, null);                
+
             }
-            progressDragDrop.Stop();
+            //progressDragDrop.Stop();
+
+            this.LoadingDroppedData = false;
+            this.DroppedDataCount = 0;
+            this.ProgressedDroppedDataCount = 0;
 
             this.Dispatcher.Invoke((Action)(() =>
             {
-                _dragDropProgressBar.Height = 0;
-                _dragDropProgressBar.Width = 0;
+                //_dragDropProgressBar.Height = 0;
+                //_dragDropProgressBar.Width = 0;                
 
                 if (_batchList.Items.Count > 0)
                 {
@@ -592,8 +740,8 @@ namespace raw2cdng_v2
             // disable GUI
             this.Dispatcher.Invoke((Action)(() =>
             {
-                _progressAll.Maximum = allFramesCount;
-                _progressAll.Value = 0;
+                this.TotalFramesToProgress = allFramesCount;
+                this.TotalFramesProgressed = 0;
                 _convert.Content = "converting";
                 _batchList.IsEnabled = false;
                 _convert.IsEnabled = false;
@@ -638,8 +786,9 @@ namespace raw2cdng_v2
                     this.Dispatcher.Invoke((Action)(() =>
                     {
                         // -- refresh _progressbar.One
-                        _progressOne.Value = 0;
-                        _progressOne.Maximum = file.data.metaData.frames;
+                        this.FramesToProgress = file.data.metaData.frames;
+                        this.FramesProgressed = 0;
+                        
                         convertPosition++;
                         _actionOutput.Content = "converting " + convertPosition + "/" + convertAmount + " - " + file.data.fileData.fileNameOnly;
                         _batchList.SelectedItem = file;
@@ -859,8 +1008,10 @@ namespace raw2cdng_v2
                 rawFiles.Clear();
                 _preview.Source = null;
 
-                _progressOne.Value = 0;
-                _progressAll.Value = 0;
+                this.FramesProgressed = 0;
+                this.FramesToProgress = 1;
+                this.TotalFramesProgressed = 0;
+                this.TotalFramesToProgress = 1;
                 _convert.IsEnabled = false;
                 _convert.Content = "convert";
 
@@ -981,8 +1132,10 @@ namespace raw2cdng_v2
             {
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    _progressOne.Value = (int)p.threadData.frame;
-                    _progressAll.Value = (int)allFramesCount;
+                    //_progressOne.Value = (int)p.threadData.frame;
+                    this.FramesProgressed = p.threadData.frame;
+                    //_progressAll.Value = (int)allFramesCount;
+                    this.TotalFramesProgressed = allFramesCount;
                 }));
             }
         }
@@ -1232,23 +1385,28 @@ namespace raw2cdng_v2
             if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
         }
 
-        private void progressDragDrop_Tick(object sender, EventArgs e)
+        private void progressedDroppedFile()
         {
-            Task.Factory.StartNew(() => draggedProgress());
+            this.ProgressedDroppedDataCount++;
         }
 
-        public void draggedProgress()
-        {
-            int w = 0;
-            this.Dispatcher.Invoke((Action)(() =>
-            {
-                w = (int)_dragDropProgressBar.Value;
-                w = (w + 1) % 100;
-                _dragDropProgressBar.Value = w;
-                _dragDropProgressBar.InvalidateVisual();
-            }));
+        //private void progressDragDrop_Tick(object sender, EventArgs e)
+        //{
+        //    Task.Factory.StartNew(() => draggedProgress());
+        //}
 
-        }
+        //public void draggedProgress()
+        //{
+        //    int w = 0;
+        //    this.Dispatcher.Invoke((Action)(() =>
+        //    {
+        //        w = (int)_dragDropProgressBar.Value;
+        //        w = (w + 1) % 100;
+        //        _dragDropProgressBar.Value = w;
+        //        _dragDropProgressBar.InvalidateVisual();
+        //    }));
+
+        //}
 
         public void previewBackground(raw r)
         {
@@ -1256,7 +1414,7 @@ namespace raw2cdng_v2
             if (frame > -1)
             {
                 var maxFrames = r.data.metaData.frames;
-                var progressPosX = 540 + 705 * frame / maxFrames;
+                var progressPosX = _preview.ActualWidth * frame / maxFrames;
                 // read picture and show
                 r.data.threadData.frame = frame;
 
@@ -1265,7 +1423,7 @@ namespace raw2cdng_v2
                 {
                     _preview.Source = io.showPicture(r, quality.high709);
                     _lensLabel.Content = String.Format("{0:d5}", frame);
-                    _previewProgressBar.Margin = new Thickness(progressPosX, 436, 0, 0);
+                    _previewProgressBar.Margin = new Thickness(progressPosX, 0, 0, 0);
                     _preview.InvalidateVisual();
                     _lensLabel.InvalidateVisual();
                 }));

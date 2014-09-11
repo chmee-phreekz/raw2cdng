@@ -12,204 +12,333 @@
         HorizontalAlignment="Left" VerticalAlignment="Top" 
         BorderThickness="1" 
         MouseLeftButtonDown="Window_MouseLeftButtonDown" 
-        Icon="/raw2cdng_v2;component/appicon.ico" SizeToContent="WidthAndHeight"
+        Icon="/raw2cdng_v2;component/appicon.ico" 
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
 
     <Window.Resources>
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
         <Style TargetType="{x:Type GridViewColumnHeader}">
             <Setter Property="Visibility" Value="Collapsed"/>
         </Style>
-        <Style x:Key="chmeeListview" TargetType="{x:Type ListViewItem}">
-            <Style.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="White" />
-                <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}" Color="White" />
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black" />
-                <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}" Color="Black" />
-            </Style.Resources>
-            <Setter Property="Focusable" Value="False" />
-        </Style>
 
         <ControlTemplate x:Key="chmeeProgress" TargetType="{x:Type ProgressBar}">
-            <Grid HorizontalAlignment="Left" Height="{TemplateBinding ProgressBar.Height}" VerticalAlignment="Top" Width="{TemplateBinding ProgressBar.Width}">
-                <Grid x:Name="PART_Track" Margin="0" Width="{TemplateBinding ProgressBar.Width}" HorizontalAlignment="Left" Background="WhiteSmoke" OpacityMask="{x:Null}"/>
-                <Grid x:Name="PART_Indicator" Margin="0" HorizontalAlignment="Left" Background="#FFa0a0a0" Height="{TemplateBinding ProgressBar.Height}"/>
+            <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" Height="{TemplateBinding Height}" VerticalAlignment="{TemplateBinding VerticalAlignment}" Width="{TemplateBinding Width}">
+                <Grid x:Name="PART_Track" Margin="0" Background="WhiteSmoke" />
+                <Grid x:Name="PART_Indicator" Margin="0" HorizontalAlignment="Left" Background="#FFa0a0a0" Width="{TemplateBinding Value}"/>
             </Grid>
         </ControlTemplate>
 
-        <ControlTemplate x:Key="chmeeButton">
-            <Grid>
-                <Rectangle x:Name="filling" >
-                    <Rectangle.Fill>
-                        <SolidColorBrush Color="WhiteSmoke" />
-                    </Rectangle.Fill>
-                </Rectangle>
-                <ContentPresenter x:Name="contentdata" Opacity="1.0" VerticalAlignment="Center" HorizontalAlignment="Center" Content="{TemplateBinding Button.Content}"/>
-            </Grid>
-            <ControlTemplate.Triggers>
-                <Trigger Property="Button.IsMouseOver" Value="true">
-                    <Setter TargetName="filling" Property="Fill" Value="#e0e0e0"/>
-                </Trigger>
-                <Trigger Property="Button.IsPressed" Value="true">
-                    <Setter TargetName="filling" Property="Fill" Value="#a0ffa0"/>
-                </Trigger>
-                <Trigger Property="RadioButton.IsChecked" Value="true">
-                    <Setter TargetName="filling" Property="Fill" Value="#e0ffe0"/>
-                </Trigger>
-                <Trigger Property="RadioButton.IsEnabled" Value="false">
-                    <Setter TargetName="filling" Property="Fill" Value="#fcfcfc"/>
-                    <Setter TargetName="contentdata" Property="Opacity" Value="0.15"/>
-                </Trigger>
-
-            </ControlTemplate.Triggers>
+        <ControlTemplate x:Key="chmeeButtonTemplate" TargetType="{x:Type ButtonBase}">
+            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}" VerticalAlignment="{TemplateBinding VerticalAlignment}" Background="{TemplateBinding Background}" >
+                <ContentPresenter ContentSource="Content" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"  />
+            </Border>
         </ControlTemplate>
+
+        <Style x:Key="chmeeButtonBaseStyle" TargetType="{x:Type ButtonBase}">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="10,2" />
+            <Setter Property="Background" Value="WhiteSmoke" />
+            <Setter Property="BorderBrush" Value="#FFEEEEEE" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Template" Value="{StaticResource chmeeButtonTemplate}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="true">
+                    <Setter Property="Background" Value="#e0e0e0"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="true">
+                    <Setter Property="Background" Value="#a0ffa0"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="false">
+                    <Setter Property="Background" Value="#fcfcfc"/>
+                    <Setter Property="Opacity" Value="0.15"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="chmeeButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource chmeeButtonBaseStyle}"/>
+
+        <Style x:Key="chmeeToggleButtonStyle" TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource chmeeButtonBaseStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="true">
+                    <Setter Property="Background" Value="#e0ffe0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="chmeeRadioButtonStyle" TargetType="{x:Type RadioButton}" BasedOn="{StaticResource chmeeButtonBaseStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="true">
+                    <Setter Property="Background" Value="#e0ffe0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="chmeeHeaderLabelStyle" TargetType="{x:Type Label}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Background" Value="#FFDEDEDE" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="#FF505050" />
+        </Style>
+
     </Window.Resources>
 
-    <Grid Width="1257" HorizontalAlignment="Left" VerticalAlignment="Top" Height="660" MaxWidth="1257">
-        <TextBlock Height="23" HorizontalAlignment="Left" Margin="10,7,0,0" Name="_title" Text="{Binding Version, StringFormat={}raw2cdng {0}}" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Foreground="#FF666666" />
-        <ToggleButton Content="debug" Height="23" HorizontalAlignment="Left" Margin="1056,7,0,0" Name="_logDebug" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="51" Unchecked="_logDebug_Unchecked" Checked="_logDebug_Checked" IsChecked="{Binding LogDebugIsChecked}" />
-        <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="exit" Height="23" HorizontalAlignment="Left" Margin="1194,7,0,0" Name="_exit" VerticalAlignment="Top" Width="51" Click="_exit_Click" />
-        <Button Template="{StaticResource chmeeButton}" BorderBrush="#FFEEEEEE" Content="info" Height="23" HorizontalAlignment="Left" Margin="1125,7,0,0" Name="_info" VerticalAlignment="Top" Width="51" Click="_info_Click" />
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <Label Content="batchlist" Height="28" HorizontalAlignment="Left" Margin="8,37,0,0" Name="_labelBatchlist" VerticalAlignment="Top" Width="526" Background="#FFDEDEDE" FontWeight="Bold" FontSize="14" Foreground="#FF505050">
-            <Label.ToolTip>
-                <ToolTip>
-                    <StackPanel>
-                        <TextBlock FontWeight="Bold">import your mlv and raw files</TextBlock>
-                        <TextBlock>drag drop files into the batchlist</TextBlock>
-                        <TextBlock>uncheck unwanted file-converts</TextBlock>
-                    </StackPanel>
-                </ToolTip>
-            </Label.ToolTip>
-        </Label>
-        <ListView ItemsSource="{Binding RawFiles}" Height="534" HorizontalAlignment="Left" Margin="8,71,0,0" Name="_batchList" VerticalAlignment="Top" Width="526" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" HorizontalContentAlignment="Center">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="do" Width="22">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <CheckBox Margin="-4,0,-4,0" IsChecked="{Binding convert}" Checked="convert_Checked" Unchecked="convert_Unchecked"/>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="thumbnail" Width="160">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <!-- zurueck auf 160 90 thumbnail  Source="{Binding thumbnail}"-->
-                                <Image  Margin="-4,0,-4,0" Height="90" Width="160" Stretch="Uniform" VerticalAlignment="Center">
-                                    <Image.Resources>
-                                        <Style TargetType="{x:Type Image}">
-                                            <!-- Default image -->
-                                            <Setter Property="Source" Value="{Binding thumbnail}"/>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <!-- Hover image -->
-                                                    <Setter Property="Source" Value="{Binding histogram}"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Image.Resources>
-                                </Image>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="desc" Width="316">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition />
-                                        <RowDefinition />
-                                        <RowDefinition />
-                                        <RowDefinition />
-                                    </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Name="_batchListTitle" Text="{Binding ListviewTitle}" Foreground="Black" FontWeight="Bold"/>
-                                    <TextBlock Grid.Row="1" Text="{Binding ListviewPropA}" Foreground="Gray" />
-                                    <TextBlock Grid.Row="2" Text="{Binding ListviewPropB}" Foreground="Gray" />
-                                    <TextBlock Grid.Row="3" Text="{Binding ListviewPropC}" Foreground="Gray" />
-                                </Grid>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <Label Content="preview" Height="28" Width="705" HorizontalAlignment="Left" Margin="540,37,0,0" Name="_labelPreview" VerticalAlignment="Top" Background="#FFDEDEDE" FontSize="14" FontWeight="Bold" Foreground="#FF505050">
-            <Label.ToolTip>
-                <ToolTip>
-                    <StackPanel>
-                        <TextBlock FontWeight="Bold">preview picture</TextBlock>
-                        <TextBlock>click on a batchlist entry</TextBlock>
-                    </StackPanel>
-                </ToolTip>
-            </Label.ToolTip>
-        </Label>
+            <TextBlock Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Name="_title" Text="{Binding Version, StringFormat={}raw2cdng {0}}" FontSize="18" FontWeight="Bold" Foreground="#FF666666" />
 
-        <Image Height="396" Margin="540,71,0,0" Name="_preview" Stretch="Uniform" VerticalAlignment="Top" MouseEnter="_preview_MouseEnter" MouseLeave="_preview_MouseLeave" HorizontalAlignment="Left" Width="705" />
-        <Label Content="" Height="24" HorizontalAlignment="Left" Margin="540,444,0,0" Name="_lensLabel" VerticalAlignment="Top" Background="#7FFFFFFF" FontSize="10" />
-        <Rectangle Height="8" HorizontalAlignment="Left" Margin="540,436,0,0" Name="_previewProgressBar" VerticalAlignment="Top" Width="1" >
-            <Rectangle.Style>
-                <Style TargetType="{x:Type Rectangle}">
-                    <Setter Property="Stroke" Value="White" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=_preview}" Value="True">
-                            <Setter Property="Stroke" Value="Green" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Rectangle.Style>
-        </Rectangle>
+            <Label Grid.Column="1" Background="#7FFFFFFF" FontSize="8" Height="18" HorizontalAlignment="Center" Name="_actionOutput" VerticalAlignment="Center" Foreground="#FFA0A0A0" Padding="2" />
 
-        <Label Background="#FFDEDEDE" Content="output settings" Height="28" HorizontalAlignment="Left" Margin="540,473,0,0" Name="_labelSettings" VerticalAlignment="Top" Width="705" FontSize="14" FontWeight="Bold" Foreground="#FF505050" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Content="{Binding TakePath}" Height="23" HorizontalAlignment="Left" Margin="540,509,0,0" Name="_takePath" VerticalAlignment="Top" Width="213" Click="_takePath_Click" IsChecked="{Binding TakePathIsChecked}"/>
-        <ToggleButton Template="{StaticResource chmeeButton}" Content="same as source" Height="23" HorizontalAlignment="Left" Margin="759,509,0,0" Name="_noPath" VerticalAlignment="Top" Width="101" Checked="_noPath_Checked" Unchecked="_noPath_Unchecked" Click="_noPath_Click" IsChecked="{Binding NoPathIsChecked}" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="debug" Name="_logDebug" Unchecked="_logDebug_Unchecked" Checked="_logDebug_Checked" IsChecked="{Binding LogDebugIsChecked}" />
+                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="info" Name="_info" Click="_info_Click" />
+                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="exit" Name="_exit" Click="_exit_Click" />
+            </StackPanel>
 
-        <RadioButton GroupName="convertFormat" Content="CDNG 16bit" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}"  Height="23" HorizontalAlignment="Left" Margin="717,545,0,0" VerticalAlignment="Top" Width="172"  Name="_format16" Click="formatSelect_Click"/>
-        <RadioButton GroupName="convertFormat" Content="CDNG 16bit maximized" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}" Height="23" HorizontalAlignment="Left" Margin="895,545,0,0" VerticalAlignment="Top" Width="172"  Name="_format16max" Click="formatSelect_Click"/>
-        <RadioButton GroupName="convertFormat" Content="ARRIRAW 12bit" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}" Height="23" Margin="1073,545,12,0" VerticalAlignment="Top" Width="172" Name="_format12" Click="formatSelect_Click" IsEnabled="False" />
-        <RadioButton GroupName="convertFormat" Content="CDNG 12bit maximized" Style="{StaticResource {x:Type ToggleButton}}" Template="{StaticResource chmeeButton}" Height="23" HorizontalAlignment="Left" Margin="540,545,0,0" VerticalAlignment="Top" Width="172" Name="_format12max" Click="formatSelect_Click" Visibility="Visible" IsEnabled="True" />
+        </Grid>
+        
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            
+            <Grid Grid.Column="0" >
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-        <Rectangle Height="1" HorizontalAlignment="Left" Margin="540,538,0,0" Name="trenner" Stroke="WhiteSmoke" VerticalAlignment="Top" Width="705" />
-        <Rectangle Height="1" HorizontalAlignment="Left" Margin="540,575,0,0" Name="trenner2" Stroke="WhiteSmoke" VerticalAlignment="Top" Width="705"/>
+                <Label Style="{StaticResource chmeeHeaderLabelStyle}" Content="batchlist" Name="_labelBatchlist">
+                    <Label.ToolTip>
+                        <TextBlock>
+                            <Bold>import your mlv and raw files</Bold><LineBreak />
+                            drag drop files into the batchlist<LineBreak />
+                            uncheck unwanted file-converts
+                        </TextBlock>
+                    </Label.ToolTip>
+                </Label>
+                                
+                <ListView Grid.Row="1" ItemsSource="{Binding RawFiles}" Name="_batchList" Drop="batchList_Drop" AllowDrop="True" PreviewMouseLeftButtonUp="batchList_Click" SelectionMode="Extended" IsTextSearchEnabled="False" Margin="0,10">
+                    <ListView.View>
+                        <GridView>                            
+                            <GridViewColumn Header="do" Width="25">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding convert}" Checked="convert_Checked" Unchecked="convert_Unchecked"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="thumbnail" Width="172" >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <!-- zurueck auf 160 90 thumbnail  Source="{Binding thumbnail}"-->
+                                        <Image Height="90" Width="160" Stretch="Uniform" VerticalAlignment="Center">
+                                            <Image.Resources>
+                                                <Style TargetType="{x:Type Image}">
+                                                    <!-- Default image -->
+                                                    <Setter Property="Source" Value="{Binding thumbnail}"/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <!-- Hover image -->
+                                                            <Setter Property="Source" Value="{Binding histogram}"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Resources>
+                                        </Image>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="desc" >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Vertical" >
+                                            <TextBlock Grid.Row="0" Name="_batchListTitle" Text="{Binding ListviewTitle}" Foreground="Black" FontWeight="Bold"/>
+                                            <TextBlock Grid.Row="1" Text="{Binding ListviewPropA}" Foreground="Gray" />
+                                            <TextBlock Grid.Row="2" Text="{Binding ListviewPropB}" Foreground="Gray" />
+                                            <TextBlock Grid.Row="3" Text="{Binding ListviewPropC}" Foreground="Gray" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
 
-        <TextBox ToolTipService.ShowDuration="12000" Height="23" HorizontalAlignment="Right" Margin="0,509,12,0" Name="_prefix" VerticalAlignment="Top" Width="378" Background="White" BorderBrush="#FFDEDEDE" Foreground="#FF339933" Text="{Binding Prefix}" HorizontalContentAlignment="Center" TextChanged="_prefix_TextChanged">
-            <TextBox.ToolTip>
-                <ToolTip>
-                    <StackPanel>
-                        <TextBlock FontWeight="Bold">naming variables</TextBlock>
-                        <TextBlock></TextBlock>
-                        <TextBlock>[D] - date yymmdd of creation</TextBlock>
-                        <TextBlock>[D2] - datetime yyyy-MM-dd_HHmm</TextBlock>
-                        <TextBlock>[M] - date yymmdd of modification/last write</TextBlock>
-                        <TextBlock>[M2] - datetime yyyy-MM-dd_HHmm</TextBlock>
-                        <TextBlock>[T] - time hhmmss of creation</TextBlock>
-                        <TextBlock>[T2] - time hhmmss of modification/last write</TextBlock>
-                        <TextBlock>[F] - filename without ending</TextBlock>
-                        <TextBlock>[S] - shortened filename [0-9a-z]</TextBlock>
-                        <TextBlock>[C] - shortened filename only [0-9]</TextBlock>
-                        <TextBlock>[P] - source pathname</TextBlock>
-                        <TextBlock>[B] - destination bitdepth</TextBlock>
-                        <TextBlock>(..) - filesequence substring (on the end)</TextBlock>
-                        <TextBlock>Sequencenumber is static on the end. length 5 digits</TextBlock>
-                        <TextBlock></TextBlock>
-                        <TextBlock>EXAMPLE</TextBlock>
-                        <TextBlock>SUMMER_[F]_[D]_[T](_C)</TextBlock>
-                        <TextBlock>Path + Audio : SUMMER_M16-1046_140416_1046</TextBlock>
-                        <TextBlock>DNG-Sequence : SUMMER_M16-1046_140416_1046_C01234.DNG</TextBlock>
-                    </StackPanel>
-                </ToolTip>
-            </TextBox.ToolTip>
-        </TextBox>
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="vertical banding" Height="23" HorizontalAlignment="Left" Margin="895,582,0,0" Name="_banding" VerticalAlignment="Top" Width="172" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" IsChecked="{Binding BandingIsChecked}" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="chroma smoothing 2x2" Height="23" HorizontalAlignment="Right" Margin="0,582,12,0" Name="_smoothing" VerticalAlignment="Top" Width="172" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" IsChecked="{Binding SmoothingIsChecked}" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="proxy disabled" Height="23" HorizontalAlignment="Left" Margin="717,582,0,0" Name="_proxy" VerticalAlignment="Top" Width="103" Unchecked="_proxy_Unchecked" Checked="_proxy_Checked" IsEnabled="True" IsChecked="{Binding ProxyIsChecked}" />
-        <Button Background="WhiteSmoke" Content="{Binding ProxyKind}" Height="23" HorizontalAlignment="Left" IsEnabled="{Binding ProxyKindIsEnabled}" Margin="826,582,0,0" Name="_proxyKind" Template="{StaticResource chmeeButton}" VerticalAlignment="Top" Width="63" Click="_proxyKind_Click" />
-        <ToggleButton Template="{StaticResource chmeeButton}" Background="WhiteSmoke" Content="premiere highlight fix" Height="23" HorizontalAlignment="Left" Margin="540,582,0,0" Name="_highlights" VerticalAlignment="Top" Width="172" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" IsChecked="{Binding HighlightsIsChecked}" />
-        <Button Template="{StaticResource chmeeButton}" Content="convert" Height="28" HorizontalAlignment="Left" Margin="540,611,0,0" Name="_convert" VerticalAlignment="Top" Width="705" FontSize="14" FontWeight="Bold" HorizontalContentAlignment="Center" Padding="2" Click="_convert_Click" IsEnabled="False" />
+                <ProgressBar Grid.Row="1" Height="12" HorizontalAlignment="Stretch" Name="_dragDropProgressBar" Template="{StaticResource chmeeProgress}" VerticalAlignment="Center" IsEnabled="True" Value="{Binding ProgressedDroppedDataCount}" Maximum="{Binding DroppedDataCount}" Margin="10,0" Visibility="{Binding LoadingDroppedData, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,611,0,0" Name="_progressOne" VerticalAlignment="Top" Width="482" Orientation="Horizontal" BorderBrush="#FFC8C8C8" Background="#FFEEEEEE" Foreground="#FF0064EE" Value="0" FontSize="8"/>
-        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Left" Margin="52,627,0,0" Name="_progressAll" Orientation="Horizontal" VerticalAlignment="Top" Width="482" Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Value="0" FontSize="8" />
-        <Label Background="#FFDEDEDE" Content="{Binding CPUcores}" Height="28" HorizontalAlignment="Left" Margin="8,611,0,0" Name="_cores" VerticalAlignment="Top" Width="38" HorizontalContentAlignment="Center" FontWeight="Bold" FontSize="14" />
-        <ProgressBar Background="#FFEEEEEE" BorderBrush="#FFC8C8C8" Foreground="#FF0064EE" Height="0" HorizontalAlignment="Left" Margin="148,305,0,0" Name="_dragDropProgressBar" Orientation="Horizontal" Template="{StaticResource chmeeProgress}" Value="75" VerticalAlignment="Top" Width="0" IsEnabled="True" />
-        <Label Background="#7FFFFFFF" FontSize="8" Height="18" HorizontalAlignment="Left" Margin="311,12,0,0" Name="_actionOutput" VerticalAlignment="Top" Width="727" Foreground="#FFA0A0A0" Padding="2" />
+                <Grid Grid.Row="2">
+                    
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Grid.Column="0" Background="#FFDEDEDE" Content="{Binding CPUcores}" Name="_cores" FontWeight="Bold" FontSize="14" Padding="15,5" Margin="0,0,5,0"  />
+
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ProgressBar Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Stretch" Name="_progressOne" Value="{Binding FramesProgressed}" Maximum="{Binding FramesToProgress}" FontSize="8"/>
+                        <ProgressBar Grid.Row="1" Template="{StaticResource chmeeProgress}" Height="12" HorizontalAlignment="Stretch" Name="_progressAll" Value="{Binding TotalFramesProgressed}" Maximum="{Binding TotalFramesToProgress}" FontSize="8" Margin="0,5,0,0"  />                        
+                    </Grid>
+                    
+                </Grid>
+            </Grid>
+            
+            <Grid Grid.Column="1" Margin="10,0,0,0">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Label Style="{StaticResource chmeeHeaderLabelStyle}" Content="preview" Name="_labelPreview">
+                    <Label.ToolTip>
+                        <TextBlock>
+                            <Bold>preview picture</Bold><LineBreak />
+                            click on a batchlist entry
+                        </TextBlock>                        
+                    </Label.ToolTip>
+                </Label>
+                
+                <Grid Grid.Row="1" Margin="0,10">
+                    
+                    <Image Name="_preview" Stretch="Uniform" VerticalAlignment="Top" MouseEnter="_preview_MouseEnter" MouseLeave="_preview_MouseLeave" />
+                    
+                    <Grid VerticalAlignment="Top">                        
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Label Content="" HorizontalAlignment="Left" Name="_lensLabel" Background="#7FFFFFFF" FontSize="10" />
+
+                        <Rectangle Grid.Row="1"  Height="8" HorizontalAlignment="Left" Name="_previewProgressBar" VerticalAlignment="Top" Width="1" >
+                            <Rectangle.Style>
+                                <Style TargetType="{x:Type Rectangle}">
+                                    <Setter Property="Stroke" Value="White" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=_preview}" Value="True">
+                                            <Setter Property="Stroke" Value="Green" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Rectangle.Style>
+                        </Rectangle>
+
+                    </Grid>
+                    
+                </Grid>
+                
+                <Grid Grid.Row="2">
+                    
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Label Style="{StaticResource chmeeHeaderLabelStyle}" Content="output settings" Name="_labelSettings" />
+                    
+                    <Grid Grid.Row="1" Margin="0,10">
+                        
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        
+                        <Grid>
+                            
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />                                
+                            </Grid.ColumnDefinitions>
+
+                            <ToggleButton Grid.Column="0" Style="{StaticResource chmeeToggleButtonStyle}" Content="{Binding TakePath}" Name="_takePath" Click="_takePath_Click" IsChecked="{Binding TakePathIsChecked}"/>
+                            <ToggleButton Grid.Column="1" Style="{StaticResource chmeeToggleButtonStyle}" Content="same as source" Name="_noPath" Checked="_noPath_Checked" Unchecked="_noPath_Unchecked" Click="_noPath_Click" IsChecked="{Binding NoPathIsChecked}" Margin="5,0,0,0"  />
+                            <TextBox Grid.Column="2" ToolTipService.ShowDuration="12000" Name="_prefix" Background="White" BorderBrush="#FFDEDEDE" Foreground="#FF339933" Text="{Binding Prefix}" HorizontalContentAlignment="Center" TextChanged="_prefix_TextChanged" Margin="5,0,0,0">
+                                <TextBox.ToolTip>
+                                    <TextBlock>
+                                        <Bold>naming variables</Bold><LineBreak />
+                                        <LineBreak />
+                                        [D] - date yymmdd of creation<LineBreak />
+                                        [D2] - datetime yyyy-MM-dd_HHmm<LineBreak />
+                                        [M] - date yymmdd of modification/last write<LineBreak />
+                                        [M2] - datetime yyyy-MM-dd_HHmm<LineBreak />
+                                        [T] - time hhmmss of creation<LineBreak />
+                                        [T2] - time hhmmss of modification/last write<LineBreak />
+                                        [F] - filename without ending<LineBreak />
+                                        [S] - shortened filename [0-9a-z]<LineBreak />
+                                        [C] - shortened filename only [0-9]<LineBreak />
+                                        [P] - source pathname<LineBreak />
+                                        [B] - destination bitdepth<LineBreak />
+                                        (..) - filesequence substring (on the end)<LineBreak />
+                                        Sequencenumber is static on the end. length 5 digits<LineBreak />
+                                        <LineBreak />
+                                        EXAMPLE<LineBreak />
+                                        SUMMER_[F]_[D]_[T](_C)<LineBreak />
+                                        Path + Audio : SUMMER_M16-1046_140416_1046<LineBreak />
+                                        DNG-Sequence : SUMMER_M16-1046_140416_1046_C01234.DNG
+                                    </TextBlock>
+                                </TextBox.ToolTip>
+                            </TextBox >
+
+                        </Grid>
+
+                        <UniformGrid Grid.Row="1" Columns="4" Rows="1" Margin="0,5,0,0">
+
+                            <RadioButton GroupName="convertFormat" Content="CDNG 12bit maximized" Style="{StaticResource chmeeRadioButtonStyle}" Name="_format12max" Click="formatSelect_Click" Visibility="Visible" IsEnabled="True" />
+                            <RadioButton GroupName="convertFormat" Content="CDNG 16bit" Style="{StaticResource chmeeRadioButtonStyle}" Name="_format16" Click="formatSelect_Click" Margin="5,0,0,0"/>
+                            <RadioButton GroupName="convertFormat" Content="CDNG 16bit maximized" Style="{StaticResource chmeeRadioButtonStyle}" Name="_format16max" Click="formatSelect_Click" Margin="5,0,0,0"/>
+                            <RadioButton GroupName="convertFormat" Content="ARRIRAW 12bit" Style="{StaticResource chmeeRadioButtonStyle}" Name="_format12" Click="formatSelect_Click" IsEnabled="False" Margin="5,0,0,0" />
+                            
+                        </UniformGrid>
+
+                        <UniformGrid Grid.Row="2" Rows="1" Columns="5" Margin="0,5,0,0">
+
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="highlight fix" Name="_highlights" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" IsChecked="{Binding HighlightsIsChecked}" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="proxy disabled" Name="_proxy" Unchecked="_proxy_Unchecked" Checked="_proxy_Checked" IsEnabled="True" IsChecked="{Binding ProxyIsChecked}" Margin="5,0,0,0" />
+                            <Button Style="{StaticResource chmeeButtonStyle}" Content="{Binding ProxyKind}" IsEnabled="{Binding ProxyKindIsEnabled}" Name="_proxyKind" Click="_proxyKind_Click" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="vertical banding" Name="_banding" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" IsChecked="{Binding BandingIsChecked}" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="chroma smoothing 2x2" Name="_smoothing" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" IsChecked="{Binding SmoothingIsChecked}" Margin="5,0,0,0" />
+                            
+                        </UniformGrid>                        
+                        
+                    </Grid>
+
+                    <Button Grid.Row="2" Style="{StaticResource chmeeButtonStyle}" Content="convert" Name="_convert" FontSize="14" FontWeight="Bold" Click="_convert_Click" IsEnabled="False" Margin="0,5,0,0"/>
+
+
+
+                </Grid>
+                
+            </Grid>
+            
+        </Grid>
+        
     </Grid>
 </Window>
