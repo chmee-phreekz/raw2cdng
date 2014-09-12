@@ -44,7 +44,7 @@
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="debug" IsChecked="{Binding LogDebugIsChecked}" />
                 <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="info" Command="{Binding ShowInfoWindowCommand}" />
-                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="exit" Click="_exit_Click" />
+                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="exit" Command="{Binding ExitApplicationCommand}" />
             </StackPanel>
 
         </Grid>
@@ -106,9 +106,11 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Vertical" >
                                             <TextBlock Text="{Binding ListviewTitle}" Foreground="Black" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding ListviewPropA}" Foreground="Gray" />
-                                            <TextBlock Text="{Binding ListviewPropB}" Foreground="Gray" />
-                                            <TextBlock Text="{Binding ListviewPropC}" Foreground="Gray" />
+                                            <TextBlock Foreground="Gray" >
+                                                <Run Text="{Binding ListviewPropA}" /><LineBreak />
+                                                <Run Text="{Binding ListviewPropB}" /><LineBreak />
+                                                <Run Text="{Binding ListviewPropC}" />
+                                            </TextBlock>
                                         </StackPanel>
                                     </DataTemplate>
                                 </GridViewColumn.CellTemplate>

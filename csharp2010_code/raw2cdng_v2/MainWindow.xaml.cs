@@ -501,7 +501,21 @@ namespace raw2cdng_v2
                                           }));
             }
         }
-
+        
+        private SimpleCommand exitApplicationCommand;
+        public SimpleCommand ExitApplicationCommand
+        {
+            get
+            {
+                return exitApplicationCommand
+                    ?? (exitApplicationCommand = new SimpleCommand(
+                                          () =>
+                                          {
+                                              Application.Current.Shutdown();
+                                          }));
+            }
+        }
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -1159,12 +1173,6 @@ namespace raw2cdng_v2
                     this.TotalFramesProgressed = allFramesCount;
                 }));
             }
-        }
-
-        private void _exit_Click(object sender, RoutedEventArgs e)
-        {
-            // -- exit button --
-            Application.Current.Shutdown();
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
