@@ -83,6 +83,7 @@
     <Compile Include="infoWindow.xaml.cs">
       <DependentUpon>infoWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="InvertBoolConverter.cs" />
     <Compile Include="io.cs" />
     <Compile Include="mlvplay.xaml.cs">
       <DependentUpon>mlvplay.xaml</DependentUpon>
