@@ -92,6 +92,7 @@
     <Compile Include="ObjectsExtensions.cs" />
     <Compile Include="raw.cs" />
     <Compile Include="settings.cs" />
+    <Compile Include="SimpleCommand.cs" />
     <Page Include="infoWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -156,7 +156,7 @@
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="debug" IsChecked="{Binding LogDebugIsChecked}" />
-                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="info" Click="_info_Click" />
+                <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="info" Command="{Binding ShowInfoWindowCommand}" />
                 <Button Style="{StaticResource chmeeButtonStyle}" Margin="5,0,0,0" Content="exit" Click="_exit_Click" />
             </StackPanel>
 

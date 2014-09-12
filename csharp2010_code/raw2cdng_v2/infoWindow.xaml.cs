@@ -18,7 +18,9 @@ namespace raw2cdng_v2
     /// </summary>
     public partial class infoWindow : Window
     {
-        public infoWindow()
+        private static infoWindow instance = null;
+
+        private infoWindow()
         {
             InitializeComponent();
         }
@@ -51,6 +53,22 @@ namespace raw2cdng_v2
                 System.Diagnostics.Process.Start("http://www.magiclantern.fm/forum/index.php?board=54.0");
             }
             catch { }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            instance = null;
+
+            base.OnClosed(e);
+        }
+
+        public static void ShowWindow()
+        {
+            if (instance == null)
+                instance = new infoWindow();
+
+            instance.Show();
+            instance.Activate();
         }
     }
 }

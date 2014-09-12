@@ -488,6 +488,19 @@ namespace raw2cdng_v2
             }
         }
 
+        private SimpleCommand showInfoWindowCommand;
+        public SimpleCommand ShowInfoWindowCommand
+        {
+            get
+            {
+                return showInfoWindowCommand
+                    ?? (showInfoWindowCommand = new SimpleCommand(
+                                          () =>
+                                          {
+                                              infoWindow.ShowWindow();
+                                          }));
+            }
+        }
 
         public MainWindow()
         {
@@ -1260,13 +1273,6 @@ namespace raw2cdng_v2
             settings.Save();
         }
 
-        private void _info_Click(object sender, RoutedEventArgs e)
-        {
-            // infowindow show
-            infoWindow infoW = new infoWindow();
-            infoW.Show();
-        }
-
         private void _prefix_TextChanged(object sender, TextChangedEventArgs e)
         {
             saveGUIsettings();
@@ -1513,8 +1519,6 @@ namespace raw2cdng_v2
             //Console.WriteLine(e.Data);
         }
 
-        // ------- EOF ----------
-
         // ----------- INotify implementation ----------
         public event PropertyChangingEventHandler PropertyChanging;
 
@@ -1531,5 +1535,7 @@ namespace raw2cdng_v2
             if (this.PropertyChanged != null)
                 this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        // ------- EOF ----------
     }
 }
