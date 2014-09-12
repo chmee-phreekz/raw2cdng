@@ -54,7 +54,6 @@ namespace raw2cdng_v2
         // -- timertick for _preview
         DispatcherTimer previewTimer = new DispatcherTimer();
         // -- timertick for _draggedProgress
-        //DispatcherTimer progressDragDrop = new DispatcherTimer();
 
         // -- old folderBrowserdialog
         System.Windows.Forms.FolderBrowserDialog _selectFolder = new System.Windows.Forms.FolderBrowserDialog();
@@ -128,17 +127,11 @@ namespace raw2cdng_v2
         }
 
         bool ffmpegExists = false;
-
-        //List<string> proxyKinds = new List<string>();
-
+        
         // settings load/save/change
         appSettings settings = new appSettings();
         bool toggleSettingsSave = false;
-
-        // colors
-        //SolidColorBrush green;
-        //SolidColorBrush white;
-
+        
         private bool takePathIsChecked = false;
         public bool TakePathIsChecked
         {
@@ -218,121 +211,7 @@ namespace raw2cdng_v2
                 saveGUIsettings();
             }
         }
-
-        //private bool bandingIsChecked = false;
-        //public bool BandingIsChecked
-        //{
-        //    get
-        //    {
-        //        return bandingIsChecked;
-        //    }
-
-        //    set
-        //    {
-        //        if (bandingIsChecked == value)
-        //            return;
-
-        //        RaisePropertyChanging("BandingIsChecked");
-        //        bandingIsChecked = value;
-        //        RaisePropertyChanged("BandingIsChecked");
-        //    }
-        //}
-
-        //private bool smoothingIsChecked = false;
-        //public bool SmoothingIsChecked
-        //{
-        //    get
-        //    {
-        //        return smoothingIsChecked;
-        //    }
-
-        //    set
-        //    {
-        //        if (smoothingIsChecked == value)
-        //            return;
-
-        //        RaisePropertyChanging("SmoothingIsChecked");
-        //        smoothingIsChecked = value;
-        //        RaisePropertyChanged("SmoothingIsChecked");
-        //    }
-        //}
-
-        //private bool highlightsIsChecked = false;
-        //public bool HighlightsIsChecked
-        //{
-        //    get
-        //    {
-        //        return highlightsIsChecked;
-        //    }
-
-        //    set
-        //    {
-        //        if (highlightsIsChecked == value)
-        //            return;
-
-        //        RaisePropertyChanging("HighlightsIsChecked");
-        //        highlightsIsChecked = value;
-        //        RaisePropertyChanged("HighlightsIsChecked");
-        //    }
-        //}
-
-        //private bool proxyIsChecked = false;
-        //public bool ProxyIsChecked
-        //{
-        //    get
-        //    {
-        //        return proxyIsChecked;
-        //    }
-
-        //    set
-        //    {
-        //        if (proxyIsChecked == value)
-        //            return;
-
-        //        RaisePropertyChanging("ProxyIsChecked");
-        //        proxyIsChecked = value;
-        //        RaisePropertyChanged("ProxyIsChecked");
-        //    }
-        //}
-
-        //private bool proxyKindIsEnabled = false;
-        //public bool ProxyKindIsEnabled
-        //{
-        //    get
-        //    {
-        //        return proxyKindIsEnabled;
-        //    }
-
-        //    set
-        //    {
-        //        if (proxyKindIsEnabled == value)
-        //            return;
-
-        //        RaisePropertyChanging("ProxyKindIsEnabled");
-        //        proxyKindIsEnabled = value;
-        //        RaisePropertyChanged("ProxyKindIsEnabled");
-        //    }
-        //}
-
-        //private string proxyKind = "jpg";
-        //public string ProxyKind
-        //{
-        //    get
-        //    {
-        //        return proxyKind;
-        //    }
-
-        //    set
-        //    {
-        //        if (proxyKind == value)
-        //            return;
-
-        //        RaisePropertyChanging("ProxyKind");
-        //        proxyKind = value;
-        //        RaisePropertyChanged("ProxyKind");
-        //    }
-        //}
-
+        
         private string prefix = "Cam01_[D]_[T]_[S](_F)";
         public string Prefix
         {
@@ -613,39 +492,17 @@ namespace raw2cdng_v2
         public MainWindow()
         {
             InitializeComponent();
-            //_batchList.DataContext = rawFiles;
-            //_batchList.ItemsSource = rawFiles;
 
             // calculate LUTs
             calc.calculatetRec709LUT();
             int[] test = calc.Rec709;
-
-            //colors
-            //green = new SolidColorBrush(Color.FromRgb(0, 255, 0));
-            //white = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-
-            //_title.Text = "raw2cdng " + version;
+            
             allFramesCount = 0;
-
-            //CPUcores = Environment.ProcessorCount;
-            //_cores.Content = CPUcores.ToString();
-
+            
             // -- init _preview Tick and small frameProgressLine
             previewTimer.Tick += previewTimer_Tick;
             previewTimer.Interval = TimeSpan.FromMilliseconds(25);
-
-            //progressDragDrop.Tick += progressDragDrop_Tick;
-            //progressDragDrop.Interval = TimeSpan.FromMilliseconds(20);
-
-
-            //_previewProgressBar.Stroke = new SolidColorBrush(Color.FromRgb(255, 255, 255));
-            //_dragDropProgressBar.Height = 0;
-            //_dragDropProgressBar.Width = 0;
-
-            // ui init
-            //_progressAll.Value = 0;
-            //_progressOne.Value = 0;
-
+            
             // ---- load settings from file ----
 
             // standard proxy
@@ -662,9 +519,7 @@ namespace raw2cdng_v2
 
             loadSettings();
             debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
-
-            //this.ProxyKind = proxyKinds[settings.proxyKind];
-
+            
             this.ConvertData.PropertyChanged += ConvertData_PropertyChanged;
 
             // debug log
@@ -709,11 +564,6 @@ namespace raw2cdng_v2
 
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
-                // draggedProgress Start
-                //_dragDropProgressBar.Height = 12;
-                //_dragDropProgressBar.Width = 200;                
-                //progressDragDrop.Start();
-
                 string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 
                 // do it in a task because of progress
@@ -886,17 +736,13 @@ namespace raw2cdng_v2
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(new Action(progressedDroppedFile), DispatcherPriority.Normal, null);                
 
             }
-            //progressDragDrop.Stop();
-
+            
             this.LoadingDroppedData = false;
             this.DroppedDataCount = 0;
             this.ProgressedDroppedDataCount = 0;
 
             this.Dispatcher.Invoke((Action)(() =>
             {
-                //_dragDropProgressBar.Height = 0;
-                //_dragDropProgressBar.Width = 0;                
-
                 if (this.BatchListItemCount > 0)
                 {
                     _convert.IsEnabled = true;
@@ -1190,8 +1036,6 @@ namespace raw2cdng_v2
                 this.BatchListIsEnabled = true;
                 this.ConvertingInProgress = false;
 
-                //if (settings.isProxy) this.ProxyKindIsEnabled = true;
-
             }));
         }
 
@@ -1345,13 +1189,11 @@ namespace raw2cdng_v2
         private void _preview_MouseEnter(object sender, MouseEventArgs e)
         {
             previewTimer.Start();
-            //_previewProgressBar.Stroke = green;
         }
 
         private void _preview_MouseLeave(object sender, MouseEventArgs e)
         {
             previewTimer.Stop();
-            //_previewProgressBar.Stroke = white;
         }
 
         private void _takePath_Click(object sender, RoutedEventArgs e)
@@ -1426,56 +1268,6 @@ namespace raw2cdng_v2
             infoW.Show();
         }
 
-        //private void _banding_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.verticalBanding = true;
-        //    saveGUIsettings();
-        //}
-        //private void _banding_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.verticalBanding = false;
-        //    saveGUIsettings();
-        //}
-
-        //private void _smoothing_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.chromaSmoothing = true;
-        //    saveGUIsettings();
-        //}
-        //private void _smoothing_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.chromaSmoothing = false;
-        //    saveGUIsettings();
-        //}
-
-        //private void _proxy_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.isProxy = true;
-        //    //this.ProxyKindIsEnabled = true;
-        //    _proxy.Content = "proxy enabled";
-        //    saveGUIsettings();
-        //}
-        //private void _proxy_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.sProxy = false;
-        //    //this.ProxyKindIsEnabled = false;
-        //    _proxy.Content = "proxy disabled";
-        //    saveGUIsettings();
-        //}
-        
-
-        //private void _highlights_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.pinkHighlight = true;
-        //    convertData.maximize = true;
-        //    saveGUIsettings();
-        //}
-        //private void _highlights_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    convertData.pinkHighlight = false;
-        //    saveGUIsettings();
-        //}
-
         private void _prefix_TextChanged(object sender, TextChangedEventArgs e)
         {
             saveGUIsettings();
@@ -1485,34 +1277,7 @@ namespace raw2cdng_v2
         {
             //empty
         }
-
-        //private void _logDebug_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    settings.debugLogEnabled = false;
-        //    debugging.debugLogEnabled = false;
-        //    saveGUIsettings();
-        //}
-        //private void _logDebug_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    settings.debugLogEnabled = true;
-        //    debugging.debugLogEnabled = true;
-        //    saveGUIsettings();
-        //}
-
-        // ------- helper for listview items
-        //private void convert_Checked(object sender, RoutedEventArgs e)
-        //{
-        //    var cb = sender as CheckBox;
-        //    var item = cb.DataContext;
-        //    //_batchList.SelectedItem = item;
-        //}
-        //private void convert_Unchecked(object sender, RoutedEventArgs e)
-        //{
-        //    var cb = sender as CheckBox;
-        //    var item = cb.DataContext;
-        //    //_batchList.SelectedItem = item;
-        //}
-
+        
         // ------- Helper ------------
 
         private void saveGUIsettings()
@@ -1547,24 +1312,6 @@ namespace raw2cdng_v2
         {
             this.ProgressedDroppedDataCount++;
         }
-
-        //private void progressDragDrop_Tick(object sender, EventArgs e)
-        //{
-        //    Task.Factory.StartNew(() => draggedProgress());
-        //}
-
-        //public void draggedProgress()
-        //{
-        //    int w = 0;
-        //    this.Dispatcher.Invoke((Action)(() =>
-        //    {
-        //        w = (int)_dragDropProgressBar.Value;
-        //        w = (w + 1) % 100;
-        //        _dragDropProgressBar.Value = w;
-        //        _dragDropProgressBar.InvalidateVisual();
-        //    }));
-
-        //}
 
         public void previewBackground(raw r)
         {
@@ -1646,62 +1393,13 @@ namespace raw2cdng_v2
                     convertData.maximize = false;
                     break;
             }
-            //if (settings.verticalBanding == true)
-            //{
-            //    this.BandingIsChecked = true;
-            //    convertData.VerticalBanding = true;
-            //}
-            //else
-            //{
-            //    this.BandingIsChecked = false;
-            //    convertData.VerticalBanding = false;
-            //}
+            
             convertData.VerticalBanding = settings.verticalBanding;
-
-            //if (settings.chromaSmooth == true)
-            //{
-            //    this.SmoothingIsChecked = true;
-            //    convertData.ChromaSmoothing = true;
-            //}
-            //else
-            //{
-            //    this.SmoothingIsChecked = false;
-            //    convertData.ChromaSmoothing = false;
-            //}
             convertData.ChromaSmoothing = settings.chromaSmooth;
-
-            //if (settings.highlightFix == true)
-            //{
-            //    this.HighlightsIsChecked = true;
-            //    convertData.PinkHighlight = true;
-            //}
-            //else
-            //{
-            //    this.HighlightsIsChecked = false;
-            //    convertData.PinkHighlight = false;
-            //}
             convertData.PinkHighlight = settings.highlightFix;
-
-            //if (settings.proxyKind == null) settings.proxyKind = 0;
-
             if (!ffmpegExists) settings.proxyKind = 0;
             convertData.ProxyKind = settings.proxyKind;
-
             convertData.IsProxy = settings.isProxy;
-            //if (settings.isProxy == true)
-            //{
-            //    this.ProxyIsChecked = true;
-            //    //this.ProxyKindIsEnabled = true;
-            //    //this.ProxyKind = proxyKinds[settings.proxyKind];
-            //    convertData.IsProxy = true;
-            //}
-            //else
-            //{
-            //    this.ProxyIsChecked = false;
-            //    //this.ProxyKindIsEnabled = false;
-            //    //this.ProxyKind = proxyKinds[settings.proxyKind];
-            //    convertData.IsProxy = false;
-            //}
 
             if (settings.prefix == null) settings.prefix = "";
             if (settings.prefix != "")

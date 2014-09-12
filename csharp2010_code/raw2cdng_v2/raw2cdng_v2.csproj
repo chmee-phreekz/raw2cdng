@@ -88,6 +88,7 @@
     <Compile Include="mlvplay.xaml.cs">
       <DependentUpon>mlvplay.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NotifyBase.cs" />
     <Compile Include="ObjectsExtensions.cs" />
     <Compile Include="raw.cs" />
     <Compile Include="settings.cs" />
