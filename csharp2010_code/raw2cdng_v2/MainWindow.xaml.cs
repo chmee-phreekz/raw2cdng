@@ -64,6 +64,25 @@ namespace raw2cdng_v2
         {
             get { return this.rawFiles; }
         }
+        
+        private raw selectedRawFile = null;
+        public raw SelectedRawFile
+        {
+            get
+            {
+                return selectedRawFile;
+            }
+
+            set
+            {
+                if (selectedRawFile == value)
+                    return;
+
+                RaisePropertyChanging("SelectedRawFile");
+                selectedRawFile = value;
+                RaisePropertyChanged("SelectedRawFile");
+            }
+        }
 
         int allFramesCount;
 
@@ -183,6 +202,10 @@ namespace raw2cdng_v2
                 RaisePropertyChanging("LogDebugIsChecked");
                 logDebugIsChecked = value;
                 RaisePropertyChanged("LogDebugIsChecked");
+
+                settings.debugLogEnabled = value;
+                debugging.debugLogEnabled = value;
+                saveGUIsettings();
             }
         }
 
@@ -452,6 +475,112 @@ namespace raw2cdng_v2
             }
         }
 
+        private string currentAction = null;
+        public string CurrentAction
+        {
+            get
+            {
+                return currentAction;
+            }
+
+            set
+            {
+                if (currentAction == value)
+                    return;
+
+                RaisePropertyChanging("CurrentAction");
+                currentAction = value;
+                RaisePropertyChanged("CurrentAction");
+            }
+        }
+
+        private bool batchListIsEnabled = true;
+        public bool BatchListIsEnabled
+        {
+            get
+            {
+                return batchListIsEnabled;
+            }
+
+            set
+            {
+                if (batchListIsEnabled == value)
+                    return;
+
+                RaisePropertyChanging("BatchListIsEnabled");
+                batchListIsEnabled = value;
+                RaisePropertyChanged("BatchListIsEnabled");
+            }
+        }
+
+        public int BatchListItemCount
+        {
+            get
+            {
+                if (this.RawFiles == null)
+                    return 0;
+                return this.RawFiles.Count;
+            }
+        }
+        
+        private WriteableBitmap previewSource = null;
+        public WriteableBitmap PreviewSource
+        {
+            get
+            {
+                return previewSource;
+            }
+
+            set
+            {
+                if (previewSource == value)
+                    return;
+
+                RaisePropertyChanging("PreviewSource");
+                previewSource = value;
+                RaisePropertyChanged("PreviewSource");
+            }
+        }
+
+        private string previewLensData = null;
+        public string PreviewLensData
+        {
+            get
+            {
+                return previewLensData;
+            }
+
+            set
+            {
+                if (previewLensData == value)
+                    return;
+
+                RaisePropertyChanging("PreviewLensData");
+                previewLensData = value;
+                RaisePropertyChanged("PreviewLensData");
+            }
+        }
+        
+        private bool convertingInProgress = false;
+        public bool ConvertingInProgress
+        {
+            get
+            {
+                return convertingInProgress;
+            }
+
+            set
+            {
+                if (convertingInProgress == value)
+                    return;
+
+                RaisePropertyChanging("ConvertingInProgress");
+                convertingInProgress = value;
+                RaisePropertyChanged("ConvertingInProgress");
+            }
+        }
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -714,7 +843,7 @@ namespace raw2cdng_v2
                 //_dragDropProgressBar.Height = 0;
                 //_dragDropProgressBar.Width = 0;                
 
-                if (_batchList.Items.Count > 0)
+                if (this.BatchListItemCount > 0)
                 {
                     _convert.IsEnabled = true;
                 }
@@ -743,18 +872,8 @@ namespace raw2cdng_v2
                 this.TotalFramesToProgress = allFramesCount;
                 this.TotalFramesProgressed = 0;
                 _convert.Content = "converting";
-                _batchList.IsEnabled = false;
-                _convert.IsEnabled = false;
-                _format12.IsEnabled = false;
-                _format12max.IsEnabled = false;
-                _format16.IsEnabled = false;
-                _format16max.IsEnabled = false;
-                _highlights.IsEnabled = false;
-                _takePath.IsEnabled = false;
-                _noPath.IsEnabled = false;
-                _proxy.IsEnabled = false;
-                this.ProxyKindIsEnabled = false;
-                _banding.IsEnabled = false;
+                this.BatchListIsEnabled = false;
+                this.ConvertingInProgress = true;
             }));
 
             // doing the work as a thread, leave GUI fluid
@@ -790,8 +909,8 @@ namespace raw2cdng_v2
                         this.FramesProgressed = 0;
                         
                         convertPosition++;
-                        _actionOutput.Content = "converting " + convertPosition + "/" + convertAmount + " - " + file.data.fileData.fileNameOnly;
-                        _batchList.SelectedItem = file;
+                        this.CurrentAction = "converting " + convertPosition + "/" + convertAmount + " - " + file.data.fileData.fileNameOnly;
+                        this.SelectedRawFile = file;
                         _batchList.ScrollIntoView(file);
                     }));
 
@@ -1006,25 +1125,17 @@ namespace raw2cdng_v2
             this.Dispatcher.Invoke((Action)(() =>
             {
                 rawFiles.Clear();
-                _preview.Source = null;
+                this.PreviewSource = null;
 
                 this.FramesProgressed = 0;
                 this.FramesToProgress = 1;
                 this.TotalFramesProgressed = 0;
                 this.TotalFramesToProgress = 1;
-                _convert.IsEnabled = false;
-                _convert.Content = "convert";
+                _convert.IsEnabled = false;                
 
-                _batchList.IsEnabled = true;
-                //_format12.IsEnabled = true;
-                _format12max.IsEnabled = true;
-                _format16.IsEnabled = true;
-                _format16max.IsEnabled = true;
-                _highlights.IsEnabled = true;
-                _takePath.IsEnabled = true;
-                _noPath.IsEnabled = true;
+                this.BatchListIsEnabled = true;
+                this.ConvertingInProgress = false;
 
-                _proxy.IsEnabled = true;
                 if (settings.isProxy) this.ProxyKindIsEnabled = true;
 
             }));
@@ -1163,8 +1274,8 @@ namespace raw2cdng_v2
 
             // read picture and show
             WriteableBitmap im = io.showPicture(rawFiles[item], quality.high709);
-            _preview.Source = im;
-            _lensLabel.Content = String.Format(
+            this.PreviewSource = im;
+            this.PreviewLensData = String.Format(
                 "{0} | {1} | ISO{2} | f/{3} | {4}°K",
                 rawFiles[item].data.lensData.lens,
                 rawFiles[item].data.lensData.shutter,
@@ -1327,32 +1438,32 @@ namespace raw2cdng_v2
             //empty
         }
 
-        private void _logDebug_Unchecked(object sender, RoutedEventArgs e)
-        {
-            settings.debugLogEnabled = false;
-            debugging.debugLogEnabled = false;
-            saveGUIsettings();
-        }
-        private void _logDebug_Checked(object sender, RoutedEventArgs e)
-        {
-            settings.debugLogEnabled = true;
-            debugging.debugLogEnabled = true;
-            saveGUIsettings();
-        }
+        //private void _logDebug_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    settings.debugLogEnabled = false;
+        //    debugging.debugLogEnabled = false;
+        //    saveGUIsettings();
+        //}
+        //private void _logDebug_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    settings.debugLogEnabled = true;
+        //    debugging.debugLogEnabled = true;
+        //    saveGUIsettings();
+        //}
 
         // ------- helper for listview items
-        private void convert_Checked(object sender, RoutedEventArgs e)
-        {
-            var cb = sender as CheckBox;
-            var item = cb.DataContext;
-            //_batchList.SelectedItem = item;
-        }
-        private void convert_Unchecked(object sender, RoutedEventArgs e)
-        {
-            var cb = sender as CheckBox;
-            var item = cb.DataContext;
-            //_batchList.SelectedItem = item;
-        }
+        //private void convert_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    var cb = sender as CheckBox;
+        //    var item = cb.DataContext;
+        //    //_batchList.SelectedItem = item;
+        //}
+        //private void convert_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    var cb = sender as CheckBox;
+        //    var item = cb.DataContext;
+        //    //_batchList.SelectedItem = item;
+        //}
 
         // ------- Helper ------------
 
@@ -1367,7 +1478,7 @@ namespace raw2cdng_v2
                 settings.highlightFix = convertData.pinkHighlight;
                 settings.outputPath = this.TakePath.ToString();
                 settings.prefix = this.Prefix;
-                settings.debugLogEnabled = (bool)this.LogDebugIsChecked;
+                settings.debugLogEnabled = this.LogDebugIsChecked;
                 //settings.format = settings.format;
                 settings.Save();
             }
@@ -1375,9 +1486,8 @@ namespace raw2cdng_v2
 
         private void previewTimer_Tick(object sender, EventArgs e)
         {
-            if (_batchList.SelectedItems.Count < 1) return;
-            int item = _batchList.Items.IndexOf(_batchList.SelectedItems[0]);
-            raw r = rawFiles[item];
+            if (this.SelectedRawFile == null) return;
+            raw r = this.SelectedRawFile;
             r.data.metaData.previewFrame++;
             r.data.metaData.maximize = true;
             r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
@@ -1421,11 +1531,11 @@ namespace raw2cdng_v2
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    _preview.Source = io.showPicture(r, quality.high709);
-                    _lensLabel.Content = String.Format("{0:d5}", frame);
+                    this.PreviewSource = io.showPicture(r, quality.high709);
+                    this.PreviewLensData = String.Format("{0:d5}", frame);
                     _previewProgressBar.Margin = new Thickness(progressPosX, 0, 0, 0);
                     _preview.InvalidateVisual();
-                    _lensLabel.InvalidateVisual();
+                    //_lensLabel.InvalidateVisual();
                 }));
             }
         }
@@ -1640,7 +1750,7 @@ namespace raw2cdng_v2
             //Console.WriteLine("Input line: {0} ({1:m:s:fff})", lineCount++, DateTime.Now);
             this.Dispatcher.Invoke((Action)(() =>
             {
-                _actionOutput.Content = e.Data;
+                this.CurrentAction = e.Data;
             }));
             if (settings.debugLogEnabled) debugging._saveDebug("[ffmpeg]: " + e.Data);
             //Console.WriteLine(e.Data);
@@ -1651,7 +1761,7 @@ namespace raw2cdng_v2
         {
             this.Dispatcher.Invoke((Action)(() =>
             {
-                _lensLabel.Content = e.Data;
+                this.PreviewLensData = e.Data;
             }));
             if (settings.debugLogEnabled) debugging._saveDebug("[ffmpeg]: " + e.Data);
             //Console.WriteLine(e.Data);
