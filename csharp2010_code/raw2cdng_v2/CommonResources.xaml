@@ -1,0 +1,122 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:raw2cdng_v2">
+
+    <local:InvertBoolConverter x:Key="InvertBoolConverter"/>
+
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+    <Style TargetType="{x:Type GridViewColumnHeader}">
+        <Setter Property="Visibility" Value="Collapsed"/>
+    </Style>
+
+    <ControlTemplate x:Key="chmeeProgress" TargetType="{x:Type ProgressBar}">
+        <Grid HorizontalAlignment="{TemplateBinding HorizontalAlignment}" Height="{TemplateBinding Height}" VerticalAlignment="{TemplateBinding VerticalAlignment}" Width="{TemplateBinding Width}">
+            <Grid x:Name="PART_Track" Margin="0" Background="WhiteSmoke" />
+            <Grid x:Name="PART_Indicator" Margin="0" HorizontalAlignment="Left" Background="#FFa0a0a0" Width="{TemplateBinding Value}"/>
+        </Grid>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="chmeeButtonTemplate" TargetType="{x:Type ButtonBase}">
+        <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" HorizontalAlignment="{TemplateBinding HorizontalAlignment}" Padding="{TemplateBinding Padding}" Margin="{TemplateBinding Margin}" VerticalAlignment="{TemplateBinding VerticalAlignment}" Background="{TemplateBinding Background}" >
+            <ContentPresenter ContentSource="Content" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"  />
+        </Border>
+    </ControlTemplate>
+
+    <Style x:Key="chmeeButtonBaseStyle" TargetType="{x:Type ButtonBase}">
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="Padding" Value="10,2" />
+        <Setter Property="Background" Value="WhiteSmoke" />
+        <Setter Property="BorderBrush" Value="#FFEEEEEE" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Template" Value="{StaticResource chmeeButtonTemplate}" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="true">
+                <Setter Property="Background" Value="#e0e0e0"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="true">
+                <Setter Property="Background" Value="#a0ffa0"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="false">
+                <Setter Property="Background" Value="#fcfcfc"/>
+                <Setter Property="Opacity" Value="0.15"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="chmeeButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource chmeeButtonBaseStyle}"/>
+
+    <Style x:Key="chmeeToggleButtonStyle" TargetType="{x:Type ToggleButton}" BasedOn="{StaticResource chmeeButtonBaseStyle}">
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="true">
+                <Setter Property="Background" Value="#e0ffe0"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="chmeeRadioButtonStyle" TargetType="{x:Type RadioButton}" BasedOn="{StaticResource chmeeButtonBaseStyle}">
+        <Style.Triggers>
+            <Trigger Property="IsChecked" Value="true">
+                <Setter Property="Background" Value="#e0ffe0"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="chmeeHeaderLabelStyle" TargetType="{x:Type Label}">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Background" Value="#FFDEDEDE" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="#FF505050" />
+    </Style>
+
+    <Style x:Key="chmeeCombobox" TargetType="{x:Type ComboBox}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBox}" >
+                    <Grid Name="MainGrid"
+                            SnapsToDevicePixels="true">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}"
+                                                Width="0"/>
+                        </Grid.ColumnDefinitions>
+                        <Popup Name="PART_Popup"
+                                    AllowsTransparency="true"
+                                    Grid.ColumnSpan="2"
+                                    Placement="Center"
+                                    Margin="1"
+                                    IsOpen="{Binding Path=IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                    Width="{TemplateBinding ActualWidth}"
+                                >
+                            <Border x:Name="DropDownBorder"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource {x:Static SystemColors.WindowFrameBrushKey}}"
+                                        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+                                <ScrollViewer Name="DropDownScrollViewer">
+                                    <Grid RenderOptions.ClearTypeHint="Enabled">
+                                        <Canvas Height="0" Width="0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                            <Rectangle 
+                                                Name="OpaqueRect"
+                                                Height="{Binding ElementName=DropDownBorder,Path=ActualHeight}" 
+                                                Width="{Binding ElementName=DropDownBorder,Path=ActualWidth}" 
+                                                Fill="{Binding ElementName=DropDownBorder,Path=Background}" />
+                                        </Canvas>
+                                        <ItemsPresenter Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </Grid>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                        <ToggleButton Grid.ColumnSpan="2"                                      
+                                            Style="{StaticResource chmeeToggleButtonStyle}"
+                                            IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
+                                            Content="{TemplateBinding SelectionBoxItem}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
