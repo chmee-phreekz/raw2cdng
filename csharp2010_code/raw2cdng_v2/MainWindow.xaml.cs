@@ -80,6 +80,8 @@ namespace raw2cdng_v2
                 RaisePropertyChanging("SelectedRawFile");
                 selectedRawFile = value;
                 RaisePropertyChanged("SelectedRawFile");
+
+                this.PreviewFrameNumber = 0;
             }
         }
 
@@ -428,6 +430,28 @@ namespace raw2cdng_v2
                 RaisePropertyChanging("PreviewSource");
                 previewSource = value;
                 RaisePropertyChanged("PreviewSource");
+            }
+        }
+
+        private int previewFrameNumber = 0;
+        //ATTENTION: Setting PreviewFrameNumber will call goToPreviewFrame()
+        public int PreviewFrameNumber
+        {
+            get
+            {
+                return previewFrameNumber;
+            }
+
+            set
+            {
+                if (previewFrameNumber == value)
+                    return;
+
+                RaisePropertyChanging("PreviewFrameNumber");
+                previewFrameNumber = value;
+                RaisePropertyChanged("PreviewFrameNumber");
+
+                this.goToPreviewFrame(value);
             }
         }
 
@@ -1305,15 +1329,27 @@ namespace raw2cdng_v2
             }
         }
 
-        private void previewTimer_Tick(object sender, EventArgs e)
+        private void goToPreviewFrame(int i)
         {
             if (this.SelectedRawFile == null) return;
             raw r = this.SelectedRawFile;
-            r.data.metaData.previewFrame++;
+            r.data.metaData.previewFrame = i;
             r.data.metaData.maximize = true;
             r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
             Task.Factory.StartNew(() => previewBackground(r));
             if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
+        }
+
+        private void previewTimer_Tick(object sender, EventArgs e)
+        {
+            //if (this.SelectedRawFile == null) return;
+            //raw r = this.SelectedRawFile;
+            //r.data.metaData.previewFrame++;
+            //r.data.metaData.maximize = true;
+            //r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
+            //Task.Factory.StartNew(() => previewBackground(r));
+            //if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
+            this.PreviewFrameNumber++;
         }
 
         private void progressedDroppedFile()
@@ -1335,10 +1371,12 @@ namespace raw2cdng_v2
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                     this.PreviewSource = io.showPicture(r, quality.high709);
-                    this.PreviewLensData = String.Format("{0:d5}", frame);
-                    _previewProgressBar.Margin = new Thickness(progressPosX, 0, 0, 0);
-                    _preview.InvalidateVisual();
-                    //_lensLabel.InvalidateVisual();
+
+                    //This is kind of a hack
+                    //When setting PreviewFrameNumber goToPreviewFrame will be called wich will result in an endless loop
+                    //To not let that happen we set the backing field and raise the notify event ourselves
+                    this.previewFrameNumber = frame;
+                    RaisePropertyChanged("PreviewFrameNumber");
                 }));
             }
         }
