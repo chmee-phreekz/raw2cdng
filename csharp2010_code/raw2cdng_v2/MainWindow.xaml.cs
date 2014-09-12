@@ -105,21 +105,31 @@ namespace raw2cdng_v2
         }
 
         // baseSettings for convert
-        convertSettings convertData = new convertSettings()
+
+        private convertSettings convertData = null;
+        public convertSettings ConvertData
         {
-            bitdepth = 16,
-            chromaSmoothing = false,
-            format = "CDNG",
-            maximize = false,
-            maximizeValue = 1,
-            pinkHighlight = false,
-            isProxy = false,
-            proxyKind = 0,
-            verticalBanding = false
-        };
+            get
+            {
+                if (convertData == null)
+                    this.convertData = initConvertData();
+                return convertData;
+            }
+
+            set
+            {
+                if (convertData == value)
+                    return;
+
+                RaisePropertyChanging("ConvertData");
+                convertData = value;
+                RaisePropertyChanged("ConvertData");
+            }
+        }
+
         bool ffmpegExists = false;
 
-        List<string> proxyKinds = new List<string>();
+        //List<string> proxyKinds = new List<string>();
 
         // settings load/save/change
         appSettings settings = new appSettings();
@@ -209,119 +219,119 @@ namespace raw2cdng_v2
             }
         }
 
-        private bool bandingIsChecked = false;
-        public bool BandingIsChecked
-        {
-            get
-            {
-                return bandingIsChecked;
-            }
+        //private bool bandingIsChecked = false;
+        //public bool BandingIsChecked
+        //{
+        //    get
+        //    {
+        //        return bandingIsChecked;
+        //    }
 
-            set
-            {
-                if (bandingIsChecked == value)
-                    return;
+        //    set
+        //    {
+        //        if (bandingIsChecked == value)
+        //            return;
 
-                RaisePropertyChanging("BandingIsChecked");
-                bandingIsChecked = value;
-                RaisePropertyChanged("BandingIsChecked");
-            }
-        }
+        //        RaisePropertyChanging("BandingIsChecked");
+        //        bandingIsChecked = value;
+        //        RaisePropertyChanged("BandingIsChecked");
+        //    }
+        //}
 
-        private bool smoothingIsChecked = false;
-        public bool SmoothingIsChecked
-        {
-            get
-            {
-                return smoothingIsChecked;
-            }
+        //private bool smoothingIsChecked = false;
+        //public bool SmoothingIsChecked
+        //{
+        //    get
+        //    {
+        //        return smoothingIsChecked;
+        //    }
 
-            set
-            {
-                if (smoothingIsChecked == value)
-                    return;
+        //    set
+        //    {
+        //        if (smoothingIsChecked == value)
+        //            return;
 
-                RaisePropertyChanging("SmoothingIsChecked");
-                smoothingIsChecked = value;
-                RaisePropertyChanged("SmoothingIsChecked");
-            }
-        }
+        //        RaisePropertyChanging("SmoothingIsChecked");
+        //        smoothingIsChecked = value;
+        //        RaisePropertyChanged("SmoothingIsChecked");
+        //    }
+        //}
 
-        private bool highlightsIsChecked = false;
-        public bool HighlightsIsChecked
-        {
-            get
-            {
-                return highlightsIsChecked;
-            }
+        //private bool highlightsIsChecked = false;
+        //public bool HighlightsIsChecked
+        //{
+        //    get
+        //    {
+        //        return highlightsIsChecked;
+        //    }
 
-            set
-            {
-                if (highlightsIsChecked == value)
-                    return;
+        //    set
+        //    {
+        //        if (highlightsIsChecked == value)
+        //            return;
 
-                RaisePropertyChanging("HighlightsIsChecked");
-                highlightsIsChecked = value;
-                RaisePropertyChanged("HighlightsIsChecked");
-            }
-        }
+        //        RaisePropertyChanging("HighlightsIsChecked");
+        //        highlightsIsChecked = value;
+        //        RaisePropertyChanged("HighlightsIsChecked");
+        //    }
+        //}
 
-        private bool proxyIsChecked = false;
-        public bool ProxyIsChecked
-        {
-            get
-            {
-                return proxyIsChecked;
-            }
+        //private bool proxyIsChecked = false;
+        //public bool ProxyIsChecked
+        //{
+        //    get
+        //    {
+        //        return proxyIsChecked;
+        //    }
 
-            set
-            {
-                if (proxyIsChecked == value)
-                    return;
+        //    set
+        //    {
+        //        if (proxyIsChecked == value)
+        //            return;
 
-                RaisePropertyChanging("ProxyIsChecked");
-                proxyIsChecked = value;
-                RaisePropertyChanged("ProxyIsChecked");
-            }
-        }
+        //        RaisePropertyChanging("ProxyIsChecked");
+        //        proxyIsChecked = value;
+        //        RaisePropertyChanged("ProxyIsChecked");
+        //    }
+        //}
 
-        private bool proxyKindIsEnabled = false;
-        public bool ProxyKindIsEnabled
-        {
-            get
-            {
-                return proxyKindIsEnabled;
-            }
+        //private bool proxyKindIsEnabled = false;
+        //public bool ProxyKindIsEnabled
+        //{
+        //    get
+        //    {
+        //        return proxyKindIsEnabled;
+        //    }
 
-            set
-            {
-                if (proxyKindIsEnabled == value)
-                    return;
+        //    set
+        //    {
+        //        if (proxyKindIsEnabled == value)
+        //            return;
 
-                RaisePropertyChanging("ProxyKindIsEnabled");
-                proxyKindIsEnabled = value;
-                RaisePropertyChanged("ProxyKindIsEnabled");
-            }
-        }
+        //        RaisePropertyChanging("ProxyKindIsEnabled");
+        //        proxyKindIsEnabled = value;
+        //        RaisePropertyChanged("ProxyKindIsEnabled");
+        //    }
+        //}
 
-        private string proxyKind = "jpg";
-        public string ProxyKind
-        {
-            get
-            {
-                return proxyKind;
-            }
+        //private string proxyKind = "jpg";
+        //public string ProxyKind
+        //{
+        //    get
+        //    {
+        //        return proxyKind;
+        //    }
 
-            set
-            {
-                if (proxyKind == value)
-                    return;
+        //    set
+        //    {
+        //        if (proxyKind == value)
+        //            return;
 
-                RaisePropertyChanging("ProxyKind");
-                proxyKind = value;
-                RaisePropertyChanged("ProxyKind");
-            }
-        }
+        //        RaisePropertyChanging("ProxyKind");
+        //        proxyKind = value;
+        //        RaisePropertyChanged("ProxyKind");
+        //    }
+        //}
 
         private string prefix = "Cam01_[D]_[T]_[S](_F)";
         public string Prefix
@@ -580,6 +590,25 @@ namespace raw2cdng_v2
             }
         }
 
+        private ObservableCollection<string> proxyKinds = new ObservableCollection<string>();
+        public ObservableCollection<string> ProxyKinds
+        {
+            get
+            {
+                return proxyKinds;
+            }
+
+            set
+            {
+                if (proxyKinds == value)
+                    return;
+
+                RaisePropertyChanging("ProxyKinds");
+                proxyKinds = value;
+                RaisePropertyChanged("ProxyKinds");
+            }
+        }
+
 
         public MainWindow()
         {
@@ -634,7 +663,9 @@ namespace raw2cdng_v2
             loadSettings();
             debugging.debugLogFilename = Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "raw2cdng.2.debug.log";
 
-            this.ProxyKind = proxyKinds[settings.proxyKind];
+            //this.ProxyKind = proxyKinds[settings.proxyKind];
+
+            this.ConvertData.PropertyChanged += ConvertData_PropertyChanged;
 
             // debug log
             if (settings.debugLogEnabled)
@@ -642,6 +673,29 @@ namespace raw2cdng_v2
                 debugging._startNewDebug(" ------------- " + version + " started at " + String.Format("{0:yy.MM.dd HH:mm:ss -- }", DateTime.Now) + "\r\n");
                 debugging._saveDebug("[init][settings] -- ffmpeg Exists: " + (ffmpegExists ? "true" : "false"));
             }
+        }
+
+        void ConvertData_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            this.saveGUIsettings();
+        }
+
+        private convertSettings initConvertData()
+        {
+            convertSettings convertData = new convertSettings()
+            {
+                bitdepth = 16,
+                ChromaSmoothing = false,
+                format = "CDNG",
+                maximize = false,
+                maximizeValue = 1,
+                PinkHighlight = false,
+                IsProxy = false,
+                ProxyKind = 0,
+                VerticalBanding = false
+            };
+
+            return convertData;
         }
 
         // --- the important three events ---------------------
@@ -922,7 +976,7 @@ namespace raw2cdng_v2
                     // if maximized use the multiplier
                     file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
 
-                    if (file.data.convertData.chromaSmoothing)
+                    if (file.data.convertData.ChromaSmoothing)
                     {
                         //if using chroma Smoothing, recalculate ev2raw/raw2ev
                         calc.calcRAWEV_Arrays(file.data.metaData.blackLevelNew, file.data.metaData.blackLevelNew);
@@ -1136,7 +1190,7 @@ namespace raw2cdng_v2
                 this.BatchListIsEnabled = true;
                 this.ConvertingInProgress = false;
 
-                if (settings.isProxy) this.ProxyKindIsEnabled = true;
+                //if (settings.isProxy) this.ProxyKindIsEnabled = true;
 
             }));
         }
@@ -1182,20 +1236,20 @@ namespace raw2cdng_v2
             rawDataChanged = calc.to16(param.rawData, param);
 
             // if verticalBanding (and if its needed. delta >0.01)
-            if (param.convertData.verticalBanding && param.metaData.verticalBandingNeeded)
+            if (param.convertData.VerticalBanding && param.metaData.verticalBandingNeeded)
             {
                 //coeffs calculated in [dowork]
                 // raw2ev/ev2raw-tables are calculated in _doWork
                 rawDataChanged = calc.fixVerticalBanding(rawDataChanged, param);
             }
             // if chroma Smoothing
-            if (param.convertData.chromaSmoothing) rawDataChanged = calc.chromaSmoothing(rawDataChanged, param);
+            if (param.convertData.ChromaSmoothing) rawDataChanged = calc.chromaSmoothing(rawDataChanged, param);
 
             // if proxy jpeg
-            if (param.convertData.isProxy) io.saveProxy(param, rawDataChanged);
+            if (param.convertData.IsProxy) io.saveProxy(param, rawDataChanged);
 
             // if pink Highlights
-            if (param.convertData.pinkHighlight) rawDataChanged = calc.pinkHighlight(rawDataChanged, param);
+            if (param.convertData.PinkHighlight) rawDataChanged = calc.pinkHighlight(rawDataChanged, param);
 
             // if 12bit        
             if (param.metaData.bitsperSampleChanged == 12)
@@ -1372,61 +1426,55 @@ namespace raw2cdng_v2
             infoW.Show();
         }
 
-        private void _banding_Checked(object sender, RoutedEventArgs e)
-        {
-            convertData.verticalBanding = true;
-            saveGUIsettings();
-        }
-        private void _banding_Unchecked(object sender, RoutedEventArgs e)
-        {
-            convertData.verticalBanding = false;
-            saveGUIsettings();
-        }
+        //private void _banding_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.verticalBanding = true;
+        //    saveGUIsettings();
+        //}
+        //private void _banding_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.verticalBanding = false;
+        //    saveGUIsettings();
+        //}
 
-        private void _smoothing_Checked(object sender, RoutedEventArgs e)
-        {
-            convertData.chromaSmoothing = true;
-            saveGUIsettings();
-        }
-        private void _smoothing_Unchecked(object sender, RoutedEventArgs e)
-        {
-            convertData.chromaSmoothing = false;
-            saveGUIsettings();
-        }
+        //private void _smoothing_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.chromaSmoothing = true;
+        //    saveGUIsettings();
+        //}
+        //private void _smoothing_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.chromaSmoothing = false;
+        //    saveGUIsettings();
+        //}
 
-        private void _proxy_Checked(object sender, RoutedEventArgs e)
-        {
-            convertData.isProxy = true;
-            this.ProxyKindIsEnabled = true;
-            _proxy.Content = "proxy enabled";
-            saveGUIsettings();
-        }
-        private void _proxy_Unchecked(object sender, RoutedEventArgs e)
-        {
-            convertData.isProxy = false;
-            this.ProxyKindIsEnabled = false;
-            _proxy.Content = "proxy disabled";
-            saveGUIsettings();
-        }
-        private void _proxyKind_Click(object sender, RoutedEventArgs e)
-        {
-            convertData.proxyKind++;
-            if (convertData.proxyKind == proxyKinds.Count()) convertData.proxyKind = 0;
-            this.ProxyKind = proxyKinds[convertData.proxyKind];
-            saveGUIsettings();
-        }
+        //private void _proxy_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.isProxy = true;
+        //    //this.ProxyKindIsEnabled = true;
+        //    _proxy.Content = "proxy enabled";
+        //    saveGUIsettings();
+        //}
+        //private void _proxy_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.sProxy = false;
+        //    //this.ProxyKindIsEnabled = false;
+        //    _proxy.Content = "proxy disabled";
+        //    saveGUIsettings();
+        //}
+        
 
-        private void _highlights_Checked(object sender, RoutedEventArgs e)
-        {
-            convertData.pinkHighlight = true;
-            convertData.maximize = true;
-            saveGUIsettings();
-        }
-        private void _highlights_Unchecked(object sender, RoutedEventArgs e)
-        {
-            convertData.pinkHighlight = false;
-            saveGUIsettings();
-        }
+        //private void _highlights_Checked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.pinkHighlight = true;
+        //    convertData.maximize = true;
+        //    saveGUIsettings();
+        //}
+        //private void _highlights_Unchecked(object sender, RoutedEventArgs e)
+        //{
+        //    convertData.pinkHighlight = false;
+        //    saveGUIsettings();
+        //}
 
         private void _prefix_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -1471,11 +1519,11 @@ namespace raw2cdng_v2
         {
             if (toggleSettingsSave == true)
             {
-                settings.verticalBanding = convertData.verticalBanding;
-                settings.isProxy = convertData.isProxy;
-                settings.proxyKind = convertData.proxyKind;
-                settings.chromaSmooth = convertData.chromaSmoothing;
-                settings.highlightFix = convertData.pinkHighlight;
+                settings.verticalBanding = convertData.VerticalBanding;
+                settings.isProxy = convertData.IsProxy;
+                settings.proxyKind = convertData.ProxyKind;
+                settings.chromaSmooth = convertData.ChromaSmoothing;
+                settings.highlightFix = convertData.PinkHighlight;
                 settings.outputPath = this.TakePath.ToString();
                 settings.prefix = this.Prefix;
                 settings.debugLogEnabled = this.LogDebugIsChecked;
@@ -1598,56 +1646,62 @@ namespace raw2cdng_v2
                     convertData.maximize = false;
                     break;
             }
-            if (settings.verticalBanding == true)
-            {
-                this.BandingIsChecked = true;
-                convertData.verticalBanding = true;
-            }
-            else
-            {
-                this.BandingIsChecked = false;
-                convertData.verticalBanding = false;
-            }
-            if (settings.chromaSmooth == true)
-            {
-                this.SmoothingIsChecked = true;
-                convertData.chromaSmoothing = true;
-            }
-            else
-            {
-                this.SmoothingIsChecked = false;
-                convertData.chromaSmoothing = false;
-            }
-            if (settings.highlightFix == true)
-            {
-                this.HighlightsIsChecked = true;
-                convertData.pinkHighlight = true;
-            }
-            else
-            {
-                this.HighlightsIsChecked = false;
-                convertData.pinkHighlight = false;
-            }
+            //if (settings.verticalBanding == true)
+            //{
+            //    this.BandingIsChecked = true;
+            //    convertData.VerticalBanding = true;
+            //}
+            //else
+            //{
+            //    this.BandingIsChecked = false;
+            //    convertData.VerticalBanding = false;
+            //}
+            convertData.VerticalBanding = settings.verticalBanding;
 
-            if (settings.proxyKind == null) settings.proxyKind = 0;
+            //if (settings.chromaSmooth == true)
+            //{
+            //    this.SmoothingIsChecked = true;
+            //    convertData.ChromaSmoothing = true;
+            //}
+            //else
+            //{
+            //    this.SmoothingIsChecked = false;
+            //    convertData.ChromaSmoothing = false;
+            //}
+            convertData.ChromaSmoothing = settings.chromaSmooth;
+
+            //if (settings.highlightFix == true)
+            //{
+            //    this.HighlightsIsChecked = true;
+            //    convertData.PinkHighlight = true;
+            //}
+            //else
+            //{
+            //    this.HighlightsIsChecked = false;
+            //    convertData.PinkHighlight = false;
+            //}
+            convertData.PinkHighlight = settings.highlightFix;
+
+            //if (settings.proxyKind == null) settings.proxyKind = 0;
 
             if (!ffmpegExists) settings.proxyKind = 0;
-            convertData.proxyKind = settings.proxyKind;
+            convertData.ProxyKind = settings.proxyKind;
 
-            if (settings.isProxy == true)
-            {
-                this.ProxyIsChecked = true;
-                this.ProxyKindIsEnabled = true;
-                this.ProxyKind = proxyKinds[settings.proxyKind];
-                convertData.isProxy = true;
-            }
-            else
-            {
-                this.ProxyIsChecked = false;
-                this.ProxyKindIsEnabled = false;
-                this.ProxyKind = proxyKinds[settings.proxyKind];
-                convertData.isProxy = false;
-            }
+            convertData.IsProxy = settings.isProxy;
+            //if (settings.isProxy == true)
+            //{
+            //    this.ProxyIsChecked = true;
+            //    //this.ProxyKindIsEnabled = true;
+            //    //this.ProxyKind = proxyKinds[settings.proxyKind];
+            //    convertData.IsProxy = true;
+            //}
+            //else
+            //{
+            //    this.ProxyIsChecked = false;
+            //    //this.ProxyKindIsEnabled = false;
+            //    //this.ProxyKind = proxyKinds[settings.proxyKind];
+            //    convertData.IsProxy = false;
+            //}
 
             if (settings.prefix == null) settings.prefix = "";
             if (settings.prefix != "")
@@ -1687,7 +1741,7 @@ namespace raw2cdng_v2
                 commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles;
 
                 // if proxyKind==1 -> mpg2
-                if (r.data.convertData.proxyKind == 1)
+                if (r.data.convertData.ProxyKind == 1)
                 {
                     if (winIO.File.Exists(outputFile + ".mpg")) winIO.File.Delete(outputFile + ".mpg");
                     if (r.data.audioData.hasAudio)
@@ -1701,7 +1755,7 @@ namespace raw2cdng_v2
                 }
 
                 // if proxyKind==2 -> mpeg4
-                if (r.data.convertData.proxyKind == 2)
+                if (r.data.convertData.ProxyKind == 2)
                 {
                     if (winIO.File.Exists(outputFile + ".mp4")) winIO.File.Delete(outputFile + ".mp4");
                     if (r.data.audioData.hasAudio)

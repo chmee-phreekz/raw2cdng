@@ -86,6 +86,54 @@
             <Setter Property="FontSize" Value="14" />
             <Setter Property="Foreground" Value="#FF505050" />
         </Style>
+        
+        <Style x:Key="chmeeCombobox" TargetType="{x:Type ComboBox}">            
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ComboBox}" >
+                        <Grid Name="MainGrid"
+                          SnapsToDevicePixels="true">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition MinWidth="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}"
+                                              Width="0"/>
+                            </Grid.ColumnDefinitions>
+                            <Popup Name="PART_Popup"
+                                    AllowsTransparency="true"
+                                    Grid.ColumnSpan="2"
+                                    Placement="Center"
+                                    Margin="1"
+                                    IsOpen="{Binding Path=IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                    Width="{TemplateBinding ActualWidth}"
+                               >                                
+                                    <Border x:Name="DropDownBorder"
+                                        BorderThickness="1"
+                                        BorderBrush="{DynamicResource {x:Static SystemColors.WindowFrameBrushKey}}"
+                                        Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+                                        <ScrollViewer Name="DropDownScrollViewer">
+                                            <Grid RenderOptions.ClearTypeHint="Enabled">
+                                                <Canvas Height="0" Width="0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                                    <Rectangle 
+                                                Name="OpaqueRect"
+                                                Height="{Binding ElementName=DropDownBorder,Path=ActualHeight}" 
+                                                Width="{Binding ElementName=DropDownBorder,Path=ActualWidth}" 
+                                                Fill="{Binding ElementName=DropDownBorder,Path=Background}" />
+                                                </Canvas>
+                                                <ItemsPresenter Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained"
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </Border>
+                            </Popup>
+                            <ToggleButton Grid.ColumnSpan="2"                                      
+                                            Style="{StaticResource chmeeToggleButtonStyle}"
+                                            IsChecked="{Binding Path=IsDropDownOpen,Mode=TwoWay,RelativeSource={RelativeSource TemplatedParent}}"
+                                            Content="{TemplateBinding SelectionBoxItem}" />                           
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>            
+        </Style>
 
     </Window.Resources>
 
@@ -295,11 +343,11 @@
 
                         <UniformGrid Grid.Row="2" Rows="1" Columns="5" Margin="0,5,0,0">
 
-                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="highlight fix" x:Name="_highlights" Unchecked="_highlights_Unchecked" Checked="_highlights_Checked" IsEnabled="True" IsChecked="{Binding HighlightsIsChecked}" />
-                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="proxy disabled" x:Name="_proxy" Unchecked="_proxy_Unchecked" Checked="_proxy_Checked" IsEnabled="True" IsChecked="{Binding ProxyIsChecked}" Margin="5,0,0,0" />
-                            <Button Style="{StaticResource chmeeButtonStyle}" Content="{Binding ProxyKind}" IsEnabled="{Binding ProxyKindIsEnabled}" x:Name="_proxyKind" Click="_proxyKind_Click" Margin="5,0,0,0" />
-                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="vertical banding" x:Name="_banding" Checked="_banding_Checked" Unchecked="_banding_Unchecked" IsEnabled="False" IsChecked="{Binding BandingIsChecked}" Margin="5,0,0,0" />
-                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="chroma smoothing 2x2" x:Name="_smoothing" Unchecked="_smoothing_Unchecked" Checked="_smoothing_Checked" IsEnabled="False" IsChecked="{Binding SmoothingIsChecked}" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="highlight fix" IsEnabled="True" IsChecked="{Binding ConvertData.PinkHighlight}" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="use proxy" x:Name="_proxy" IsEnabled="True" IsChecked="{Binding ConvertData.IsProxy}" Margin="5,0,0,0" />                            
+                            <ComboBox Style="{StaticResource chmeeCombobox}" ItemsSource="{Binding ProxyKinds}" SelectedIndex="{Binding ConvertData.ProxyKind}" IsEnabled="{Binding IsChecked, ElementName=_proxy}" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="vertical banding" IsEnabled="False" IsChecked="{Binding ConvertData.VerticalBanding}" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="chroma smoothing 2x2" IsEnabled="False" IsChecked="{Binding ConvertData.ChromaSmoothing}" Margin="5,0,0,0" />
 
                         </UniformGrid>
 
