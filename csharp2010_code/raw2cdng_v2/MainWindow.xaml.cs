@@ -811,7 +811,6 @@ namespace raw2cdng_v2
                         convertPosition++;
                         this.CurrentAction = "converting " + convertPosition + "/" + convertAmount + " - " + file.data.fileData.fileNameOnly;
                         this.SelectedRawFile = file;
-                        _batchList.ScrollIntoView(file);
                     }));
 
                     // copy properties from GUI into rawobject
@@ -1272,12 +1271,7 @@ namespace raw2cdng_v2
         {
             saveGUIsettings();
         }
-
-        private void _noPath_Click(object sender, RoutedEventArgs e)
-        {
-            //empty
-        }
-        
+                
         // ------- Helper ------------
 
         private void saveGUIsettings()
