@@ -158,12 +158,119 @@ namespace raw2cdng_v2
     }
     public class convertSettings : NotifyBase
     {
-        public int bitdepth { get; set; }
-        public bool maximize { get; set; }
-        public double maximizeValue { get; set; }
-        public string format { get; set; }        
-        public bool videoProxy { get; set; }
-        public int videoCodec { get; set; }
+        private int bitdepth = 16;
+        public int BitDepth
+        {
+            get
+            {
+                return bitdepth;
+            }
+
+            set
+            {
+                if (bitdepth == value)
+                    return;
+
+                RaisePropertyChanging("BitDepth");
+                bitdepth = value;
+                RaisePropertyChanged("BitDepth");
+            }
+        }
+
+        private bool maximize = false;
+        public bool Maximize
+        {
+            get
+            {
+                return maximize;
+            }
+
+            set
+            {
+                if (maximize == value)
+                    return;
+
+                RaisePropertyChanging("Maximize");
+                maximize = value;
+                RaisePropertyChanged("Maximize");
+            }
+        }
+
+        private double maximizeValue = 1;
+        public double MaximizeValue
+        {
+            get
+            {
+                return maximizeValue;
+            }
+
+            set
+            {
+                if (maximizeValue == value)
+                    return;
+
+                RaisePropertyChanging("MaximizeValue");
+                maximizeValue = value;
+                RaisePropertyChanged("MaximizeValue");
+            }
+        }
+
+        private string format = "CDNG";
+        public string Format
+        {
+            get
+            {
+                return format;
+            }
+
+            set
+            {
+                if (format == value)
+                    return;
+
+                RaisePropertyChanging("Format");
+                format = value;
+                RaisePropertyChanged("Format");
+            }
+        }
+
+        private bool videoProxy = false;
+        public bool VideoProxy
+        {
+            get
+            {
+                return videoProxy;
+            }
+
+            set
+            {
+                if (videoProxy == value)
+                    return;
+
+                RaisePropertyChanging("VideoProxy");
+                videoProxy = value;
+                RaisePropertyChanged("VideoProxy");
+            }
+        }
+
+        private int videoCodec = 0;
+        public int VideoCodec
+        {
+            get
+            {
+                return videoCodec;
+            }
+
+            set
+            {
+                if (videoCodec == value)
+                    return;
+
+                RaisePropertyChanging("VideoCodec");
+                videoCodec = value;
+                RaisePropertyChanged("VideoCodec");
+            }
+        }
 
         private bool pinkHighlight = false;
         public bool PinkHighlight

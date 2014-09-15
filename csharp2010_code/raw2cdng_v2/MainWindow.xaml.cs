@@ -107,13 +107,11 @@ namespace raw2cdng_v2
 
         // baseSettings for convert
 
-        private convertSettings convertData = null;
+        private convertSettings convertData = new convertSettings();
         public convertSettings ConvertData
         {
             get
-            {
-                if (convertData == null)
-                    this.convertData = initConvertData();
+            {                
                 return convertData;
             }
 
@@ -585,24 +583,6 @@ namespace raw2cdng_v2
             this.saveGUIsettings();
         }
 
-        private convertSettings initConvertData()
-        {
-            convertSettings convertData = new convertSettings()
-            {
-                bitdepth = 16,
-                ChromaSmoothing = false,
-                format = "CDNG",
-                maximize = false,
-                maximizeValue = 1,
-                PinkHighlight = false,
-                IsProxy = false,
-                ProxyKind = 0,
-                VerticalBanding = false
-            };
-
-            return convertData;
-        }
-
         // --- the important three events ---------------------
 
         private void batchList_Drop(object sender, DragEventArgs e)
@@ -869,7 +849,7 @@ namespace raw2cdng_v2
                     file.data.rawData = null;
 
                     // if maximized use the multiplier
-                    file.data.metaData.maximizer = (Math.Pow(2, convertData.bitdepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
+                    file.data.metaData.maximizer = (Math.Pow(2, convertData.BitDepth) - 1) / (file.data.metaData.whiteLevelOld - file.data.metaData.blackLevelOld);
 
                     if (file.data.convertData.ChromaSmoothing)
                     {
@@ -1278,26 +1258,26 @@ namespace raw2cdng_v2
 
             if (_format16.IsChecked == true)
             {
-                convertData.bitdepth = 16;
-                convertData.maximize = false;
+                convertData.BitDepth = 16;
+                convertData.Maximize = false;
                 settings.format = 1;
             }
             else if (_format16max.IsChecked == true)
             {
-                convertData.bitdepth = 16;
-                convertData.maximize = true;
+                convertData.BitDepth = 16;
+                convertData.Maximize = true;
                 settings.format = 2;
             }
             else if (_format12.IsChecked == true)
             {
-                convertData.bitdepth = 12;
-                convertData.maximize = false;
+                convertData.BitDepth = 12;
+                convertData.Maximize = false;
                 settings.format = 3;
             }
             else if (_format12max.IsChecked == true)
             {
-                convertData.bitdepth = 12;
-                convertData.maximize = true;
+                convertData.BitDepth = 12;
+                convertData.Maximize = true;
                 settings.format = 4;
             }
             settings.Save();
@@ -1398,28 +1378,28 @@ namespace raw2cdng_v2
             {
                 case 1:
                     _format16.IsChecked = true;
-                    convertData.bitdepth = 16;
-                    convertData.maximize = false;
+                    convertData.BitDepth = 16;
+                    convertData.Maximize = false;
                     break;
                 case 2:
                     _format16max.IsChecked = true;
-                    convertData.bitdepth = 16;
-                    convertData.maximize = true;
+                    convertData.BitDepth = 16;
+                    convertData.Maximize = true;
                     break;
                 case 3:
                     _format12.IsChecked = true;
-                    convertData.bitdepth = 12;
-                    convertData.maximize = false;
+                    convertData.BitDepth = 12;
+                    convertData.Maximize = false;
                     break;
                 case 4:
                     _format12max.IsChecked = true;
-                    convertData.bitdepth = 12;
-                    convertData.maximize = true;
+                    convertData.BitDepth = 12;
+                    convertData.Maximize = true;
                     break;
                 default:
                     _format16.IsChecked = true;
-                    convertData.bitdepth = 16;
-                    convertData.maximize = false;
+                    convertData.BitDepth = 16;
+                    convertData.Maximize = false;
                     break;
             }
             
