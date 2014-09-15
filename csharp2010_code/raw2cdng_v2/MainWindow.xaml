@@ -157,47 +157,31 @@
                 </Label>
 
                 <Grid Grid.Row="1" Margin="0,10">
+                    
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
                     <Image x:Name="_preview" Stretch="Uniform" VerticalAlignment="Top" MouseEnter="_preview_MouseEnter" MouseLeave="_preview_MouseLeave" Source="{Binding PreviewSource}" />
 
-                    <Grid VerticalAlignment="Top">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <Label VerticalAlignment="Top" HorizontalAlignment="Left" Background="#7FFFFFFF" FontSize="10" Content="{Binding PreviewLensData}" />
 
-                        <Label HorizontalAlignment="Left" Background="#7FFFFFFF" FontSize="10" >
-                            <Label.Style>
-                                <Style TargetType="{x:Type Label}">
-                                    <Setter Property="Content" Value="{Binding PreviewLensData}" />
-                                    <Setter Property="ContentStringFormat" Value="" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=_preview}" Value="True">
-                                            <Setter Property="Content" Value="{Binding PreviewFrameNumber}" />
-                                            <Setter Property="ContentStringFormat" Value="d5" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=previewSlider}" Value="True">
-                                            <Setter Property="Content" Value="{Binding PreviewFrameNumber}" />
-                                            <Setter Property="ContentStringFormat" Value="d5" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Label.Style>
-                        </Label>
+                    <Grid Grid.Row="1" Visibility="{Binding Source, Converter={StaticResource NullToVisibilityConverter}, ElementName=_preview}" >
+                        <Grid.RenderTransform>
+                            <TranslateTransform Y="{Binding ActualHeight, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Grid}}, Converter={StaticResource NegateDoubleConverter}}" />
+                        </Grid.RenderTransform>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label HorizontalAlignment="Left" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Background="#7FFFFFFF" FontSize="10" Content="{Binding PreviewFrameNumber}" ContentStringFormat="d5" Padding="5,0" />
                         
-                        <!--<Rectangle Grid.Row="1"  Height="8" HorizontalAlignment="Left" x:Name="_previewProgressBar" VerticalAlignment="Top" Width="1" >
-                            <Rectangle.Style>
-                                <Style TargetType="{x:Type Rectangle}">
-                                    <Setter Property="Stroke" Value="White" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsMouseOver, ElementName=_preview}" Value="True">
-                                            <Setter Property="Stroke" Value="Green" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Rectangle.Style>
-                        </Rectangle>-->
-                        <Slider x:Name="previewSlider" Grid.Row="1" Style="{StaticResource previewSliderStyle}" Value="{Binding PreviewFrameNumber, Mode=TwoWay}" Maximum="{Binding SelectedRawFile.data.metaData.frames}" />
+                        <Slider x:Name="previewSlider" Grid.Column="1" Style="{StaticResource previewSliderStyle}" Value="{Binding PreviewFrameNumber, Mode=TwoWay}" Maximum="{Binding SelectedRawFile.data.metaData.frames}" Margin="1,0" />
+
+                        <Label Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Stretch" VerticalContentAlignment="Center" Background="#7FFFFFFF" FontSize="10" Content="{Binding SelectedRawFile.data.metaData.frames}" ContentStringFormat="d5" Padding="5,0" />
 
                     </Grid>
 

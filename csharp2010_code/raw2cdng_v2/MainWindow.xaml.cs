@@ -434,7 +434,6 @@ namespace raw2cdng_v2
         }
 
         private int previewFrameNumber = 0;
-        //ATTENTION: Setting PreviewFrameNumber will call goToPreviewFrame()
         public int PreviewFrameNumber
         {
             get
@@ -1223,8 +1222,7 @@ namespace raw2cdng_v2
                 rawFiles[item].data.lensData.shutter,
                 rawFiles[item].data.lensData.isoValue,
                 ((double)rawFiles[item].data.lensData.aperture / (double)100),
-                rawFiles[item].data.metaData.whiteBalance,
-                CultureInfo.InvariantCulture
+                rawFiles[item].data.metaData.whiteBalance
                 );
             if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] read Data from " + rawFiles[item].data.fileData.fileNameOnly + " frame " + rawFiles[item].data.threadData.frame);
             if (settings.debugLogEnabled) debugging._saveDebug("[batchList_Click] * " + rawFiles[item].data.fileData.fileNameOnly);
@@ -1342,13 +1340,6 @@ namespace raw2cdng_v2
 
         private void previewTimer_Tick(object sender, EventArgs e)
         {
-            //if (this.SelectedRawFile == null) return;
-            //raw r = this.SelectedRawFile;
-            //r.data.metaData.previewFrame++;
-            //r.data.metaData.maximize = true;
-            //r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
-            //Task.Factory.StartNew(() => previewBackground(r));
-            //if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
             this.PreviewFrameNumber++;
         }
 
@@ -1362,21 +1353,13 @@ namespace raw2cdng_v2
             var frame = r.data.metaData.previewFrame;
             if (frame > -1)
             {
-                var maxFrames = r.data.metaData.frames;
-                var progressPosX = _preview.ActualWidth * frame / maxFrames;
                 // read picture and show
                 r.data.threadData.frame = frame;
 
-                //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                     this.PreviewSource = io.showPicture(r, quality.high709);
-
-                    //This is kind of a hack
-                    //When setting PreviewFrameNumber goToPreviewFrame will be called wich will result in an endless loop
-                    //To not let that happen we set the backing field and raise the notify event ourselves
-                    this.previewFrameNumber = frame;
-                    RaisePropertyChanged("PreviewFrameNumber");
+                    this.PreviewFrameNumber = frame;
                 }));
             }
         }

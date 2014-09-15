@@ -6,6 +6,10 @@
 
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
 
+    <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+
+    <local:NegateDoubleConverter x:Key="NegateDoubleConverter" />
+
     <Style TargetType="{x:Type GridViewColumnHeader}">
         <Setter Property="Visibility" Value="Collapsed"/>
     </Style>
