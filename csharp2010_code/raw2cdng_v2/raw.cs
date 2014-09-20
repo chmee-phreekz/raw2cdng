@@ -156,19 +156,222 @@ namespace raw2cdng_v2
         public int isoValue { get; set; }
         public string shutter { get; set; }
     }
-    public class convertSettings
+    public class convertSettings : NotifyBase
     {
-        public int bitdepth { get; set; }
-        public bool maximize { get; set; }
-        public double maximizeValue { get; set; }
-        public string format { get; set; }
-        public bool pinkHighlight { get; set; }
-        public bool chromaSmoothing { get; set; }
-        public bool verticalBanding { get; set; }
-        public bool isProxy { get; set; }
-        public int proxyKind { get; set; }
-        public bool videoProxy { get; set; }
-        public int videoCodec { get; set; }
+        private int bitdepth = 16;
+        public int BitDepth
+        {
+            get
+            {
+                return bitdepth;
+            }
+
+            set
+            {
+                if (bitdepth == value)
+                    return;
+
+                RaisePropertyChanging("BitDepth");
+                bitdepth = value;
+                RaisePropertyChanged("BitDepth");
+            }
+        }
+
+        private bool maximize = false;
+        public bool Maximize
+        {
+            get
+            {
+                return maximize;
+            }
+
+            set
+            {
+                if (maximize == value)
+                    return;
+
+                RaisePropertyChanging("Maximize");
+                maximize = value;
+                RaisePropertyChanged("Maximize");
+            }
+        }
+
+        private double maximizeValue = 1;
+        public double MaximizeValue
+        {
+            get
+            {
+                return maximizeValue;
+            }
+
+            set
+            {
+                if (maximizeValue == value)
+                    return;
+
+                RaisePropertyChanging("MaximizeValue");
+                maximizeValue = value;
+                RaisePropertyChanged("MaximizeValue");
+            }
+        }
+
+        private string format = "CDNG";
+        public string Format
+        {
+            get
+            {
+                return format;
+            }
+
+            set
+            {
+                if (format == value)
+                    return;
+
+                RaisePropertyChanging("Format");
+                format = value;
+                RaisePropertyChanged("Format");
+            }
+        }
+
+        private bool videoProxy = false;
+        public bool VideoProxy
+        {
+            get
+            {
+                return videoProxy;
+            }
+
+            set
+            {
+                if (videoProxy == value)
+                    return;
+
+                RaisePropertyChanging("VideoProxy");
+                videoProxy = value;
+                RaisePropertyChanged("VideoProxy");
+            }
+        }
+
+        private int videoCodec = 0;
+        public int VideoCodec
+        {
+            get
+            {
+                return videoCodec;
+            }
+
+            set
+            {
+                if (videoCodec == value)
+                    return;
+
+                RaisePropertyChanging("VideoCodec");
+                videoCodec = value;
+                RaisePropertyChanged("VideoCodec");
+            }
+        }
+
+        private bool pinkHighlight = false;
+        public bool PinkHighlight
+        {
+            get
+            {
+                return pinkHighlight;
+            }
+
+            set
+            {
+                if (pinkHighlight == value)
+                    return;
+
+                RaisePropertyChanging("PinkHighlight");
+                pinkHighlight = value;
+                RaisePropertyChanged("PinkHighlight");
+
+                //Not sure if this is intended.
+                //Took this from the previous _highlights_Checked function
+                if (value == true)
+                    this.maximize = true;
+            }
+        }
+
+        private bool chromaSmoothing = false;
+        public bool ChromaSmoothing
+        {
+            get
+            {
+                return chromaSmoothing;
+            }
+
+            set
+            {
+                if (chromaSmoothing == value)
+                    return;
+
+                RaisePropertyChanging("ChromaSmoothing");
+                chromaSmoothing = value;
+                RaisePropertyChanged("ChromaSmoothing");
+            }
+        }
+
+        private bool verticalBanding = false;
+        public bool VerticalBanding
+        {
+            get
+            {
+                return verticalBanding;
+            }
+
+            set
+            {
+                if (verticalBanding == value)
+                    return;
+
+                RaisePropertyChanging("VerticalBanding");
+                verticalBanding = value;
+                RaisePropertyChanged("VerticalBanding");
+            }
+        }
+
+        private bool isProxy = false;
+        public bool IsProxy
+        {
+            get
+            {
+                return isProxy;
+            }
+
+            set
+            {
+                if (isProxy == value)
+                    return;
+
+                RaisePropertyChanging("IsProxy");
+                isProxy = value;
+                RaisePropertyChanged("IsProxy");
+            }
+        }
+
+        private int proxyKind = 0;
+        public int ProxyKind
+        {
+            get
+            {
+                return proxyKind;
+            }
+
+            set
+            {
+                if (proxyKind == value)
+                    return;
+
+                RaisePropertyChanging("ProxyKind");
+                proxyKind = value;
+                RaisePropertyChanged("ProxyKind");
+            }
+        }
+
     }
 
     public class Blocks

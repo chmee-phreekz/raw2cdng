@@ -781,7 +781,7 @@ namespace raw2cdng_v2
         {
             
             // til now its all 8bit and based on jpg-pictures
-            if (r.convertData.proxyKind < 3)
+            if (r.convertData.ProxyKind < 3)
             {
                 BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
                 BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);

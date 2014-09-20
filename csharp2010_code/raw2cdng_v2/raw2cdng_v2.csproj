@@ -83,13 +83,22 @@
     <Compile Include="infoWindow.xaml.cs">
       <DependentUpon>infoWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="InvertBoolConverter.cs" />
     <Compile Include="io.cs" />
     <Compile Include="mlvplay.xaml.cs">
       <DependentUpon>mlvplay.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NegateIntConverter.cs" />
+    <Compile Include="NotifyBase.cs" />
+    <Compile Include="NullToVisibilityConverter.cs" />
     <Compile Include="ObjectsExtensions.cs" />
     <Compile Include="raw.cs" />
     <Compile Include="settings.cs" />
+    <Compile Include="SimpleCommand.cs" />
+    <Page Include="CommonResources.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="infoWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
