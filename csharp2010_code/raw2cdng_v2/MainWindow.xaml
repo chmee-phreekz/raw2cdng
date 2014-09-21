@@ -237,7 +237,7 @@
                             <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="highlight fix" IsEnabled="True" IsChecked="{Binding ConvertData.PinkHighlight}" />
                             <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="use proxy" x:Name="_proxy" IsEnabled="True" IsChecked="{Binding ConvertData.IsProxy}" Margin="5,0,0,0" />                            
                             <ComboBox Style="{StaticResource chmeeCombobox}" ItemsSource="{Binding ProxyKinds}" SelectedIndex="{Binding ConvertData.ProxyKind}" IsEnabled="{Binding IsChecked, ElementName=_proxy}" Margin="5,0,0,0" />
-                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="vertical banding" IsEnabled="False" IsChecked="{Binding ConvertData.VerticalBanding}" Margin="5,0,0,0" />
+                            <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="vertical banding" IsEnabled="True" IsChecked="{Binding ConvertData.VerticalBanding}" Margin="5,0,0,0" />
                             <ToggleButton Style="{StaticResource chmeeToggleButtonStyle}" Content="chroma smoothing 2x2" IsEnabled="False" IsChecked="{Binding ConvertData.ChromaSmoothing}" Margin="5,0,0,0" />
 
                         </UniformGrid>

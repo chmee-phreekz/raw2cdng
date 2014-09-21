@@ -46,7 +46,7 @@ namespace raw2cdng_v2
             InitializeComponent();
 
             // calculate LUTs
-            calc.calculatetRec709LUT();
+            calc.calculateRec709LUT();
 
             fps = 0;
             // -- init _preview Tick and small frameProgressLine

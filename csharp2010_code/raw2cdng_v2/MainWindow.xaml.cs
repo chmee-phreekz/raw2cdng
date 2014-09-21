@@ -96,7 +96,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.6.0";
+        private string version = "1.6.1";
         public string Version
         {
             get
@@ -542,7 +542,7 @@ namespace raw2cdng_v2
             InitializeComponent();
 
             // calculate LUTs
-            calc.calculatetRec709LUT();
+            calc.calculateRec709LUT();
             int[] test = calc.Rec709;
             
             allFramesCount = 0;

@@ -26,21 +26,6 @@ namespace raw2cdng_v2
                 //debugging._saveDebug("[app.xaml.cs][startup] -- you wanna play a video?");
 
                 string file = clArgs[0];
-                /*                
-                                // ffplay - if existent
-                                Process ffplay = new Process();
-                                // should i use this? its a Uri.winIO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase)
-                                string startup = winIO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).Substring(6) + winIO.Path.DirectorySeparatorChar + "ffplay.exe";
-                                debugging._saveDebug("[app.xaml.cs][startup] -- startupDir : "+startup);
-                                debugging._saveDebug("[app.xaml.cs][startup] -- clArgs[0] : " + clArgs[0]);
-
-                                ProcessStartInfo info = new ProcessStartInfo(startup, file);
-
-                                info.CreateNoWindow = true;
-                                info.UseShellExecute = false;
-                                ffplay.StartInfo = info;
-                                ffplay.Start();
-                  */
                 // -------------- second way - using own player abilities
 
                 mlvplay player = new mlvplay(file);

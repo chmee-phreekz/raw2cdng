@@ -559,9 +559,9 @@ namespace raw2cdng_v2
 
             // -- compute Histograms
             // 8 histograms , assume green is enough
-            for (var x = 0; x < halfResy; x++)
+            for (var x = 0; x < halfResx; x++)
             {
-                column = (x*2) %  8;
+                column = (x * 2) % 8;
                 for (var y = 0; y < halfResy; y++)
                 {
                     int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
@@ -572,34 +572,44 @@ namespace raw2cdng_v2
                     int gEven = (pic[rowGB] | pic[rowGB + 1] << 8);
                     //int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
                     histogram[column][gEven]++;
-                    histogram[column+1][gOdd]++;
+                    histogram[column + 1][gOdd]++;
                 }
             }
 
             // calculate median per readout-channel (not rgb)
+            int val = 0;
             int[] median = new int[8];
             double[] d_median = new double[8];
             for (int i = 0; i < 8; i++)
             {
+                val = 0;
                 median[i] = 0;
-                foreach (int value in histogram[i]) median[i] += value;
+                foreach (int value in histogram[i]) median[i] += value * val++;
                 d_median[i] = (double)median[i] / (double)65536;
             }
 
             // find most frequent Value
             // assuming this is the base value to be corrected to
             double frequentVal = d_median.GroupBy(item => item).OrderByDescending(g => g.Count()).Select(g => g.Key).First();
-            
+
             // -- compute median correction factor
             // look for histogram difference
             for (int i = 0; i < 8; i++) coeffs[i] = d_median[i] / frequentVal;
-            
+
             // -- decide if correction needed 
-            // if any value differs more than 0.01
+            // find min max - if values differs more than 0.01
+            double min = 65535.0;
+            double max = 0.0;
             coeffs[8] = 0;
-            for (int i = 0; i < 8; i++) if (Math.Abs(coeffs[i] - 1) > 0.01) coeffs[8] = 1;
+            for (int i = 0; i < 8; i++)
+            {
+                if (coeffs[i] > max) max = coeffs[i];
+                if (coeffs[i] < min) min = coeffs[i];
+            }
+            if ((max - min) > 0.01) coeffs[8] = 1;
 
             // finally draw a histogram as bitmap
+            // only for gui 
             r.histogram = createHistogramBMP(histogram[0]);
 
             return coeffs;
@@ -607,19 +617,50 @@ namespace raw2cdng_v2
 
         public static byte[] fixVerticalBanding(byte[] picIn, data param)
         {
-            // vertical Banding written by a1ex
+            // vertical Banding idea by a1ex
             // to be found in Magic Lantern / modules / lv_rec / raw2dng.c
             // https://bitbucket.org/hudson/magic-lantern/src/c38da103d1842fce7da5a3a5f2d5d71990ed4f0c/modules/lv_rec/raw2dng.c?at=unified
 
             byte[] picOut = new byte[picIn.Length];
-            // verticalBanding from ml/a1ex here
-            // 16bit byte[] in
-            // 16bit byte[] out
-            /*
-            apply_vertical_stripes_correction
-            */
+            int halfResX = param.metaData.xResolution / 2;
+            int halfResY = param.metaData.yResolution / 2;
+
+            for (var x = 0; x < halfResX; x++)
+            {
+                int column = (x * 2) % 8;
+                double coeffEven = param.metaData.verticalBandingCoeffs[column];
+                double coeffOdd = param.metaData.verticalBandingCoeffs[column + 1];
+
+                for (var y = 0; y < halfResY; y++)
+                {
+                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResX * 4);
+                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResX * 4);
+
+                    int rEven = (int)((double)(picIn[rowRG] | picIn[rowRG + 1] << 8) / (double)coeffEven);
+                    int gOdd = (int)((double)(picIn[rowRG + 2] | picIn[rowRG + 3] << 8) / (double)coeffOdd);
+                    int gEven = (int)((double)(picIn[rowGB] | picIn[rowGB + 1] << 8) / (double)coeffEven);
+                    int bOdd = (int)((double)(picIn[rowGB + 2] | picIn[rowGB + 3] << 8) / (double)coeffOdd);
+
+                    if (rEven > 65535) rEven = 65535;
+                    if (gOdd > 65535) gOdd = 65535;
+                    if (gEven > 65535) gEven = 65535;
+                    if (bOdd > 65535) bOdd = 65535;
+
+                    // back to array
+                    picOut[rowRG] = (byte)(rEven & 0xff);
+                    picOut[rowRG + 1] = (byte)(rEven >> 8);
+                    picOut[rowRG + 2] = (byte)(gOdd & 0xff);
+                    picOut[rowRG + 3] = (byte)(gOdd >> 8);
+                    picOut[rowGB] = (byte)(gEven & 0xff);
+                    picOut[rowGB + 1] = (byte)(gEven >> 8);
+                    picOut[rowGB + 2] = (byte)(bOdd & 0xff);
+                    picOut[rowGB + 3] = (byte)(bOdd >> 8);
+                }
+            }
+
             return picOut;
         }
+
 
         public static byte[] chromaSmoothing(byte[] picIn, data param)
         {
@@ -1331,7 +1372,7 @@ namespace raw2cdng_v2
  
         public static int[] Rec709 = new int[130000];
 
-        public static void calculatetRec709LUT()
+        public static void calculateRec709LUT()
         {
             double temp = 0;
             for (int n = 0; n < Rec709.Length; n++)
