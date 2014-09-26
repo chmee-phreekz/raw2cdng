@@ -8,7 +8,7 @@ starting 2013 i tried to code an **all-in-one-without-install-lightweight-applic
 the application, thus the sourcecode, is under GPL-License.
 ***
 weblinks:
-[download windows binaries for users](http://www.phreekz.de/wordpress/2014/04/magiclantern-raw2cdng-1-5-0/)
+[download windows executables for users](http://www.phreekz.de/wordpress/2014/04/magiclantern-raw2cdng-1-5-0/) &
 [cinema dng discussion in magiclantern-forum](http://www.magiclantern.fm/forum/index.php?topic=5618.0)
 ***
 regards chmee
