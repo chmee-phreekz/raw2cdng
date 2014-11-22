@@ -40,6 +40,18 @@ using winForm = System.Windows.Forms;
  * Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor,
  * Boston, MA  02110-1301, USA.
+ * 
+ * -------------------------------------------------------
+ * important: the reason why this app exists is Magiclantern.
+ * in the beginning their sourcecode was a logical helper
+ * i avoided to copy/paste the source from them, just to
+ * learn and know, what i'm doing. nonetheless some codeparts
+ * or at least the ideas are based on magiclantern-code
+ * (chromasmoothing, verticalbanding)
+ * 
+ * thanks to a1ex, g3gg0, baldand, Phillip Davis and rd4eva
+ * 
+ * and of course all users testing the app. thanks. 
  */
 
 
@@ -96,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.6.1";
+        private string version = "1.6.3.beta";
         public string Version
         {
             get
@@ -212,7 +224,7 @@ namespace raw2cdng_v2
             }
         }
         
-        private string prefix = "Cam01_[D]_[T]_[S](_F)";
+        private string prefix = "Cam01_[D]_[T]_[S](_)";
         public string Prefix
         {
             get
@@ -228,6 +240,7 @@ namespace raw2cdng_v2
                 RaisePropertyChanging("Prefix");
                 prefix = value;
                 RaisePropertyChanged("Prefix");
+                saveGUIsettings();
             }
         }
         
@@ -543,18 +556,20 @@ namespace raw2cdng_v2
 
             // calculate LUTs
             calc.calculateRec709LUT();
-            int[] test = calc.Rec709;
+//            int[] test = calc.Rec709;
             
             allFramesCount = 0;
             
             // -- init _preview Tick and small frameProgressLine
             previewTimer.Tick += previewTimer_Tick;
-            previewTimer.Interval = TimeSpan.FromMilliseconds(25);
+            previewTimer.Interval = TimeSpan.FromMilliseconds(40);
             
             // ---- load settings from file ----
 
             // standard proxy
+            proxyKinds.Add("no proxy");
             proxyKinds.Add("jpg");
+            proxyKinds.Add("debug bayer");
 
             // ask for ffmpeg in same directory, if - proxy will be mpeg2 as well
             if (winIO.File.Exists(Environment.CurrentDirectory + winIO.Path.DirectorySeparatorChar + "ffmpeg.exe"))
@@ -589,7 +604,7 @@ namespace raw2cdng_v2
         {
             // -- dragdrop files
             // -- prepare metadata
-            // -- put into listview
+            // -- because of databinding its magically in the list
 
 
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -653,6 +668,7 @@ namespace raw2cdng_v2
                     importData.threadData = new threaddata();
                     importData.lensData = new lensdata();
                     importData.audioData = new audiodata();
+                    importData.metaData.deadSensel = new List<point>();
                     // write versionstring into author-tag
                     // not done yet.
                     importData.metaData.version = version;
@@ -719,20 +735,55 @@ namespace raw2cdng_v2
                         this.Dispatcher.Invoke((Action)(() =>
                         {
                             // create thumbnail
-                            importRaw.thumbnail = io.showPicture(importRaw, quality.lowmullim);
+                            importRaw.thumbnail = io.showPicture(importRaw, quality.low_mullim);
 
-                            // calculate coeffs and histograms
+                            if (settings.debugLogEnabled) debugging._saveDebug("[drop] calculating verticalBandingCoeefs and searching hot/dead-pixels.. ");
+                            // calculate vertical banding coeffs and histograms
+                            // and find hot dead pixels
                             if (importRaw.data.metaData.isMLV)
                             {
                                 importRaw.data.fileData.VIDFBlock = importRaw.VIDFBlocks[0];
-                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.to16(io.readMLV(importRaw.data), importRaw.data), importRaw);
+                                uint[] picSource = calc.to16(io.readMLV(importRaw.data), importRaw.data);
+
+                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff( calc.maximize(picSource, importRaw.data), importRaw);
+                                //calc.findDeadSensels(picSource,importRaw.data);
+
+                                picSource = null;
                             }
                             else
                             {
                                 importRaw.data.fileData.RAWBlock = importRaw.RAWBlocks[0];
-                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.to16(io.readRAW(importRaw.data), importRaw.data), importRaw);
-                            }
+                                uint[] picSource = calc.to16(io.readRAW(importRaw.data), importRaw.data);
+                                
+                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.maximize(picSource, importRaw.data), importRaw);
+                                //calc.findDeadSensels(picSource, importRaw.data);
 
+                                picSource = null;
+                            }
+                            if (importRaw.data.metaData.deadSensel.Count != 0)
+                            {
+                                string deadSensels = "";
+                                string col = "";
+                                foreach (point xy in importRaw.data.metaData.deadSensel)
+                                {
+                                    if ((xy.x % 2) == 0)
+                                    {
+                                        if ((xy.y % 2) == 0) col = "r1";
+                                        else col = "g1";
+                                    }
+                                    else
+                                    {
+                                        if ((xy.y % 2) == 0) col = "g2";
+                                        else col = "b1";
+                                    }
+                                    deadSensels += "[" + xy.x.ToString() + "," + xy.y.ToString() + ","+(xy.isHot?"hot":"dead")+","+col+"]";
+                                } 
+                                if (settings.debugLogEnabled) debugging._saveDebug("[drop] found dead sensels: " + deadSensels);
+                            }
+                            else
+                            {
+                                if (settings.debugLogEnabled) debugging._saveDebug("[drop] NO dead sensels found");
+                            }
 
                             if (importRaw.data.metaData.verticalBandingCoeffs[8] == 1) importRaw.data.metaData.verticalBandingNeeded = true;
                             else importRaw.data.metaData.verticalBandingNeeded = false;
@@ -804,6 +855,10 @@ namespace raw2cdng_v2
                 _convert.Content = "converting";
                 this.BatchListIsEnabled = false;
                 this.ConvertingInProgress = true;
+
+                // decide if tif or jpg output
+                if (convertData.ProxyKind == 2) convertData.ProxyTif = true;
+                else convertData.ProxyTif = false;
             }));
 
             // doing the work as a thread, leave GUI fluid
@@ -904,11 +959,11 @@ namespace raw2cdng_v2
                     string date = string.Format("{0:yyMMdd}", file.data.fileData.creationTime);
                     string datetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.creationTime);
                     string modifiedDate = string.Format("{0:yyMMdd}", file.data.fileData.modificationTime);
+                    string modifiedDate2 = string.Format("{0:yyyy-MM-dd}", file.data.fileData.modificationTime);
                     string modifiedDatetime = String.Format("{0:yyyy-MM-dd_HHmm}", file.data.fileData.modificationTime);
 
                     string time = string.Format("{0:HHmmss}", file.data.fileData.creationTime);
                     string modifiedTime = string.Format("{0:HHmmss}", file.data.fileData.modificationTime);
-
                     string bitdepth = file.data.metaData.bitsperSampleChanged.ToString();
 
                     // set filename from prefix-generator
@@ -917,6 +972,7 @@ namespace raw2cdng_v2
                         Replace("[D2]", datetime).
                         Replace("[M]", modifiedDate).
                         Replace("[M2]", modifiedDatetime).
+                        Replace("[M3]", modifiedDate2).
                         Replace("[T]", time).
                         Replace("[T2]", modifiedTime).
                         Replace("[S]", file.data.fileData.fileNameShort).
@@ -958,6 +1014,7 @@ namespace raw2cdng_v2
 
                     // set dngheader
                     // dngheader is a fileresource (DNGtemplate20)
+                    if (file.data.convertData.PinkHighlight) file.data.metaData.whiteLevelNew = 46480;
                     file.data.metaData.DNGHeader = dng.setDNGHeader(file.data);
                     if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
 
@@ -1031,15 +1088,27 @@ namespace raw2cdng_v2
 
                     // proxy clicked and ffmpeg existent. ok. lets do.
                     // new: if videoproxy, jpgs will be deleted.
-                    if (ffmpegExists && settings.isProxy)
+                    if (ffmpegExists && settings.proxyKind!=0)
                     {
+                        switch (settings.proxyKind)
+                        {
+                            case 0:
+                                break;
+                            case 3:
+                            case 4:
+                                executeFFMPEG(file);
+                                foreach (winIO.FileInfo f in new winIO.DirectoryInfo(file.data.fileData._changedPath).GetFiles("*.jpg"))
+                                {
+                                    f.Delete();
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+
                         if ((settings.proxyKind != 0) && (settings.proxyKind < 3))
                         {
-                            executeFFMPEG(file);
-                            foreach (winIO.FileInfo f in new winIO.DirectoryInfo(file.data.fileData._changedPath).GetFiles("*.jpg"))
-                            {
-                                f.Delete();
-                            }
+                            
                         }
                     }
                 }
@@ -1055,7 +1124,7 @@ namespace raw2cdng_v2
             {
                 rawFiles.Clear();
                 this.PreviewSource = null;
-
+                this.currentAction = "";
                 this.FramesProgressed = 0;
                 this.FramesToProgress = 1;
                 this.TotalFramesProgressed = 0;
@@ -1075,9 +1144,10 @@ namespace raw2cdng_v2
             if (param.metaData.isMLV) param.rawData = io.readMLV(param);
             else param.rawData = io.readRAW(param);
 
-            byte[] rawDataChanged;
+            uint[] rawDataChanged;
             // in use if 12bit
-            byte[] fillUp = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] fillUp = new byte[6];
+            for (int i=0; i < fillUp.Length; i++) fillUp[i] = 0;
 
             // -- prepare DNG output
 
@@ -1085,7 +1155,7 @@ namespace raw2cdng_v2
             string finalOutputFilename = justFilename + ".dng";
 
             // write Timecode into dng
-            int timestamp = param.threadData.frame + (int)calc.dateTime2Frame(param.fileData.creationTime, (double)(param.metaData.fpsNom / param.metaData.fpsDen));
+            int timestamp = param.threadData.frame + (int)calc.dateTime2Frame(param.fileData.modificationTime, (double)(param.metaData.fpsNom / param.metaData.fpsDen));
             param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1dba, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
 
             /*            // workaround for 12bit, because first module needs 16bit-data
@@ -1104,37 +1174,36 @@ namespace raw2cdng_v2
                         }
             */
 
+            // -------------------------------------------------------
             // ------- here's the magic - converting the data --------
             // -------------------------------------------------------
+
             rawDataChanged = calc.to16(param.rawData, param);
+
+            // if chroma Smoothing
+            if (param.convertData.ChromaSmoothing)
+            {
+                calc.chromaSmoothing(ref rawDataChanged, param);
+            }
+
+            // now maximize the data
+            if (param.convertData.Maximize) rawDataChanged = calc.maximize(rawDataChanged, param);
 
             // if verticalBanding (and if its needed. delta >0.01)
             if (param.convertData.VerticalBanding && param.metaData.verticalBandingNeeded)
             {
-                //coeffs calculated in [dowork]
-                // raw2ev/ev2raw-tables are calculated in _doWork
+                //coeffs calculated once in [dowork]
                 rawDataChanged = calc.fixVerticalBanding(rawDataChanged, param);
             }
-            // if chroma Smoothing
-            if (param.convertData.ChromaSmoothing) rawDataChanged = calc.chromaSmoothing(rawDataChanged, param);
-
+            
             // if proxy jpeg
-            if (param.convertData.IsProxy) io.saveProxy(param, rawDataChanged);
+            if (param.convertData.ProxyKind > 0 && param.convertData.ProxyKind < 5)
+            {
+                io.saveProxy(param, rawDataChanged);
+            }
 
             // if pink Highlights
-            if (param.convertData.PinkHighlight) rawDataChanged = calc.pinkHighlight(rawDataChanged, param);
-
-            // if 12bit        
-            if (param.metaData.bitsperSampleChanged == 12)
-            {
-                // for 12 bit we have to add some spare fields to work over all resolutions
-                byte[] tempRaw = new byte[fillUp.Length + rawDataChanged.Length];
-                rawDataChanged.CopyTo(tempRaw, 0);
-                fillUp.CopyTo(tempRaw, rawDataChanged.Length);
-
-                rawDataChanged = calc.from16to12(tempRaw, param);
-                tempRaw = null;
-            }
+            if (param.convertData.PinkHighlight) calc.pinkHighlight(ref rawDataChanged, param);
 
             // ----- dng IO operations header and rawdata -----
             // ------------------------------------------------
@@ -1146,7 +1215,23 @@ namespace raw2cdng_v2
             // -- write the bytearray - converted raw
             using (System.IO.FileStream stream = new System.IO.FileStream(finalOutputFilename, System.IO.FileMode.Append, System.IO.FileAccess.Write, System.IO.FileShare.Read))
             {
-                stream.Write(rawDataChanged, 0, rawDataChanged.Length);
+                if (param.metaData.bitsperSampleChanged == 12)
+                {
+                    // for 12 bit we have to add some spare fields to work over all resolutions
+                    uint[] tempRaw = new uint[fillUp.Length + rawDataChanged.Length];
+                    rawDataChanged.CopyTo(tempRaw, 0);
+                    fillUp.CopyTo(tempRaw, rawDataChanged.Length);
+
+                    byte[] convertedTo12 = calc.from16to12(tempRaw, param);
+                    stream.Write(convertedTo12, 0, convertedTo12.Length);
+                    tempRaw = null;
+                    convertedTo12 = null;
+                }
+                else
+                {
+                    // convert uint to Bytes and save
+                    stream.Write(calc.toBytes(rawDataChanged, param), 0, rawDataChanged.Length*2);
+                }
                 // write the versionstring at EOF of dng
                 stream.Write(param.metaData.versionString, 0, param.metaData.versionString.Length);
             }
@@ -1194,7 +1279,7 @@ namespace raw2cdng_v2
             // maybe deleting the if
 
             // read picture and show
-            WriteableBitmap im = io.showPicture(rawFiles[item], quality.high709);
+            WriteableBitmap im = io.showPicture(rawFiles[item], quality.high_709);
             this.PreviewSource = im;
             this.PreviewLensData = String.Format(
                 "{0} | {1} | ISO{2} | f/{3} | {4}°K",
@@ -1287,7 +1372,22 @@ namespace raw2cdng_v2
         {
             saveGUIsettings();
         }
-                
+
+ /*
+  * ------- problematic, because it rereads data
+  * ------- already cached. wrong approach
+  private void ListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as ListView).SelectedItems.Count == 0) return;
+            object itemSender = (sender as ListView).SelectedItems[0];
+            int item = (sender as ListView).Items.IndexOf(itemSender);
+
+            //Window player = new Window();
+            mlvplay player = new mlvplay( rawFiles[item].data.fileData.fileName );
+            player.Show();
+            player.Focus();
+        }
+    */
         // ------- Helper ------------
 
         private void saveGUIsettings()
@@ -1295,7 +1395,6 @@ namespace raw2cdng_v2
             if (toggleSettingsSave == true)
             {
                 settings.verticalBanding = convertData.VerticalBanding;
-                settings.isProxy = convertData.IsProxy;
                 settings.proxyKind = convertData.ProxyKind;
                 settings.chromaSmooth = convertData.ChromaSmoothing;
                 settings.highlightFix = convertData.PinkHighlight;
@@ -1320,7 +1419,9 @@ namespace raw2cdng_v2
 
         private void previewTimer_Tick(object sender, EventArgs e)
         {
-            this.PreviewFrameNumber++;
+            double mx = Mouse.GetPosition(_preview).X;
+
+            this.PreviewFrameNumber = (int)(mx/_preview.ActualWidth*this.SelectedRawFile.data.metaData.frames);
         }
 
         private void progressedDroppedFile()
@@ -1338,7 +1439,7 @@ namespace raw2cdng_v2
 
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    this.PreviewSource = io.showPicture(r, quality.high709);
+                    this.PreviewSource = io.showPicture(r, quality.high_709);
                     this.PreviewFrameNumber = frame;
                 }));
             }
@@ -1406,9 +1507,8 @@ namespace raw2cdng_v2
             convertData.VerticalBanding = settings.verticalBanding;
             convertData.ChromaSmoothing = settings.chromaSmooth;
             convertData.PinkHighlight = settings.highlightFix;
-            if (!ffmpegExists) settings.proxyKind = 0;
             convertData.ProxyKind = settings.proxyKind;
-            convertData.IsProxy = settings.isProxy;
+            if (!ffmpegExists && settings.proxyKind>1) settings.proxyKind = 1;
 
             if (settings.prefix == null) settings.prefix = "";
             if (settings.prefix != "")
@@ -1447,32 +1547,34 @@ namespace raw2cdng_v2
                 Process ffmpegprocess = new Process();
                 commandline = "-r " + r.data.metaData.fpsNom + "/" + r.data.metaData.fpsDen + " -f image2 -i " + inputjpgFiles;
 
-                // if proxyKind==1 -> mpg2
-                if (r.data.convertData.ProxyKind == 1)
+                switch (r.data.convertData.ProxyKind)
                 {
-                    if (winIO.File.Exists(outputFile + ".mpg")) winIO.File.Delete(outputFile + ".mpg");
-                    if (r.data.audioData.hasAudio)
-                    {
-                        commandline += " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 2 -codec:a mp2 -b:a 192k -shortest " + outputFile + ".mpg";
-                    }
-                    else
-                    {
-                        commandline += " -codec:v mpeg2video -qscale:v 2 " + outputFile + ".mpg";
-                    }
-                }
-
-                // if proxyKind==2 -> mpeg4
-                if (r.data.convertData.ProxyKind == 2)
-                {
-                    if (winIO.File.Exists(outputFile + ".mp4")) winIO.File.Delete(outputFile + ".mp4");
-                    if (r.data.audioData.hasAudio)
-                    {
-                        commandline += " -i " + inputAudioFile + " -c:v h264 -preset veryfast -crf 20 -codec:a mp3 -b:a 192k -shortest " + outputFile + ".mp4";
-                    }
-                    else
-                    {
-                        commandline += " -c:v h264 -preset slow -crf 20 " + outputFile + ".mp4";
-                    }
+                    case 2:
+                        // if proxyKind==2 -> mpg2
+                        if (winIO.File.Exists(outputFile + ".mpg")) winIO.File.Delete(outputFile + ".mpg");
+                        if (r.data.audioData.hasAudio)
+                        {
+                            commandline += " -i " + inputAudioFile + " -codec:v mpeg2video -qscale:v 2 -codec:a mp2 -b:a 192k -shortest " + outputFile + ".mpg";
+                        }
+                        else
+                        {
+                            commandline += " -codec:v mpeg2video -qscale:v 2 " + outputFile + ".mpg";
+                        }
+                        break;
+                    case 3:
+                        // if proxyKind==3 -> mpeg4
+                        if (winIO.File.Exists(outputFile + ".mp4")) winIO.File.Delete(outputFile + ".mp4");
+                        if (r.data.audioData.hasAudio)
+                        {
+                            commandline += " -i " + inputAudioFile + " -c:v h264 -preset veryfast -crf 20 -codec:a mp3 -b:a 192k -shortest " + outputFile + ".mp4";
+                        }
+                        else
+                        {
+                            commandline += " -c:v h264 -preset slow -crf 20 " + outputFile + ".mp4";
+                        }
+                        break;
+                    default:
+                        break;
                 }
 
                 if (settings.debugLogEnabled)

@@ -13,10 +13,12 @@ namespace raw2cdng_v2
     public enum quality
     {
         // used for the playback-algorithm
-        lowgrey = 0,
-        lowmullim = 1,
-        highgamma2 = 2,
-        high709 =3
+        low_grey = 0,
+        low_mullim = 1,
+        high_gamma2 = 2,
+        high_709 = 3,
+        demosaic_VNG4 = 4,
+        debug_RGGB = 9
     }
     public enum codec
     {
@@ -27,6 +29,12 @@ namespace raw2cdng_v2
         prores444 = 3
     }
 
+    public class point
+    {
+        public int x { get; set; }
+        public int y { get; set; }
+        public bool isHot { get; set; }
+    }
     public class raw
     {
         public bool convert { get; set; }
@@ -108,6 +116,8 @@ namespace raw2cdng_v2
         public string propertiesString { get; set; }
         public double[] verticalBandingCoeffs { get; set; }
         public bool verticalBandingNeeded { get; set; }
+
+        public List<point> deadSensel { get; set; }
     }
 
     public class audiodata 
@@ -289,8 +299,7 @@ namespace raw2cdng_v2
                 pinkHighlight = value;
                 RaisePropertyChanged("PinkHighlight");
 
-                //Not sure if this is intended.
-                //Took this from the previous _highlights_Checked function
+                //pink highlights only with maximizing
                 if (value == true)
                     this.maximize = true;
             }
@@ -312,6 +321,10 @@ namespace raw2cdng_v2
                 RaisePropertyChanging("ChromaSmoothing");
                 chromaSmoothing = value;
                 RaisePropertyChanged("ChromaSmoothing");
+
+                //chroma smoothing only with maximizing
+                if (value == true)
+                    this.maximize = true;
             }
         }
 
@@ -353,6 +366,25 @@ namespace raw2cdng_v2
             }
         }
 
+        private bool proxyTif = false;
+        public bool ProxyTif
+        {
+            get
+            {
+                return proxyTif;
+            }
+
+            set
+            {
+                if (proxyTif == value)
+                    return;
+
+                RaisePropertyChanging("IsProxy");
+                proxyTif = value;
+                RaisePropertyChanged("IsProxy");
+            }
+        }
+        
         private int proxyKind = 0;
         public int ProxyKind
         {

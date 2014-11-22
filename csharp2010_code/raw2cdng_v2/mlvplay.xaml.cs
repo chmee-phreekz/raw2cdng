@@ -38,7 +38,7 @@ namespace raw2cdng_v2
         int originalWB = 0;
         string originalWBText = "";
         int[] originalFractions = new int[6];
-        int playbackQuality = 0;
+        int playbackQuality = 5;
         string output = "";
 
         public mlvplay()
@@ -126,10 +126,10 @@ namespace raw2cdng_v2
                 importRaw.data.metaData.propertiesString = importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px || " + importRaw.data.lensData.isoValue + "ISO | " + importRaw.data.lensData.shutter + " | " + importRaw.data.metaData.fpsString + "fps";
 
                 // set properties of the window
-                this.Width = importRaw.data.metaData.xResolution / 2;
-                this.Height = importRaw.data.metaData.yResolution / 2;
-                _playback.Width = importRaw.data.metaData.xResolution / 2;
-                _playback.Height = importRaw.data.metaData.yResolution / 2;
+                this.Width = importRaw.data.metaData.xResolution+48;
+                this.Height = importRaw.data.metaData.yResolution+48;
+                _playback.Width = importRaw.data.metaData.xResolution;
+                _playback.Height = importRaw.data.metaData.yResolution;
                 _playback.Source = null;
                 this.Title = "mlvplay " + importRaw.data.fileData.fileNameOnly;
                 _wbLabel.Content = originalWBText;
@@ -161,23 +161,27 @@ namespace raw2cdng_v2
                 //_preview.Source = im;
                 this.Dispatcher.Invoke((Action)(() =>
                 {
-                    switch (playbackQuality % 4)
+                    switch (playbackQuality % 5)
                     {
                         case 0:
-                            _playback.Source = io.showPicture(r,quality.high709);
+                            _playback.Source = io.showPicture(r,quality.high_709);
                             output = "HQ 709";
                             break;
                         case 1:
-                            _playback.Source = io.showPicture(r,quality.highgamma2);
+                            _playback.Source = io.showPicture(r,quality.high_gamma2);
                             output = "HQ gamma 2.0";
                             break;
                         case 2:
-                            _playback.Source = io.showPicture(r,quality.lowmullim);
+                            _playback.Source = io.showPicture(r,quality.low_mullim);
                             output = "LQ mul/lim";
                             break;
                         case 3:
-                            _playback.Source = io.showPicture(r,quality.lowgrey);
+                            _playback.Source = io.showPicture(r,quality.low_grey);
                             output = "LQ grey";
+                            break;
+                        case 4:
+                            _playback.Source = io.showPicture(r, quality.debug_RGGB);
+                            output = "RGGB pattern";
                             break;
 
                         default:
@@ -270,11 +274,16 @@ namespace raw2cdng_v2
                     // change Quality on Q
                     break;
                 case Key.X:
-                    Application.Current.Shutdown();
+                    //Application.Current.Shutdown();
+                    playbackTimer.Stop();
+                    this.Close();
                     // close on X
                     break;
                 case Key.Escape:
-                    Application.Current.Shutdown();
+                    //Application.Current.Shutdown();
+                    playbackTimer.Stop();
+                    this.Close();
+                    
                     // close on ESC
                     break;
                 default:

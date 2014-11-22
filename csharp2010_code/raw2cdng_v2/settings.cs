@@ -18,7 +18,6 @@ namespace raw2cdng_v2
         public string debugLogFile = "";
 
         public bool chromaSmooth;
-        public bool isProxy;
         public int proxyKind;
         public bool highlightFix;
         public bool verticalBanding;

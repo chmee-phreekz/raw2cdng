@@ -16,15 +16,17 @@ namespace raw2cdng_v2
     class calc
     {
         // helper arrays
-        private const int EV_RESOLUTION = 65536;
+        private const int EV_RESOLUTION = 32768;
 
         public static int[] ev2raw = new int[24 * EV_RESOLUTION];
         public static int[] raw2ev = new int[EV_RESOLUTION];
         public static int zero = 0;
-        public static int full = 65535;
+        public static int full14 = 16383;
+        public static int full16 = 65535;
 
         public static void calcRAWEV_Arrays(int black, int white)
         {
+            /*
             for (var i = 0; i < 65536; i++) calc.raw2ev[i] = (int)(Math.Log(Math.Max(1, i - black))/Math.Log(2) * EV_RESOLUTION) ;
             for (var i = -10*EV_RESOLUTION; i < 0; i++)
             {
@@ -41,7 +43,7 @@ namespace raw2cdng_v2
                     ev2raw[i] = Math.Max(ev2raw[i], white);
                 }
             }
-            
+            */
         }
 
         // --- bitdepth conversion ---
@@ -50,118 +52,77 @@ namespace raw2cdng_v2
         // 16bit - 8192-60.000 - maximized 0-65535
         // 12bit - 512-3750 = ~3.200 - maximized 0-4095 (
 
-        public static byte[] to16(byte[] source, data rData)
+        public static uint[] to16(byte[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
             int resy = rData.metaData.yResolution;
-            int bl = rData.metaData.blackLevelOld;
+            uint bl = (uint)rData.metaData.blackLevelOld;
             bool maximize = rData.metaData.maximize;
             double maximizer = rData.metaData.maximizer;
 
             // ------------- and go ----
             int chunks = resx * resy * 14 / 8;
-            byte[] Dest = new Byte[chunks / 14 * 16];
+            uint[] Dest = new uint[resx*resy];
             UInt32 tt = 0;
-            int senselA, senselB, senselC, senselD, senselE, senselF, senselG, senselH;
+            uint senselA, senselB, senselC, senselD, senselE, senselF, senselG, senselH;
             for (var t = 0; t < chunks; t += 14)
             {
-                if (maximize == true)
-                {
-                    senselA = (int)((source[t] >> 2) | (source[t + 1] << 6));
-                    senselB = (int)(((source[t] & 0x3) << 12) | (source[t + 3] << 4) | (source[t + 2] >> 4));
-                    senselC = (int)(((source[t + 2] & 0x0f) << 10) | (source[t + 5] << 2) | (source[t + 4] >> 6));
-                    senselD = (int)(((source[t + 4] & 0x3f) << 8) | (source[t + 7]));
-                    senselE = (int)((source[t + 9] >> 2) | (source[t + 6] << 6));
-                    senselF = (int)(((source[t + 9] & 0x3) << 12) | (source[t + 8] << 4) | (source[t + 11] >> 4));
-                    senselG = (int)(((source[t + 11] & 0x0f) << 10) | (source[t + 10] << 2) | (source[t + 13] >> 6));
-                    senselH = (int)(((source[t + 13] & 0x3f) << 8) | (source[t + 12]));
+                // no maximizing
+                senselA = (uint)((source[t] >> 2) | (source[t + 1] << 6));
+                senselB = (uint)(((source[t] & 0x3) << 12) | (source[t + 3] << 4) | (source[t + 2] >> 4));
+                senselC = (uint)(((source[t + 2] & 0x0f) << 10) | (source[t + 5] << 2) | (source[t + 4] >> 6));
+                senselD = (uint)(((source[t + 4] & 0x3f) << 8) | (source[t + 7]));
+                senselE = (uint)((source[t + 9] >> 2) | (source[t + 6] << 6));
+                senselF = (uint)(((source[t + 9] & 0x3) << 12) | (source[t + 8] << 4) | (source[t + 11] >> 4));
+                senselG = (uint)(((source[t + 11] & 0x0f) << 10) | (source[t + 10] << 2) | (source[t + 13] >> 6));
+                senselH = (uint)(((source[t + 13] & 0x3f) << 8) | (source[t + 12]));
 
-                    // debias sensel
-                    senselA = senselA - (int)bl;
-                    senselB = senselB - (int)bl;
-                    senselC = senselC - (int)bl;
-                    senselD = senselD - (int)bl;
-                    senselE = senselE - (int)bl;
-                    senselF = senselF - (int)bl;
-                    senselG = senselG - (int)bl;
-                    senselH = senselH - (int)bl;
-
-                    // maximize to 16bit
-                    senselA = (int)(senselA * maximizer);
-                    senselB = (int)(senselB * maximizer);
-                    senselC = (int)(senselC * maximizer);
-                    senselD = (int)(senselD * maximizer);
-                    senselE = (int)(senselE * maximizer);
-                    senselF = (int)(senselF * maximizer);
-                    senselG = (int)(senselG * maximizer);
-                    senselH = (int)(senselH * maximizer);
-
-                    // do max on overflow
-                    if (senselA > 65535) senselA = 65535;
-                    if (senselB > 65535) senselB = 65535;
-                    if (senselC > 65535) senselC = 65535;
-                    if (senselD > 65535) senselD = 65535;
-                    if (senselE > 65535) senselE = 65535;
-                    if (senselF > 65535) senselF = 65535;
-                    if (senselG > 65535) senselG = 65535;
-                    if (senselH > 65535) senselH = 65535;
-
-                    // -- react on underflow
-                    if (senselA < 0) senselA = 0;
-                    if (senselB < 0) senselB = 0;
-                    if (senselC < 0) senselC = 0;
-                    if (senselD < 0) senselD = 0;
-                    if (senselE < 0) senselE = 0;
-                    if (senselF < 0) senselF = 0;
-                    if (senselG < 0) senselG = 0;
-                    if (senselH < 0) senselH = 0;
-
-                }
-                else
-                {
-                    // no maximizing
-                    senselA = (int)((source[t] >> 2) | (source[t + 1] << 6));
-                    senselB = (int)(((source[t] & 0x3) << 12) | (source[t + 3] << 4) | (source[t + 2] >> 4));
-                    senselC = (int)(((source[t + 2] & 0x0f) << 10) | (source[t + 5] << 2) | (source[t + 4] >> 6));
-                    senselD = (int)(((source[t + 4] & 0x3f) << 8) | (source[t + 7]));
-                    senselE = (int)((source[t + 9] >> 2) | (source[t + 6] << 6));
-                    senselF = (int)(((source[t + 9] & 0x3) << 12) | (source[t + 8] << 4) | (source[t + 11] >> 4));
-                    senselG = (int)(((source[t + 11] & 0x0f) << 10) | (source[t + 10] << 2) | (source[t + 13] >> 6));
-                    senselH = (int)(((source[t + 13] & 0x3f) << 8) | (source[t + 12]));
-
-                }
-
-                Dest[tt++] = (byte)(senselA & 0xff);
-                Dest[tt++] = (byte)(senselA >> 8);
-
-                Dest[tt++] = (byte)(senselB & 0xff);
-                Dest[tt++] = (byte)(senselB >> 8);
-
-                Dest[tt++] = (byte)(senselC & 0xff);
-                Dest[tt++] = (byte)(senselC >> 8);
-
-                Dest[tt++] = (byte)(senselD & 0xff);
-                Dest[tt++] = (byte)(senselD >> 8);
-
-                Dest[tt++] = (byte)(senselE & 0xff);
-                Dest[tt++] = (byte)(senselE >> 8);
-
-                Dest[tt++] = (byte)(senselF & 0xff);
-                Dest[tt++] = (byte)(senselF >> 8);
-
-                Dest[tt++] = (byte)(senselG & 0xff);
-                Dest[tt++] = (byte)(senselG >> 8);
-
-                Dest[tt++] = (byte)(senselH & 0xff);
-                Dest[tt++] = (byte)(senselH >> 8);
+                Dest[tt++] = senselA;
+                Dest[tt++] = senselB;
+                Dest[tt++] = senselC;
+                Dest[tt++] = senselD;
+                Dest[tt++] = senselE;
+                Dest[tt++] = senselF;
+                Dest[tt++] = senselG;
+                Dest[tt++] = senselH;
 
             }
             return Dest;
         }
 
-        // not used anymore, because all adjuster work with 16bit values
-        public static byte[] from16to12(byte[] source, data rData)
+        public static byte[] toBytes(uint[] pic, data rData)
+        {
+            byte[] byteOutput = new byte[rData.metaData.xResolution * rData.metaData.yResolution * 2];
+            int t = 0;
+            foreach (UInt16 sensel in pic)
+            {
+                byteOutput[t++] = (byte)(sensel & 0xFF);
+                byteOutput[t++] = (byte)(sensel >> 8);
+            }
+            return byteOutput;
+        }
+
+        public static uint[] maximize(uint[] source, data rData)
+        {
+            uint[] dest = new uint[source.Length];
+            uint bl = (uint)rData.metaData.blackLevelOld;
+            double maximizer = rData.metaData.maximizer;
+            for (int pos = 0; pos < (rData.metaData.xResolution * rData.metaData.yResolution); pos++)
+            {
+                int sensel = (int)source[pos];
+                
+                // debias sensel
+                sensel = sensel - (int)bl;
+                // maximize to 16bit
+                sensel = (int)(sensel * maximizer);
+                // do min/max
+                dest[pos] = (uint)COERCE(ref sensel,ref zero,ref full16);
+            }
+            return dest;
+        }
+
+        public static byte[] from16to12(uint[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
@@ -169,95 +130,22 @@ namespace raw2cdng_v2
 
             // ------------- and go ----
 
-            int chunks = resx * resy * 16 / 8;
-            byte[] Dest = new Byte[chunks / 16 * 12 + 72];
+            int chunks = resx * resy;
+            byte[] Dest = new Byte[chunks /2 *3];
             UInt32 tt = 0;
-            int senselA, senselB, senselC, senselD, senselE, senselF, senselG, senselH;
-            int senselI, senselJ, senselK, senselL, senselM, senselN, senselO, senselP;
-            int senselQ, senselR, senselS, senselT, senselU, senselV, senselW, senselX;
 
-            for (var t = 0; t < chunks; t += 48)
+            for (var t = 0; t < chunks; t += 2)
             {
-                //read 16bit data and shift 4 bits.
-                senselA = (source[t] | (source[t + 1] << 8)) >> 4;  
-                senselB = (source[t + 2] | (source[t + 3] << 8)) >> 4;
-                senselC = (source[t + 4] | (source[t + 5] << 8)) >> 4;
-                senselD = (source[t + 6] | (source[t + 7] << 8)) >> 4;
-                senselE = (source[t + 8] | (source[t + 9] << 8)) >> 4;
-                senselF = (source[t + 10] | (source[t + 11] << 8)) >> 4;
-                senselG = (source[t + 12] | (source[t + 13] << 8)) >> 4;
-                senselH = (source[t + 14] | (source[t + 15] << 8)) >> 4;
-
-                senselI = (source[t + 16] | (source[t + 17] << 8)) >> 4;
-                senselJ = (source[t + 18] | (source[t + 19] << 8)) >> 4;
-                senselK = (source[t + 20] | (source[t + 21] << 8)) >> 4;
-                senselL = (source[t + 22] | (source[t + 23] << 8)) >> 4;
-                senselM = (source[t + 24] | (source[t + 25] << 8)) >> 4;
-                senselN = (source[t + 26] | (source[t + 27] << 8)) >> 4;
-                senselO = (source[t + 28] | (source[t + 29] << 8)) >> 4;
-                senselP = (source[t + 30] | (source[t + 31] << 8)) >> 4;
-
-                senselQ = (source[t + 32] | (source[t + 33] << 8)) >> 4;
-                senselR = (source[t + 34] | (source[t + 35] << 8)) >> 4;
-                senselS = (source[t + 36] | (source[t + 37] << 8)) >> 4;
-                senselT = (source[t + 38] | (source[t + 39] << 8)) >> 4;
-                senselU = (source[t + 40] | (source[t + 41] << 8)) >> 4;
-                senselV = (source[t + 42] | (source[t + 43] << 8)) >> 4;
-                senselW = (source[t + 44] | (source[t + 45] << 8)) >> 4;
-                senselX = (source[t + 46] | (source[t + 47] << 8)) >> 4;
-
-                Dest[tt++] = (byte)((senselA >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselA & 0xF) << 4) | (senselB >> 8));
-                Dest[tt++] = (byte)(senselB & 0xff);
-
-                Dest[tt++] = (byte)((senselC >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselC & 0xF) << 4) | (senselD >> 8));
-                Dest[tt++] = (byte)(senselD & 0xff);
-
-                Dest[tt++] = (byte)((senselE >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselE & 0xF) << 4) | (senselF >> 8));
-                Dest[tt++] = (byte)(senselF & 0xff);
-                //9
-                Dest[tt++] = (byte)((senselG >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselG & 0xF) << 4) | (senselH >> 8));
-                Dest[tt++] = (byte)(senselH & 0xff);
-
-                Dest[tt++] = (byte)((senselI >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselI & 0xF) << 4) | (senselJ >> 8));
-                Dest[tt++] = (byte)(senselJ & 0xff);
-
-                Dest[tt++] = (byte)((senselK >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselK & 0xF) << 4) | (senselL >> 8));
-                Dest[tt++] = (byte)(senselL & 0xff);
-                //18
-                Dest[tt++] = (byte)((senselM >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselM & 0xF) << 4) | (senselN >> 8));
-                Dest[tt++] = (byte)(senselN & 0xff);
-
-                Dest[tt++] = (byte)((senselO >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselO & 0xF) << 4) | (senselP >> 8));
-                Dest[tt++] = (byte)(senselP & 0xff);
-
-                Dest[tt++] = (byte)((senselQ >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselQ & 0xF) << 4) | (senselR >> 8));
-                Dest[tt++] = (byte)(senselR & 0xff);
-                //27
-                Dest[tt++] = (byte)((senselS >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselS & 0xF) << 4) | (senselT >> 8));
-                Dest[tt++] = (byte)(senselT & 0xff);
-
-                Dest[tt++] = (byte)((senselU >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselU & 0xF) << 4) | (senselV >> 8));
-                Dest[tt++] = (byte)(senselV & 0xff);
-
-                Dest[tt++] = (byte)((senselW >> 4) & 0xff);
-                Dest[tt++] = (byte)(((senselW & 0xF) << 4) | (senselX >> 8));
-                Dest[tt++] = (byte)(senselX & 0xff);
-                //36
+                uint sA = source[t] >> 4;
+                uint sB = source[t + 1] >> 4;
+                Dest[tt++] = (byte)((sA >> 4) & 0xff);
+                Dest[tt++] = (byte)(((sA & 0xF) << 4) | (sB >> 8));
+                Dest[tt++] = (byte)(sB & 0xff);
             }
             return Dest;
         }
 
+        // not used anymore, because all adjuster work with 16bit values
         public static byte[] to12(byte[] source, data rData)
         {
             // preparing variables
@@ -493,86 +381,72 @@ namespace raw2cdng_v2
             return Dest;
         }
 
-        public static byte[] pinkHighlight(byte[] pic, data param)
+        public static void pinkHighlight(ref uint[] pic, data param)
         {
-            int halfResx = param.metaData.xResolution / 2;
-            int halfResy = param.metaData.yResolution / 2;
+            int xRes = param.metaData.xResolution;
+            int yRes = param.metaData.yResolution;
             
             // thats the value green and red/blue drifts in bmcc-premiere code.
-            int whitelevel = 42000;
+            int limitedWhitelevel = 41721; // 46480; // 42000;
             //double maxRange = 1.8;
 
-            for (var y = 0; y < halfResy; y++)
+            for (var y = 0; y < yRes; y+=2)
             {
-                for (var x = 0; x < halfResx; x++)
+                for (var x = 0; x < xRes; x+=2)
                 {
                     // adress for both rows
-                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    int rowRG = x + (y + 0) * xRes;
+                    int rowGB = x + (y + 1) * xRes;
 
                     // sensel-values
-                    int r1 = (pic[rowRG] | pic[rowRG + 1] << 8);
-                    int g1 = (pic[rowRG + 2] | pic[rowRG + 3] << 8);
-                    int g2 = (pic[rowGB] | pic[rowGB + 1] << 8);
-                    int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
+                    int r1 = (int)pic[rowRG];
+                    int g1 = (int)pic[rowRG + 1];
+                    int g2 = (int)pic[rowGB];
+                    int b1 = (int)pic[rowGB + 1];
 
                     // limiting r and b to values of g1/g2
-                    if (r1 > whitelevel) r1 = whitelevel;
+                    r1 = COERCE(ref r1, ref zero, ref limitedWhitelevel);
+                    //if (r1 > whitelevel) r1 = whitelevel;
                     //if (g1 > whitelevel) g1 = whitelevel; // whitelevel + (g1 - whitelevel) * 2;
                     //if (g2 > whitelevel) g2 = whitelevel; // whitelevel + (g2 - whitelevel) * 2;
-                    if (b1 > whitelevel) b1 = whitelevel;
-/*
-                    // ------- tried to higher the output, but gets pink, assume of overflow
-                    r1 = (int)(r1 * (double)maxRange);
-                    g1 = (int)(g1 * (double)maxRange);
-                    g2 = (int)(g2 * (double)maxRange);
-                    b1 = (int)(b1 * (double)maxRange);
+                    //if (b1 > whitelevel) b1 = whitelevel;
+                    b1 = COERCE(ref b1, ref zero, ref limitedWhitelevel);
 
-                    // --- so simply doin a check on overflow
-                    if(r1>65535)r1=65535;
-                    if(g1>65535)g1=65535;
-                    if(g2>65535)g2=65535;
-                    if(b1>65535)b1=65535;
- */
-                    pic[rowRG] = (byte)(r1 & 0xff);
-                    pic[rowRG + 1] = (byte)(r1 >> 8);
-                    pic[rowRG + 2] = (byte)(g1 & 0xff);
-                    pic[rowRG + 3] = (byte)(g1 >> 8);
-                    pic[rowGB] = (byte)(g2 & 0xff);
-                    pic[rowGB + 1] = (byte)(g2 >> 8);
-                    pic[rowGB + 2] = (byte)(b1 & 0xff);
-                    pic[rowGB + 3] = (byte)(b1 >> 8);
+                    pic[rowRG] = (uint)r1;
+                    pic[rowRG + 1] = (uint)g1;
+                    pic[rowGB] = (uint)g2;
+                    pic[rowGB + 1] = (uint)b1;
                 }
             }
-            return pic;
         }
 
-        public static double[] calcVerticalBandingCoeff(byte[] pic, raw r)
+        public static double[] calcVerticalBandingCoeff(uint[] pic, raw r)
         {
-            int halfResx = r.data.metaData.xResolution / 2;
-            int halfResy = r.data.metaData.yResolution / 2;
+            int xRes = r.data.metaData.xResolution;
+            int yRes = r.data.metaData.yResolution;
 
             double[] coeffs = new double[9];
             int[][] histogram = new int[8][];
             int column = 0;
+            
             for (var i = 0; i < 8; i++) histogram[i] = new int[65536];
 
             // -- compute Histograms
             // 8 histograms , assume green is enough
-            for (var x = 0; x < halfResx; x++)
+            for (var x = 0; x < xRes; x+=2)
             {
-                column = (x * 2) % 8;
-                for (var y = 0; y < halfResy; y++)
+                column = x % 8;
+                for (var y = 0; y < yRes; y+=2)
                 {
-                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    int rowRG = (x + (y + 0) * xRes);
+                    int rowGB = (x + (y + 1) * xRes);
 
-                    //int r1 = (pic[rowRG] | pic[rowRG + 1] << 8);
-                    int gOdd = (pic[rowRG + 2] | pic[rowRG + 3] << 8);
-                    int gEven = (pic[rowGB] | pic[rowGB + 1] << 8);
-                    //int b1 = (pic[rowGB + 2] | pic[rowGB + 3] << 8);
-                    histogram[column][gEven]++;
-                    histogram[column + 1][gOdd]++;
+                    //int r1 = pic[rowRG];
+                    int g1 = (int)pic[rowRG + 1];
+                    int g2 = (int)pic[rowGB];
+                    //int b1 = pic[rowGB + 1];
+                    histogram[column][g2]++;
+                    histogram[column + 1][g1]++;
                 }
             }
 
@@ -615,140 +489,252 @@ namespace raw2cdng_v2
             return coeffs;
         }
 
-        public static byte[] fixVerticalBanding(byte[] picIn, data param)
+        public static uint[] fixVerticalBanding(uint[] picIn, data param)
         {
             // vertical Banding idea by a1ex
             // to be found in Magic Lantern / modules / lv_rec / raw2dng.c
             // https://bitbucket.org/hudson/magic-lantern/src/c38da103d1842fce7da5a3a5f2d5d71990ed4f0c/modules/lv_rec/raw2dng.c?at=unified
 
-            byte[] picOut = new byte[picIn.Length];
-            int halfResX = param.metaData.xResolution / 2;
-            int halfResY = param.metaData.yResolution / 2;
+            uint[] picOut = new uint[picIn.Length];
+            int xRes = param.metaData.xResolution;
+            int yRes = param.metaData.yResolution;
 
-            for (var x = 0; x < halfResX; x++)
+            for (var x = 0; x < xRes; x+=2)
             {
-                int column = (x * 2) % 8;
+                int column = x % 8;
                 double coeffEven = param.metaData.verticalBandingCoeffs[column];
                 double coeffOdd = param.metaData.verticalBandingCoeffs[column + 1];
 
-                for (var y = 0; y < halfResY; y++)
+                for (var y = 0; y < yRes; y+=2)
                 {
-                    int rowRG = (x * 2 * 2 + (y * 2 + 0) * halfResX * 4);
-                    int rowGB = (x * 2 * 2 + (y * 2 + 1) * halfResX * 4);
+                    int rowRG = x + (y + 0) * xRes;
+                    int rowGB = x + (y + 1) * xRes;
 
-                    int rEven = (int)((double)(picIn[rowRG] | picIn[rowRG + 1] << 8) / (double)coeffEven);
-                    int gOdd = (int)((double)(picIn[rowRG + 2] | picIn[rowRG + 3] << 8) / (double)coeffOdd);
-                    int gEven = (int)((double)(picIn[rowGB] | picIn[rowGB + 1] << 8) / (double)coeffEven);
-                    int bOdd = (int)((double)(picIn[rowGB + 2] | picIn[rowGB + 3] << 8) / (double)coeffOdd);
+                    int r1 = (int)((double)picIn[rowRG] / (double)coeffEven);
+                    int g1 = (int)((double)picIn[rowRG + 1] / (double)coeffOdd);
+                    int g2 = (int)((double)picIn[rowGB] / (double)coeffEven);
+                    int b1 = (int)((double)picIn[rowGB + 1] / (double)coeffOdd);
 
-                    if (rEven > 65535) rEven = 65535;
-                    if (gOdd > 65535) gOdd = 65535;
-                    if (gEven > 65535) gEven = 65535;
-                    if (bOdd > 65535) bOdd = 65535;
+                    r1 = COERCE(ref r1,ref zero,ref full16);
+                    g1 = COERCE(ref g1,ref zero, ref full16);
+                    g2 = COERCE(ref g2,ref zero, ref full16);
+                    b1 = COERCE(ref b1,ref zero, ref full16);
 
                     // back to array
-                    picOut[rowRG] = (byte)(rEven & 0xff);
-                    picOut[rowRG + 1] = (byte)(rEven >> 8);
-                    picOut[rowRG + 2] = (byte)(gOdd & 0xff);
-                    picOut[rowRG + 3] = (byte)(gOdd >> 8);
-                    picOut[rowGB] = (byte)(gEven & 0xff);
-                    picOut[rowGB + 1] = (byte)(gEven >> 8);
-                    picOut[rowGB + 2] = (byte)(bOdd & 0xff);
-                    picOut[rowGB + 3] = (byte)(bOdd >> 8);
+                    picOut[rowRG] = (uint)r1;
+                    picOut[rowRG + 1] = (uint)g1;
+                    picOut[rowGB] = (uint)g2;
+                    picOut[rowGB + 1] = (uint)b1;
                 }
             }
-
             return picOut;
         }
 
-
-        public static byte[] chromaSmoothing(byte[] picIn, data param)
+        public static void findDeadSensels(uint[] source, data param)
         {
-            // chroma Smoothing 2x2 written by a1ex
-            // to be found in Magic Lantern / modules / dual_iso / chroma_smooth.c 
-            
-            // is half recoded and put into sourcecode - but not ready yet.
-            //please look into calc.cs as well, there is ev2raw and raw2ev
-            
-            int xres = param.metaData.xResolution;
-            int yres = param.metaData.yResolution;
-            int xresHalf = xres / 2;
-            int yresHalf = yres / 2;
+            // input source is 16bit without maximizing(!)
+            // assuming below blacklevel are defective sensels
+            // we mark them as dead
 
-            byte[] picOut = new byte[picIn.Length];
+            // while writing that i found, it was the same
+            // approach as from escho
+            
+            int ResX = param.metaData.xResolution;
+            int ResY = param.metaData.yResolution;
+            
+            // basic variables
+            //int threshold = 2;
+            uint senselValue = 0;
 
-          /*
-                        for (int y = 4; y < yres - 5; y += 2)
+            for (var y = 2; y < (ResY-2); y+=2)
+            {
+                for (var x = 1; x < (ResX-2); x+=2)
+                {
+                    senselValue = source[x + y * ResX];
+                    
+                    // look for dead pixel
+                    if (senselValue < (param.metaData.blackLevelOld-256))
+                    {
+                        param.metaData.deadSensel.Add(new point { x = x, y = y, isHot = false });
+                    }
+
+                    //look for neighbour green data
+                    int neighboursVal = 0;
+                    for (int dy = -1; dy < 2; dy++)
+                    {
+                        for (int dx = -1; dx < 2; dx++)
                         {
-                            for (int x = 4; x < xres - 4; x += 2)
+                            if ((Math.Abs(dx) + Math.Abs(dy)) == 2)
                             {
-                                int rowRG = (x * 2 * 2 + (y * 2 + 0) * xresHalf * 4);
-                                int rowGB = (x * 2 * 2 + (y * 2 + 1) * yresHalf * 4);
-                                
-                                int g1 = picIn[x+1 +     y * xres];
-                                int g2 = picIn[x   + (y+1) * yres];
-                                int ge = (raw2ev[g1] + raw2ev[g2]) / 2;
-            
-                                // looks ugly in darkness
-                                if (ge < 2*EV_RESOLUTION) continue;
-
-                                int i,j;
-                                int k = 0;
-                                int[] med_r = new int[5];
-                                int[] med_b = new int[5];
-                                for (i = -2; i <= 2; i += 2)
-                                {
-                                    for (j = -2; j <= 2; j += 2)
-                                    {
-                                        //#ifdef CHROMA_SMOOTH_2X2
-                                        if (Math.Abs(i) + Math.Abs(j) == 4) continue;
-                    
-                                        int ar  = picIn[x+i   +   (y+j) * xres];
-                                        int ag1 = picIn[x+i+1 +   (y+j) * xres];
-                                        int ag2 = picIn[x+i   + (y+j+1) * xres];
-                                        int ab  = picIn[x+i+1 + (y+j+1) * xres];
-                    
-                                        int age = (raw2ev[ag1] + raw2ev[ag2]) / 2;
-                                        med_r[k] = raw2ev[ar] - age;
-                                        med_b[k] = raw2ev[ab] - age;
-                                        k++;
-                                     }
-                                }
-                                int dr = opt_med5(ref med_r);
-                                int db = opt_med5(ref med_b);
-
-                                if (ge + dr <= EV_RESOLUTION) continue;
-                                if (ge + db <= EV_RESOLUTION) continue;
-
-                                int gedr = ge + dr;
-                                int gedb = ge + db;
-                                int fullArray = 14 * full;
-
-
-                                picOut[x   +     y * xres] = ev2raw[COERCE(ref gedr, ref zero, ref fullArray)];
-                                picOut[x+1 + (y+1) * yres] = ev2raw[COERCE(ge + db, 0, 14*EV_RESOLUTION-1)];
-     
+                                // only look on green neighbours -> distance 2
+                                neighboursVal += (int)source[(x + dx) + (y + dy) * ResX];
                             }
                         }
-                         */
-            return picOut;
-    
+                    }
+                    if (senselValue/4 > neighboursVal)
+                    {
+                        param.metaData.deadSensel.Add(new point { x = x, y = y, isHot = true });
+                    }
+                }
+            }
         }
 
-        // --- preview helper ---
-        public static WriteableBitmap doBitmapLQgrey(byte[] imageData, data param)
+        public static void fixDeadSensels()
         {
-            int halfResx = param.metaData.xResolution / 2;
-            int halfResy = param.metaData.yResolution / 2;
-            int whole = halfResx * halfResy;
+            // assuming, dead sensels are zero 0
+            // and hot pixels are full well 16384
+            // we replace with neighbour values
+            // and we assume they re static
+            // so finding is a onetimer
+            // replacing is done on values from metadata.deadhot
+            // preparing variables
+        }
 
-            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+        public static void chromaSmoothing(ref uint[] picIn, data param)
+        {
+            // chroma Smoothing 2x2 written by a1ex & escho ?!
+            // seems the algorithm in lv_rec is the right one for single frames
+            // https://bitbucket.org/hudson/magic-lantern/src/tip/modules/lv_rec/raw2dng.c
+            // to be found in Magic Lantern / modules / dual_iso / chroma_smooth.c
+            // or in mlvfs - https://bitbucket.org/dmilligan/mlvfs/src/2b61f5707f91f58578b151b37b3f62dc138b8249/mlvfs/chroma_smooth.c?at=master
+            
+            int xRes = param.metaData.xResolution;
+            int yRes = param.metaData.yResolution;
+            int xResHalf = xRes / 2;
+            int yResHalf = yRes / 2;
+            int whiteLevel = param.metaData.whiteLevelOld;
+            int blackLevel = param.metaData.blackLevelOld;
+
+            //byte[] picOut = new byte[picIn.Length];
+
+            for (var y = 4; y < (yRes-5); y+=2)
+            {
+                for (var x = 4; x < (xRes - 4); x += 2)
+                {
+                    //int ge = (int)( voP(picIn, param, x+1, y) + voP(picIn, param, x, y+1) ) /2;
+                    //if (ge < (2*param.metaData.blackLevelOld)) continue;
+
+                    int eh = 0;
+                    int i, j;
+                    int k = 0;
+                    int[] med_r = new int[5];
+                    int[] med_b = new int[5];
+
+                    // horizontal interpolation
+                    for (i = -2; i <= 2; i += 2)
+                    {
+                        for (j = -2; j <= 2; j += 2)
+                        {
+                            if (Math.Abs(i) + Math.Abs(j) == 4) continue;
+
+                            int r = (int)voP(picIn, param, x + i, y + j);
+                            int g1 = (int)voP(picIn, param, x + i + 1, y + j);
+                            int g2 = (int)voP(picIn, param, x + i, y + j + 1);
+                            int g3 = (int)voP(picIn, param, x + i - 1, y + j);
+                            int g5 = (int)voP(picIn, param, x + i + 2, y + j + 1);
+                            int b = (int)voP(picIn, param, x + i + 1, y + j + 1);
+
+                            int gr = (g1 + g3) / 2;
+                            int gb = (g2 + g5) / 2;
+                            eh += Math.Abs(g1 - g3) + Math.Abs(g2 - g5);
+
+                            med_r[k] = r - gr;
+                            med_b[k] = b - gb;
+                            k++;
+                        }
+                    }
+                    int drh = opt_med5(ref med_r);
+                    int dbh = opt_med5(ref med_b);
+
+                    int ev = 0;
+                    k = 0;
+
+                    // vertical interpolation
+                    for (i = -2; i <= 2; i += 2)
+                    {
+                        for (j = -2; j <= 2; j += 2)
+                        {
+                            if (Math.Abs(i) + Math.Abs(j) == 4) continue;
+
+                            int r = (int)voP(picIn, param, x + i, y + j);
+                            int g1 = (int)voP(picIn, param, x + i + 1, y + j);
+                            int g2 = (int)voP(picIn, param, x + i, y + j + 1);
+                            int g4 = (int)voP(picIn, param, x + i, y + j - 1);
+                            int g6 = (int)voP(picIn, param, x + i + 1, y + j + 2);
+                            int b = (int)voP(picIn, param, x + i + 1, y + j + 1);
+
+                            int gr = (g2 + g4) / 2;
+                            int gb = (g1 + g6) / 2;
+                            ev += Math.Abs(g2 - g4) + Math.Abs(g1 - g6);
+
+                            med_r[k] = r - gr;
+                            med_b[k] = b - gb;
+                            k++;
+                        }
+                    }
+                    int drv = opt_med5(ref med_r);
+                    int dbv = opt_med5(ref med_b);
+
+                    int ng1 = (int)picIn[x + 1 + y * xRes];
+                    int ng2 = (int)picIn[x + (y + 1) * xRes];
+                    int ng3 = (int)picIn[x - 1 + (y) * xRes];
+                    int ng4 = (int)picIn[x + (y - 1) * xRes];
+                    int ng5 = (int)picIn[x + 2 + (y + 1) * xRes];
+                    int ng6 = (int)picIn[x + 1 + (y + 2) * xRes];
+
+                    int grv = (ng2 + ng4) / 2;
+                    int grh = (ng1 + ng3) / 2;
+                    int gbv = (ng1 + ng6) / 2;
+                    int gbh = (ng2 + ng5) / 2;
+
+                    int a_gr = ev < eh ? grv : grh;
+                    int a_gb = ev < eh ? gbv : gbh;
+                    int a_dr = ev < eh ? drv : drh;
+                    int a_db = ev < eh ? dbv : dbh;
+
+                    int thr = 64;
+                    if (voP(picIn, param, x, y) < blackLevel + thr || voP(picIn, param, x + 1, y + 1) < blackLevel + thr || Math.Abs(drv - drh) < thr || Math.Abs(grv - grh) < thr || Math.Abs(gbv - gbh) < thr)
+                    {
+                        a_dr = (drv + drh) / 2;
+                        a_db = (dbv + dbh) / 2;
+                        a_gr = (ng1 + ng2 + ng3 + ng4) / 4;
+                        a_gb = (ng1 + ng2 + ng5 + ng6) / 4;
+                    }
+
+                    /* replace red and blue pixels with filtered values, keep green pixels unchanged */
+                    /* don't touch overexposed areas */
+                    int grdr = a_gr + a_dr;
+                    int gbdb = a_gb + a_db;
+
+                    if (picIn[x + y * xRes] < whiteLevel)
+                    {
+                        picIn[x + y * xRes] = (uint)COERCE(ref grdr, ref blackLevel, ref whiteLevel);
+                    }
+                    if (picIn[x + 1 + (y + 1) * xRes] < whiteLevel)
+                    {
+                        picIn[x + 1 + (y + 1) * xRes] = (uint)COERCE(ref gbdb, ref blackLevel, ref whiteLevel);
+                    }
+                }
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        // ------------------------ preview calculations -------------------------
+        // -----------------------------------------------------------------------
+
+        public static WriteableBitmap doBitmapLQgrey(uint[] imageData, data param)
+        {
+            int xRes = param.metaData.xResolution;
+            int yRes = param.metaData.yResolution;
+            int whole = xRes*yRes;
+
+            byte[] imageData8 = new byte[whole / 4 * 3];
 
             int div = 64;
 
             // basic variables
-            int rowBG = 0;
-            int rowGR = 0;
+            int rowRG = 0;
+            int rowGB = 0;
             int b1 = 0;
             int g1 = 0;
             int g2 = 0;
@@ -756,97 +742,48 @@ namespace raw2cdng_v2
             int bitmapPos = 0;
             double grey = 0;
 
-            for (var y = 0; y < halfResy; y++)
+            for (var y = 0; y < yRes; y+=2)
             {
-                for (var x = 0; x < halfResx; x++)
+                for (var x = 0; x < xRes; x+=2)
                 {
-                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    rowRG = (x + (y + 0) * xRes);
+                    rowGB = (x + (y + 1) * xRes);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    r1 = (int)(imageData[rowRG] / param.metaData.wb_R);
+                    g1 = (int)(imageData[rowRG + 1] / param.metaData.wb_G);
+                    g2 = (int)(imageData[rowGB] / param.metaData.wb_G);
+                    b1 = (int)(imageData[rowGB + 1] / param.metaData.wb_B);
 
                     // coeffs taken from rgb->y(uv) conversion
                     grey = (g1 + g2) / 2 * 0.11 + b1*0.59 + r1*0.30;
                     grey = (grey / div);
                     grey = (byte)((grey > 255) ? 255 : grey);
 
-                    bitmapPos = (x + y * halfResx) * 3;
+                    bitmapPos = (x / 2 + y / 2 * xRes / 2) * 3;
                     
                     imageData8[bitmapPos] = (byte)grey;
                     imageData8[bitmapPos + 1] = (byte)grey;
                     imageData8[bitmapPos + 2] = (byte)grey;
                 }
             }
-            /* ------------------------ this is the debayered pic..
-            int rMul, gMul, bMul; 
-            for (var i = 0; i < whole; i++)
-            {
-                int r = (int)Math.Floor((double)( i/ resx));
-                int c = i - (r * resx);
-                bool row = Convert.ToBoolean(r % 2);
-                bool column = Convert.ToBoolean(c % 2);
-
-                bmPos = i * 3;
-
-                rMul = 0;
-                gMul = 0;
-                bMul = 0;
-                int greyValue = (int)((imageData[i * 2] + imageData[i * 2 + 1] * 256) / 256);
-
-                if (!column && !row)
-                { 
-                    // is r1
-                    rMul = 1;
-                    imageData8[bmPos + 0] = (byte)(greyValue);
-                }
-                if (column && !row)
-                {
-                    // is g1
-                    gMul = 1;
-                    imageData8[bmPos + 1] = (byte)(greyValue);
-                }
-                if (!column && row)
-                {
-                    // is g2
-                    gMul = 1;
-                    imageData8[bmPos + 1] = (byte)(greyValue);
-                }
-                if (column && row)
-                {
-                    // is b1
-                    bMul = 1;
-                    imageData8[bmPos + 2] = (byte)(greyValue);
-                }
-                
-                //greyValue = 255;
-                //imageData8[bmPos + 0] = (byte)(greyValue * rMul);
-                //imageData8[bmPos + 1] = (byte)(greyValue * gMul);
-                //imageData8[bmPos + 2] = (byte)(greyValue * bMul);
-            }*/
-
-            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
-            wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
-
-            //imageData8 = null;
+            WriteableBitmap wbm = new WriteableBitmap(xRes/2, yRes/2, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, xRes/2, yRes/2), imageData8, 3 * xRes/2, 0);
             return wbm;
         }
 
-        public static WriteableBitmap doBitmapLQmullim(byte[] imageData, data param)
+        public static WriteableBitmap doBitmapLQmullim(uint[] imageData, data param)
         {
-            int halfResx = param.metaData.xResolution / 2;
-            int halfResy = param.metaData.yResolution / 2;
-            int whole = halfResx * halfResy;
+            int xRes = param.metaData.xResolution;
+            int yRes = param.metaData.yResolution;
+            int whole = xRes * yRes;
 
-            byte[] imageData8 = new byte[halfResx * halfResy * 3];
+            byte[] imageData8 = new byte[whole / 4 * 3];
 
             int div = 64;
 
             // basic variables
-            int rowBG = 0;
-            int rowGR = 0;
+            int rowRG = 0;
+            int rowGB = 0;
             int b1 = 0;
             int g1 = 0;
             int g2 = 0;
@@ -854,39 +791,37 @@ namespace raw2cdng_v2
             int bitmapPos = 0;
             int gNew = 0;
 
-            for (var y = 0; y < halfResy; y++)
+            for (var y = 0; y < yRes; y += 2)
             {
-                for (var x = 0; x < halfResx; x++)
+                for (var x = 0; x < xRes; x += 2)
                 {
-                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    rowRG = (x + (y + 0) * xRes);
+                    rowGB = (x + (y + 1) * xRes);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
-                    
+                    r1 = (int)(imageData[rowRG] / param.metaData.wb_R);
+                    g1 = (int)(imageData[rowRG + 1] / param.metaData.wb_G);
+                    g2 = (int)(imageData[rowGB] / param.metaData.wb_G);
+                    b1 = (int)(imageData[rowGB + 1] / param.metaData.wb_B);
+
                     gNew = (g1 + g2) / 2;
 
-                        b1 = (b1 / div);
-                        gNew = (gNew / div);
-                        r1 = (r1 / div);
-                    
-                    bitmapPos = (x + y * halfResx) * 3;
-                    
-                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    b1 = (b1 / div);
+                    gNew = (gNew / div);
+                    r1 = (r1 / div);
+
+                    bitmapPos = (x / 2 + y / 2 * xRes / 2) * 3;
+
+                    imageData8[bitmapPos] = (byte)((b1 > 255) ? 255 : b1);
                     imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
-                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                    imageData8[bitmapPos + 2] = (byte)((r1 > 255) ? 255 : r1);
                 }
             }
-            WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
-            wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3*halfResx, 0);
-            
-            //imageData8 = null;
+            WriteableBitmap wbm = new WriteableBitmap(xRes / 2, yRes / 2, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, xRes / 2, yRes / 2), imageData8, 3 * xRes / 2, 0);
             return wbm;
         }
 
-        public static WriteableBitmap doBitmapHQ(byte[] imageData, data param)
+        public static WriteableBitmap doBitmapHQ(uint[] imageData, data param)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
@@ -899,8 +834,8 @@ namespace raw2cdng_v2
             double gamma = 0.5;
 
             // basic variables
-            int rowBG = 0;
-            int rowGR = 0;
+            int rowRG = 0;
+            int rowGB = 0;
             int b1 = 0;
             int g1 = 0;
             int g2 = 0;
@@ -912,13 +847,13 @@ namespace raw2cdng_v2
             {
                 for (var x = 0; x < halfResx; x++)
                 {
-                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    rowRG = (x * 2  + (y * 2 + 0) * halfResx *2);
+                    rowGB = (x * 2  + (y * 2 + 1) * halfResx *2);
 
-                    b1 = (int)((imageData[rowBG] | imageData[rowBG + 1] << 8) /  param.metaData.wb_B); //((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]));
-                    g1 = (int)((imageData[rowBG + 2] | imageData[rowBG + 3] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    g2 = (int)((imageData[rowGR] | imageData[rowGR + 1] << 8) /  param.metaData.wb_G); //((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]));
-                    r1 = (int)((imageData[rowGR + 2] | imageData[rowGR + 3] << 8) /  param.metaData.wb_R); //((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]));
+                    r1 = (int)(imageData[rowRG] / param.metaData.wb_R);
+                    g1 = (int)(imageData[rowRG + 1] / param.metaData.wb_G);
+                    g2 = (int)(imageData[rowGB] / param.metaData.wb_G);
+                    b1 = (int)(imageData[rowGB + 1] / param.metaData.wb_B);
 
                     gNew = (g1 + g2) / 2;
 
@@ -929,19 +864,17 @@ namespace raw2cdng_v2
                         r1 = (int)((Math.Pow((double)r1 / div, gamma)) * 256);
                     bitmapPos = (x + y * halfResx) * 3;
 
-                    imageData8[bitmapPos] = (byte)((r1 > 255) ? 255 : r1);
+                    imageData8[bitmapPos] = (byte)((b1 > 255) ? 255 : b1);
                     imageData8[bitmapPos + 1] = (byte)((gNew > 255) ? 255 : gNew);
-                    imageData8[bitmapPos + 2] = (byte)((b1 > 255) ? 255 : b1);
+                    imageData8[bitmapPos + 2] = (byte)((r1 > 255) ? 255 : r1);
                 }
             }
             WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
             wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
-
-            //imageData8 = null;
             return wbm;
         }
 
-        public static WriteableBitmap doBitmapHQ709(byte[] imageData, data param)
+        public static WriteableBitmap doBitmapHQ709(uint[] imageData, data param)
         {
             int halfResx = param.metaData.xResolution / 2;
             int halfResy = param.metaData.yResolution / 2;
@@ -949,8 +882,8 @@ namespace raw2cdng_v2
             byte[] imageData8 = new byte[halfResx * halfResy * 3];
 
             // basic variables
-            int rowBG = 0;
-            int rowGR = 0;
+            int rowRG = 0;
+            int rowGB = 0;
             double b1 = 0;
             double g1 = 0;
             double g2 = 0;
@@ -962,13 +895,13 @@ namespace raw2cdng_v2
             {
                 for (var x = 0; x < halfResx; x++)
                 {
-                    rowBG = (x * 2 * 2 + (y * 2 + 0) * halfResx * 4);
-                    rowGR = (x * 2 * 2 + (y * 2 + 1) * halfResx * 4);
+                    rowRG = (x * 2 + (y * 2 + 0) * halfResx * 2);
+                    rowGB = (x * 2 + (y * 2 + 1) * halfResx * 2);
 
-                    b1 = (imageData[rowBG] | imageData[rowBG + 1] << 8) / param.metaData.wb_B; // ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]);
-                    g1 = (imageData[rowBG + 2] | imageData[rowBG + 3] << 8) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
-                    g2 = (imageData[rowGR] | imageData[rowGR + 1] << 8) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
-                    r1 = (imageData[rowGR + 2] | imageData[rowGR + 3] << 8) / param.metaData.wb_R; // ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]);
+                    r1 = (int)(imageData[rowRG] / param.metaData.wb_R);
+                    g1 = (int)(imageData[rowRG + 1] / param.metaData.wb_G);
+                    g2 = (int)(imageData[rowGB] / param.metaData.wb_G);
+                    b1 = (int)(imageData[rowGB + 1] / param.metaData.wb_B);
 
                     gNew = (g1 + g2)/2;
 
@@ -982,19 +915,239 @@ namespace raw2cdng_v2
 
                     bitmapPos = (x + y * halfResx) * 3;
 
-                    imageData8[bitmapPos] = (byte)r1;
+                    imageData8[bitmapPos] = (byte)b1;
                     imageData8[bitmapPos + 1] = (byte)gNew;
-                    imageData8[bitmapPos + 2] = (byte)b1;
+                    imageData8[bitmapPos + 2] = (byte)r1;
                 }
             }
             WriteableBitmap wbm = new WriteableBitmap(halfResx, halfResy, 96, 96, PixelFormats.Bgr24, null);
             wbm.WritePixels(new Int32Rect(0, 0, halfResx, halfResy), imageData8, 3 * halfResx, 0);
+            return wbm;
+        }
+
+        // -----------------------------------------------------------------------
+        // --------------------------------------- demosaicing -------------------
+        // -----------------------------------------------------------------------
+        
+        // -- first attempt to demosaic the raw-data
+        // -- AHD algorithm taken from coffins dcraw
+        // -- http://cybercom.net/~dcoffin/dcraw/dcraw.c - line 4692
+        // -- another algo would be vng4 - line 4247
+        // --
+
+        public static WriteableBitmap demosaic_debugRGGBPattern(uint[] input, data param)
+        {
+            int ResX = param.metaData.xResolution;
+            int ResY = param.metaData.yResolution;
+            byte[] imageData8RGB = new byte[ResX * ResY * 3];
+            int c = 0;
+            // -------
+            for (int y = 0; y < param.metaData.yResolution; y++)
+            {
+                for (int x = 0; x < param.metaData.xResolution; x++)
+                {
+                    // decide what color
+                    bool dx = x % 2 == 0 ? true : false;
+                    bool dy = y % 2 == 0 ? true : false;
+                    int pos = x + y * ResX;
+                    if (dx)
+                    {
+                        if (dy)
+                        {
+                            //r1
+                            imageData8RGB[c++] = 0;
+                            imageData8RGB[c++] = 0;
+                            imageData8RGB[c++] = (byte)(input[pos] / 256);
+                        }
+                        else
+                        {
+                            //g1
+                            imageData8RGB[c++] = 0;
+                            imageData8RGB[c++] = (byte)(input[pos] / 256);
+                            imageData8RGB[c++] = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (dy)
+                        {
+                            //g2
+                            imageData8RGB[c++] = 0;
+                            imageData8RGB[c++] = (byte)(input[pos] / 256);
+                            imageData8RGB[c++] = 0;
+                        }
+                        else
+                        {
+                            //b1
+                            imageData8RGB[c++] = (byte)(input[pos] / 256);
+                            imageData8RGB[c++] = 0;
+                            imageData8RGB[c++] = 0;
+                        }
+                    }
+                }
+            }
+
+            // -------
+            WriteableBitmap wbm = new WriteableBitmap(ResX, ResY, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, ResX, ResY), imageData8RGB, 3 * ResX, 0);
+
+            //imageData8 = null;
+            return wbm;
+        
+        }
+    
+        public static WriteableBitmap demosaic_AHD(uint[] imageData, data param)
+        {
+            int ResX = param.metaData.xResolution;
+            int ResY = param.metaData.yResolution;
+            int ResXmin = ResX - 2;
+            int ResYmin = ResY - 2;
+
+            int whole = ResX * ResY;
+            uint[] imageData16RGB = new uint[whole * 3];
+
+            // basic variables
+            int arrPos = 0;
+            double r1 = 0;
+            double g1 = 0;
+            double g2 = 0;
+            double b1 = 0;
+            int bitmapPos = 0;
+            double gNew = 0;
+
+            for (var y = 0; y < ResY; y++)
+            {
+                for (var x = 0; x < ResX; x++)
+                {
+                    arrPos = (x+ y * ResX) *2;
+                    r1 = 0;
+                    b1 = 0;
+                    g1 = 0;
+                    g2 = 0;
+                    int[] tempCol;
+                    List<int> senselQuad = new List<int>();
+
+                    if (x > 1 && x < ResXmin && y > 1 && y < ResYmin)
+                    {
+                        // tempsave a 5x5 sensel array for demosaicing
+                        for(int dy=-2;dy<3;dy++)
+                        {
+                            for(int dx=-2;dx<3;dx++)
+                            {
+                                senselQuad.Add((int)voP(imageData,param,x+dx,y+dy));
+                            }
+                        }
+                        
+                        if ((y % 2 == 0) && (x % 2 == 0))
+                        {
+                            // is red 1
+                            r1 = voP(imageData, param, x, y) / param.metaData.wb_R; // ((double)param.metaData.RGBfraction[4] / (double)param.metaData.RGBfraction[5]);
+                            tempCol = VNG4_demosaic(senselQuad,0x00);
+                            //gNew = bicubicGreen(imageData, param, x, y) / param.metaData.wb_G;
+                        }
+                        if ((y % 2 == 0) && (x % 2 == 1))
+                        {
+                            // is green 1
+                            g1 = voP(imageData, param, x, y) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                            tempCol = VNG4_demosaic(senselQuad, 0x01);
+                            //gNew = g1;
+                        }
+                        if ((y % 2 == 1) && (x % 2 == 0))
+                        {
+                            // is green 2
+                            g2 = voP(imageData, param, x, y) / param.metaData.wb_G; // ((double)param.metaData.RGBfraction[2] / (double)param.metaData.RGBfraction[3]);
+                            tempCol = VNG4_demosaic(senselQuad, 0x02);
+                            //gNew = g2;
+                        }
+                        if ((y % 2 == 1) && (x % 2 == 1))
+                        {
+                            // is blue 1
+                            b1 = voP(imageData, param, x, y) / param.metaData.wb_B; //(imageData[arrPos] | imageData[arrPos + 1] << 8) / param.metaData.wb_R; // ((double)param.metaData.RGBfraction[0] / (double)param.metaData.RGBfraction[1]);
+                            tempCol = VNG4_demosaic(senselQuad, 0x04);
+                            //gNew = bicubicGreen(imageData, param, x, y) / param.metaData.wb_G;
+                        }
+                        if (b1 > 65535) b1 = 65535;
+                        b1 = calc.Rec709[(int)b1];
+
+                        if (gNew > 65535) gNew = 65535;
+                        gNew = calc.Rec709[(int)gNew];
+
+                        if (r1 > 65535) r1 = 65535;
+                        r1 = calc.Rec709[(int)r1];
+                    }
+
+                    bitmapPos = (x + y * ResX) * 3;
+
+                    imageData16RGB[bitmapPos] = 0;// (byte)r1; // (byte)r1;
+                    imageData16RGB[bitmapPos + 1] = (byte)gNew;
+                    imageData16RGB[bitmapPos + 2] = 0;// (byte)b1;
+                }
+            }
+            WriteableBitmap wbm = new WriteableBitmap(ResX, ResY, 96, 96, PixelFormats.Bgr24, null);
+            wbm.WritePixels(new Int32Rect(0, 0, ResX, ResY), imageData16RGB, 3 * ResX, 0);
 
             //imageData8 = null;
             return wbm;
         }
 
-        public static WriteableBitmap createHistogramBMP(int[] h, int x=256, int y=128)
+        public static uint voP(uint[] imageData, data param, int x, int y)
+        {
+            return imageData[(x + y * param.metaData.xResolution)];
+        }
+
+        public static int bicubicGreen(uint[] imageData, data param, int x, int y)
+        {
+            int val=0;
+            double Neighbour1 = voP(imageData, param, x - 1, y) + voP(imageData, param, x + 1, y) + voP(imageData, param, x, y - 1) + voP(imageData, param, x, y + 1);
+//            double Neighbour2 = valOnPos(imageData, param, x - 2, y - 1) + valOnPos(imageData, param, x - 2, y + 1) + valOnPos(imageData, param, x - 1, y - 2) + valOnPos(imageData, param, x + 1, y - 2) + valOnPos(imageData, param, x + 1, y - 2) + valOnPos(imageData, param, x + 1, y + 2) + valOnPos(imageData, param, x + 2, y + 1) + valOnPos(imageData, param, x + 2, y - 1);
+//            double Neighbour3 = valOnPos(imageData, param, x - 3, y) + valOnPos(imageData, param, x + 3, y) + valOnPos(imageData, param, x, y - 3) + valOnPos(imageData, param, x, y + 3);
+//            val = (int)(Neighbour1 / 4 * 0.66 + Neighbour2 / 8 * 0.24 + Neighbour3 / 4 * 0.1); 
+              val = (int)(Neighbour1 / 4);
+              val = 0;
+            return val; 
+        }
+
+        public static int[] VNG4_demosaic(List<int> sensel, int col)
+        {
+            /* vng algorithm from
+             * calculate 4 layers R G1 G2 B
+            
+             *  http://research.microsoft.com/en-us/um/people/lhe/papers/icassp04.demosaicing.pdf
+             *  http://scien.stanford.edu/pages/labsite/1999/psych221/projects/99/tingchen/main.htm
+             *  http://stackoverflow.com/questions/6114099/fast-integer-abs-function
+             *  http://scien.stanford.edu/pages/labsite/1999/psych221/projects/99/dixiedog/vision.htm
+             *  http://scien.stanford.edu/pages/labsite/1999/psych221/projects/99/tingchen/algodep/vargra.html
+             */
+
+            int[] result = new int[4];
+            int[] gradients;
+
+            // calculate 8 gradients
+            int N = Math.Abs(sensel[7] - sensel[17]) + Math.Abs(sensel[2] - sensel[12]) + Math.Abs(sensel[6] - sensel[16]) / 2 + Math.Abs(sensel[8] - sensel[18]) / 2 + Math.Abs(sensel[1] - sensel[11]) / 2 + Math.Abs(sensel[3] - sensel[13]) / 2;
+            int E = Math.Abs(sensel[13] - sensel[11]) + Math.Abs(sensel[14] - sensel[12]) + Math.Abs(sensel[8] - sensel[6]) / 2 + Math.Abs(sensel[18] - sensel[16]) / 2 + Math.Abs(sensel[9] - sensel[7]) / 2 + Math.Abs(sensel[19] - sensel[17]) / 2;
+            int S = Math.Abs(sensel[17] - sensel[7]) + Math.Abs(sensel[22] - sensel[12]) + Math.Abs(sensel[18] - sensel[8]) / 2 + Math.Abs(sensel[16] - sensel[6]) / 2 + Math.Abs(sensel[23] - sensel[13]) / 2 + Math.Abs(sensel[21] - sensel[11]) / 2;
+            int W = Math.Abs(sensel[11] - sensel[13]) + Math.Abs(sensel[10] - sensel[12]) + Math.Abs(sensel[16] - sensel[18]) / 2 + Math.Abs(sensel[6] - sensel[8]) / 2 + Math.Abs(sensel[15] - sensel[17]) / 2 + Math.Abs(sensel[5] - sensel[7]) / 2;
+            int NE = Math.Abs(sensel[8] - sensel[16]) + Math.Abs(sensel[4] - sensel[12]) + Math.Abs(sensel[7] - sensel[11]) / 2 + Math.Abs(sensel[13] - sensel[17]) / 2 + Math.Abs(sensel[3] - sensel[7]) / 2 + Math.Abs(sensel[9] - sensel[13]) / 2;
+            int SE = Math.Abs(sensel[18] - sensel[6]) + Math.Abs(sensel[24] - sensel[12]) + Math.Abs(sensel[13] - sensel[7]) / 2 + Math.Abs(sensel[17] - sensel[11]) / 2 + Math.Abs(sensel[19] - sensel[13]) / 2 + Math.Abs(sensel[23] - sensel[17]) / 2;
+            int NW = Math.Abs(sensel[6] - sensel[18]) + Math.Abs(sensel[0] - sensel[12]) + Math.Abs(sensel[11] - sensel[17]) / 2 + Math.Abs(sensel[7] - sensel[13]) / 2 + Math.Abs(sensel[5] - sensel[11]) / 2 + Math.Abs(sensel[1] - sensel[7]) / 2;
+            int SW = Math.Abs(sensel[16] - sensel[8]) + Math.Abs(sensel[20] - sensel[12]) + Math.Abs(sensel[17] - sensel[13]) / 2 + Math.Abs(sensel[11] - sensel[7]) / 2 + Math.Abs(sensel[21] - sensel[17]) / 2 + Math.Abs(sensel[15] - sensel[11]) / 2;
+
+            gradients = new int[] { N, E, S, W, NE, SE, NW, SW };
+            // threshold of gradients
+            int min = ARR_MIN(gradients);
+            int max = ARR_MAX(gradients);
+            int T = (int)(1.5*min + 0.5 * (max - min));
+
+            // select and add subsets that are lower T
+            foreach (int grad in gradients)
+            {
+
+            }
+
+            return result;
+        }
+
+        public static WriteableBitmap createHistogramBMP(int[] h, int x = 256, int y = 128)
         {
             byte[] imageData8 = new byte[256 * 128 * 3];
             int[] mergeHist = new int[256];
@@ -1061,7 +1214,10 @@ namespace raw2cdng_v2
             return wbm;
         }
 
+        // ----------------------
         // --- dng-tag helper ---
+        // ----------------------
+
         public static string setFilenameShort(string t)
         {
             t = Regex.Replace(t, @"[^0-9A-Za-z]+", "");
@@ -1337,7 +1493,7 @@ namespace raw2cdng_v2
         }
 
         // ----- helper written by ml-community
-        // fpr chroma smoothing
+        // ----- for chroma smoothing
 
         public static int opt_med5(ref int[] p)
         {
@@ -1348,7 +1504,7 @@ namespace raw2cdng_v2
             PIX_SORT(ref p[1],ref p[2]) ; 
             PIX_SORT(ref p[2],ref p[3]) ;
             PIX_SORT(ref p[1],ref p[2]) ; 
-            return(p[2]) ;
+            return p[2];
         }
 
         public static void PIX_SORT(ref int a,ref int b) 
@@ -1366,6 +1522,40 @@ namespace raw2cdng_v2
         public static int COERCE(ref int x, ref int lo, ref int hi)
         {
             return Math.Max(Math.Min(x, hi), lo);
+        }
+        
+        public static int ARR_MIN(int[] arr)
+        {
+            if (arr.Length > 0)
+            {
+                int min = arr[0];
+                for (int i = 1; i < arr.Length; i++)
+                {
+                    if (arr[i] < min) min = arr[i];
+                }
+                return min;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        public static int ARR_MAX(int[] arr)
+        {
+            if (arr.Length > 0)
+            {
+                int max = arr[0];
+                for (int i = 1; i < arr.Length; i++)
+                {
+                    if (arr[i] > max) max = arr[i];
+                }
+                return max;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
         }
 
         // ----- LUTS for faster playback and jpg-conversion

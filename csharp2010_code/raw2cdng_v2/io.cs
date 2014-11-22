@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 
+
 namespace raw2cdng_v2
 {
     class io
@@ -763,43 +764,76 @@ namespace raw2cdng_v2
                 imageArray = io.readRAW(rawFile.data);
             }
 
+            uint[] picSource = calc.maximize(calc.to16(imageArray, rawFile.data),rawFile.data);
+
             switch (quality)
             {
-                case raw2cdng_v2.quality.lowgrey:
-                    return calc.doBitmapLQgrey(calc.to16(imageArray, rawFile.data), rawFile.data);
-                case raw2cdng_v2.quality.lowmullim:
-                    return calc.doBitmapLQmullim(calc.to16(imageArray, rawFile.data), rawFile.data);
-                case raw2cdng_v2.quality.highgamma2:
-                    return calc.doBitmapHQ(calc.to16(imageArray, rawFile.data), rawFile.data);
-                case raw2cdng_v2.quality.high709:
-                    return calc.doBitmapHQ709(calc.to16(imageArray, rawFile.data), rawFile.data);
+                case raw2cdng_v2.quality.low_grey:
+                    return calc.doBitmapLQgrey(picSource, rawFile.data);
+                case raw2cdng_v2.quality.low_mullim:
+                    return calc.doBitmapLQmullim(picSource, rawFile.data);
+                case raw2cdng_v2.quality.high_gamma2:
+                    return calc.doBitmapHQ(picSource, rawFile.data);
+                case raw2cdng_v2.quality.high_709:
+                    return calc.doBitmapHQ709(picSource, rawFile.data);
+                case raw2cdng_v2.quality.demosaic_VNG4:
+                    return calc.demosaic_AHD(picSource, rawFile.data);
+                case raw2cdng_v2.quality.debug_RGGB:
+                    return calc.demosaic_debugRGGBPattern(picSource, rawFile.data);
                 default:
-                    return calc.doBitmapLQmullim(calc.to16(imageArray, rawFile.data), rawFile.data);
+                    return calc.doBitmapLQmullim(picSource, rawFile.data);
             }
         }
-        public static void saveProxy(data r, byte[] imageArray)
+
+        public static void saveProxy(data r, uint[] imageArray)
         {
-            
             // til now its all 8bit and based on jpg-pictures
-            if (r.convertData.ProxyKind < 3)
+            switch (r.convertData.ProxyKind)
             {
-                BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
-                BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
+                case 0:
+                    break;
+                case 2:
+                    // tif output
+                    BitmapSource tifsource = calc.demosaic_debugRGGBPattern(imageArray,r);                 //calc.doBitmapHQ709(imageArray, r);
+                    BitmapFrame tifframe = BitmapFrame.Create(tifsource);
 
-                String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
-                FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create);
-                JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
-                jpgEncoder.Frames.Add(bitmapframe);
-                jpgEncoder.Save(jpgStream);
-                jpgStream.Close();
+                    String tifFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".tif";  //file name 
+                    FileStream tifStream = new FileStream(tifFileName, FileMode.Create);
+                    TiffBitmapEncoder tiffEncoder = new TiffBitmapEncoder();
+                    tiffEncoder.Frames.Add(tifframe);
+                    tiffEncoder.Save(tifStream);
+                    tifStream.Close();
 
-                imageArray = null;
-                jpgEncoder = null;
-                jpgStream = null;
-                bitmapframe = null;
-                bitmapsource = null;
-            }   
+                    imageArray = null;
+                    tiffEncoder = null;
+                    tifStream = null;
+                    tifframe = null;
+                    tifsource = null;
 
+                    break;
+                case 1:
+                case 3:
+                    // jpg output
+                    BitmapSource bitmapsource = calc.doBitmapHQ709(imageArray, r);
+                    BitmapFrame bitmapframe = BitmapFrame.Create(bitmapsource);
+
+                    String jpgFileName = r.fileData._changedPath + r.fileData.outputFilename + string.Format("{0,5:D5}", r.threadData.frame) + ".jpg";  //file name 
+                    FileStream jpgStream = new FileStream(jpgFileName, FileMode.Create);
+                    JpegBitmapEncoder jpgEncoder = new JpegBitmapEncoder();
+                    // myEncoder = Encoder.Q; 
+                    jpgEncoder.Frames.Add(bitmapframe);
+                    jpgEncoder.Save(jpgStream);
+                    jpgStream.Close();
+
+                    imageArray = null;
+                    jpgEncoder = null;
+                    jpgStream = null;
+                    bitmapframe = null;
+                    bitmapsource = null;
+                    break;
+                default:
+                    break;
+            }
             // when we write debayered full resolution output, 10, 12 and 16bit will come  
         }
 
@@ -917,11 +951,17 @@ namespace raw2cdng_v2
 
             int subChunkSize = 0;
             
-            // now calc SubChunkSize
+            /* --- now calc SubChunkSize
             for (var i = 1; i < wavFile.Count(); i++)
             {
                 subChunkSize += wavFile[i].Length;
             }
+            */
+
+            // why taking the real subchunksize?
+            // readjust to the length of sequence
+            // this is the solution for davinci resolve
+            subChunkSize = (int)(mData.data.audioData.audioSamplingRate * mData.data.metaData.frames / (mData.data.metaData.fpsNom / mData.data.metaData.fpsDen) * mData.data.audioData.audioChannels * mData.data.audioData.audioBitsPerSample/8);
 
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] subChunkSize :"+subChunkSize);
 
