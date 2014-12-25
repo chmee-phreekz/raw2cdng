@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.6.3.beta";
+        private string version = "1.6.5";
         public string Version
         {
             get
@@ -556,7 +556,8 @@ namespace raw2cdng_v2
 
             // calculate LUTs
             calc.calculateRec709LUT();
-//            int[] test = calc.Rec709;
+            // set colormatrices
+            io.setMatrices();
             
             allFramesCount = 0;
             
@@ -689,6 +690,14 @@ namespace raw2cdng_v2
                         importRaw.data.metaData.errorString += io.createMLVBlockList(file, importRaw);
                         Blocks.mlvBlockList = Blocks.mlvBlockList.OrderBy(x => x.timestamp).ToList();
                         importRaw.data.metaData.errorString += io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
+                        
+                        // adjusting to new matrix values / thanks to andy600
+                        colormatrix result = io.colormatrices.Find(item => item.modell == importRaw.data.metaData.modell);
+                        importRaw.data.metaData.colorMatrixA = calc.int2byteArray(result.colormatrixA);
+                        importRaw.data.metaData.colorMatrixB = calc.int2byteArray(result.colormatrixB);
+                        importRaw.data.metaData.forwardMatrixA = calc.int2byteArray(result.forwardmatrixA);
+                        importRaw.data.metaData.forwardMatrixB = calc.int2byteArray(result.forwardmatrixB);
+
                         if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: " + Blocks.mlvBlockList.Count);
                         importRaw.AUDFBlocks = null;
                         if (importRaw.data.audioData.hasAudio)
@@ -716,6 +725,14 @@ namespace raw2cdng_v2
                         if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
                         io.getRAWAttributes(file, importRaw);
                         if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Attributes read and set.");
+
+                        // adjusting to new matrix values / thanks to andy600
+                        colormatrix result = io.colormatrices.Find(item => item.modell == importRaw.data.metaData.modell);
+                        importRaw.data.metaData.colorMatrixA = calc.int2byteArray(result.colormatrixA);
+                        importRaw.data.metaData.colorMatrixB = calc.int2byteArray(result.colormatrixB);
+                        importRaw.data.metaData.forwardMatrixA = calc.int2byteArray(result.forwardmatrixA);
+                        importRaw.data.metaData.forwardMatrixB = calc.int2byteArray(result.forwardmatrixB);
+
                         io.createRAWBlockList(file, importRaw);
                         if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.RAWBlocks.Count);
 
@@ -1373,21 +1390,6 @@ namespace raw2cdng_v2
             saveGUIsettings();
         }
 
- /*
-  * ------- problematic, because it rereads data
-  * ------- already cached. wrong approach
-  private void ListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if ((sender as ListView).SelectedItems.Count == 0) return;
-            object itemSender = (sender as ListView).SelectedItems[0];
-            int item = (sender as ListView).Items.IndexOf(itemSender);
-
-            //Window player = new Window();
-            mlvplay player = new mlvplay( rawFiles[item].data.fileData.fileName );
-            player.Show();
-            player.Focus();
-        }
-    */
         // ------- Helper ------------
 
         private void saveGUIsettings()
@@ -1549,8 +1551,8 @@ namespace raw2cdng_v2
 
                 switch (r.data.convertData.ProxyKind)
                 {
-                    case 2:
-                        // if proxyKind==2 -> mpg2
+                    case 3:
+                        // if proxyKind==3 -> mpg2
                         if (winIO.File.Exists(outputFile + ".mpg")) winIO.File.Delete(outputFile + ".mpg");
                         if (r.data.audioData.hasAudio)
                         {
@@ -1561,8 +1563,8 @@ namespace raw2cdng_v2
                             commandline += " -codec:v mpeg2video -qscale:v 2 " + outputFile + ".mpg";
                         }
                         break;
-                    case 3:
-                        // if proxyKind==3 -> mpeg4
+                    case 4:
+                        // if proxyKind==4 -> mpeg4
                         if (winIO.File.Exists(outputFile + ".mp4")) winIO.File.Delete(outputFile + ".mp4");
                         if (r.data.audioData.hasAudio)
                         {

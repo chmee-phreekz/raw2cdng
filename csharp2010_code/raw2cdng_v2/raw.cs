@@ -29,12 +29,22 @@ namespace raw2cdng_v2
         prores444 = 3
     }
 
+    public class colormatrix
+    {
+        public string modell { get; set; }
+        public int[] colormatrixA { get; set; }
+        public int[] colormatrixB { get; set; }
+        public int[] forwardmatrixA { get; set; }
+        public int[] forwardmatrixB { get; set; }
+    }
+
     public class point
     {
         public int x { get; set; }
         public int y { get; set; }
         public bool isHot { get; set; }
     }
+
     public class raw
     {
         public bool convert { get; set; }
@@ -70,7 +80,11 @@ namespace raw2cdng_v2
         public int bitsperSample { get; set; }
         public int bitsperSampleChanged { get; set; }
         public bool isLog { get; set; }
-        public byte[] colorMatrix { get; set; }
+        public byte[] colorMatrixA { get; set; }
+        public byte[] colorMatrixB { get; set; }
+        public byte[] forwardMatrixA { get; set; }
+        public byte[] forwardMatrixB { get; set; }
+
         public int lostFrames { get; set; }
         public int fpsNom { get; set; }
         public int fpsDen { get; set; }
@@ -148,6 +162,7 @@ namespace raw2cdng_v2
         public string outputFilename { get; set; }
         public DateTime creationTime { get; set; }
         public DateTime modificationTime { get; set; }
+        public int fileSize { get; set; }
         
         public Blocks.mlvBlock VIDFBlock {get;set;}
         public Blocks.rawBlock RAWBlock { get; set; }

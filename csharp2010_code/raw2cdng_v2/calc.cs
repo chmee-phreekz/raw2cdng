@@ -1492,6 +1492,13 @@ namespace raw2cdng_v2
             return Dest;
         }
 
+        public static byte[] int2byteArray(int[] input)
+        {
+            byte[] output = new byte[input.Length * sizeof(int)];
+            Buffer.BlockCopy(input, 0, output, 0, output.Length);
+            return output;
+        }
+
         // ----- helper written by ml-community
         // ----- for chroma smoothing
 

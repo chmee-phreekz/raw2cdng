@@ -251,11 +251,15 @@ namespace raw2cdng_v2
 
             }
 
-            // colormatrix1
-            Data.metaData.colorMatrix.CopyTo(DNGtemplate, 0x1b7a);
-            // colormatrix2
-            Data.metaData.colorMatrix.CopyTo(DNGtemplate, 0x1bc2);
-
+            // colormatrixA
+            Data.metaData.colorMatrixA.CopyTo(DNGtemplate, 0x1b7a);
+            // colormatrixB
+            Data.metaData.colorMatrixB.CopyTo(DNGtemplate, 0x1bc2);
+            // forwardmatrixA
+            Data.metaData.forwardMatrixA.CopyTo(DNGtemplate, 0x1d20);
+            // forwardmatrixB
+            Data.metaData.forwardMatrixB.CopyTo(DNGtemplate, 0x1d68);
+            
             // REELNAME
             byte[] reelNameArray = System.Text.Encoding.UTF8.GetBytes(Data.fileData.fileNameShort);
             reelNameArray.CopyTo(DNGtemplate, 0x1db0);
