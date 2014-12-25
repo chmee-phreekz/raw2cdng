@@ -1017,7 +1017,7 @@ namespace raw2cdng_v2
             if (debugging.debugLogEnabled) debugging._saveDebug("[saveAudio] timeRefMultiplier: " + timeRefMultiplier);
    
             // set TimeRef (long)
-            double time2frame = calc.dateTime2Frame(mData.data.fileData.creationTime, timeRefMultiplier);
+            double time2frame = calc.dateTime2Frame(mData.data.fileData.modificationTime, timeRefMultiplier);
             long timeRef = (long)(mData.data.audioData.audioSamplingRate * time2frame);
             Array.Copy(BitConverter.GetBytes(timeRef), 0, wavFile[0], 0x18a, 8);
 
