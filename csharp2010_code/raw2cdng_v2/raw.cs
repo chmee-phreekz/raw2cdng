@@ -44,7 +44,7 @@ namespace raw2cdng_v2
         public int y { get; set; }
         public bool isHot { get; set; }
     }
-
+    
     public class raw
     {
         public bool convert { get; set; }
@@ -59,6 +59,13 @@ namespace raw2cdng_v2
         public List<Blocks.rawBlock> RAWBlocks { get; set; }
         public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
         public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
+        public List<frameData> frameList { get; set; }
+    }
+    
+    public class frameData
+    {
+        public byte[] frame { get; set; }
+        public long frameNo { get; set; }
     }
 
     public class data

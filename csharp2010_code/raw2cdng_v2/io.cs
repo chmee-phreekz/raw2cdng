@@ -209,7 +209,7 @@ namespace raw2cdng_v2
             }
             raw.data.fileData.fileSize = filesize;
             // iterate thru all files
-            // and put the vidfblocks it into list
+            // and put the vidfblocks into list
             if (debugging.debugLogEnabled)
             {
                 debugging._saveDebug("[createMLVBlocklist] splitFiles counted (" + raw.data.metaData.splitCount + ")");
@@ -303,7 +303,7 @@ namespace raw2cdng_v2
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[createRAWBlocklist] started");
 
-            List<Blocks.rawBlock> tmpList = new List<Blocks.rawBlock>();
+            List<Blocks.rawBlock> rawList = new List<Blocks.rawBlock>();
 
             int fno = 0;
             bool isSplitted = false;
@@ -314,36 +314,45 @@ namespace raw2cdng_v2
             long fl = fs.Length;
             long offset = 0;
             long delta = 0;
+            long fileDelta = 0;
 
             for (int f = 0; f < raw.data.metaData.frames; f++)
             {
-                if ((fl-offset) < raw.data.metaData.stripByteCount)
-                {
-                    isSplitted = true;
-                }
-                
-                tmpList.Add(new Blocks.rawBlock() { 
+                // needed for Split-Detection and offset-delta
+                fileDelta = fl - offset;
+   
+                if (fileDelta < raw.data.metaData.stripByteCount) isSplitted = true;
+              
+                // add entry
+                rawList.Add(new Blocks.rawBlock() { 
                     fileNo = fno,
                     fileOffset = offset,
                     splitted = isSplitted
                 });
 
-                if((fl-offset) < raw.data.metaData.stripByteCount)
+                // change offset (delta) for next splitfile
+                if( isSplitted == true )
                 {
+                    if (debugging.debugLogEnabled) debugging._saveDebug("[createRAWBlocklist] split on frame "+f);
                     isSplitted = false;
-                    delta = fl - offset;
+                    
                     fs.Close();
                     fn = raw.data.fileData.sourcePath + Path.DirectorySeparatorChar + raw.data.fileData.fileNameOnly + "." + RAWFileEnding[fno];
                     fi = new FileInfo(fn);
                     fs = fi.OpenRead();
-                    fl = fs.Length + delta;
-                    offset = -delta;
+                    
+                    fl = fs.Length + fileDelta;
+                    offset = -fileDelta+delta;
+                    delta = fileDelta;
                     fno++;
                 }
 
                 offset += raw.data.metaData.stripByteCount;
             }
-            raw.RAWBlocks = tmpList;
+            raw.RAWBlocks = rawList;
+
+            fs.Close();
+
             return raw;
         }
 
@@ -416,6 +425,27 @@ namespace raw2cdng_v2
             //small exception: if fps is lower than 1fps, set it to 1fps. for functional TC. 
             if (mData.data.metaData.fpsNom < 1000) mData.data.metaData.fpsNom = 1000;
 
+            // handle dropped framerates
+            if (mData.data.metaData.fpsNom == 23976)
+            {
+                mData.data.metaData.fpsNom = 24000;
+                mData.data.metaData.fpsDen = 1001;
+                mData.data.metaData.dropFrame = true;
+            }
+            if (mData.data.metaData.fpsNom == 29970)
+            {
+                mData.data.metaData.fpsNom = 30000;
+                mData.data.metaData.fpsDen = 1001;
+                mData.data.metaData.dropFrame = true;
+            }
+            if (mData.data.metaData.fpsNom == 59940)
+            {
+                mData.data.metaData.fpsNom = 60000;
+                mData.data.metaData.fpsDen = 1001;
+                mData.data.metaData.dropFrame = true;
+            }
+
+
             Single fps_out = (Single)mData.data.metaData.fpsNom / (Single)mData.data.metaData.fpsDen;
             mData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
 
@@ -439,6 +469,14 @@ namespace raw2cdng_v2
             byte[] modelid = new byte[52];
             Array.Copy(IDNTArray, 16, modelid, 0, 32);
             mData.data.metaData.modell = Encoding.ASCII.GetString(modelid).Replace("\0", "");
+            
+            // if modelstring unknown, set on colormatrixvalue
+            // since 1.6.6
+            if (null == colormatrices.FirstOrDefault(x => x.modell == mData.data.metaData.modell))
+            {
+                if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] [!] modelName unknown - estimating from colormtrix");
+                setModellOnColorMatrix(mData);
+            }
 
             mData.data.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
 
@@ -737,6 +775,26 @@ namespace raw2cdng_v2
             //small exception: if fps is lower than 1fps, set it to 1fps. for functional TC. 
             if (rData.data.metaData.fpsNom < 1000) rData.data.metaData.fpsNom = 1000;
 
+            // handle dropped framerates
+            if (rData.data.metaData.fpsNom == 23976)
+            {
+                rData.data.metaData.fpsNom = 24000;
+                rData.data.metaData.fpsDen = 1001;
+                rData.data.metaData.dropFrame = true;
+            }
+            if (rData.data.metaData.fpsNom == 29970)
+            {
+                rData.data.metaData.fpsNom = 30000;
+                rData.data.metaData.fpsDen = 1001;
+                rData.data.metaData.dropFrame = true;
+            }
+            if (rData.data.metaData.fpsNom == 59940)
+            {
+                rData.data.metaData.fpsNom = 60000;
+                rData.data.metaData.fpsDen = 1001;
+                rData.data.metaData.dropFrame = true;
+            }
+
             Single fps_out = (Single)rData.data.metaData.fpsNom / 1000;
             rData.data.metaData.fpsString = string.Format("{0:0.00}", fps_out);
             rData.data.metaData.duration = calc.frameToTC_s(rData.data.metaData.frames, (rData.data.metaData.fpsNom / rData.data.metaData.fpsDen));
@@ -765,45 +823,144 @@ namespace raw2cdng_v2
 
             if (debugging.debugLogEnabled) debugging._saveDebug("[getRAWAttrib,RAW] deciding model on first colorMatrix-Value");
 
-            int tmpMod = BitConverter.ToInt32(rData.data.metaData.colorMatrixA, 0);
-            switch (tmpMod)
-            {
-                case 6722:
-                    rData.data.metaData.modell = "Canon EOS 5D Mark III";
-                    break;
-                case 4716:
-                    rData.data.metaData.modell = "Canon EOS 5D Mark II";
-                    break;
-                case 6461:
-                    rData.data.metaData.modell = "Canon EOS 600D";
-                    break;
-                case 7034:
-                    rData.data.metaData.modell = "Canon EOS 6D";
-                    break;
-                case 4763:
-                    rData.data.metaData.modell = "Canon EOS 500D";
-                    break;
-                case 6719:
-                    rData.data.metaData.modell = "Canon EOS 60D";
-                    break;
-                case 4920:
-                    rData.data.metaData.modell = "Canon EOS 50D";
-                    break;
-                case 6602:
-                    rData.data.metaData.modell = "Canon EOS 700D"; // thats for 650D, 100D, EOSM as well
-                    break;
-                case 6444:
-                    rData.data.metaData.modell = "Canon EOS 1100D";
-                    break;
-                default:
-                    rData.data.metaData.modell = "Canon EOS 7D";
-                    break;
-            }
+            setModellOnColorMatrix(rData);
+
             rData.data.metaData.camId = "MAGIC" + Guid.NewGuid().ToString().Substring(0, 7);
 
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] metaData Object:", rData.data.metaData);
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] fileData Object:", rData.data.fileData);
             if (debugging.debugLogEnabled) debugging._saveDebugObject("[getMLVAttributes] lensData Object:", rData.data.lensData);
+        }
+
+        // new since 1.6.9
+        public static void readChunk(raw d, int startFrame, int frames)
+        {
+            long startOffset = 0;
+            long length = 1;
+
+            if (d.data.metaData.isMLV)
+            {
+                // is MLV
+                
+                FileInfo fi = new FileInfo(d.data.fileData.sourcePath + Path.DirectorySeparatorChar + d.data.fileData.fileNameOnly + "." + MLVFileEnding[d.VIDFBlocks[startFrame].fileNo]);
+                FileStream fs = fi.OpenRead();
+                
+                startOffset = d.VIDFBlocks[startFrame].fileOffset;
+                
+                if (d.VIDFBlocks[startFrame].fileNo == d.VIDFBlocks[startFrame + frames].fileNo)
+                {
+                    // if all chunks are in same file
+                    
+                    length = d.VIDFBlocks[startFrame + frames].fileOffset - startOffset;
+                    byte[] fileChunk = new byte[length];
+            
+                    fs.Position = (long)(startOffset);
+                    fs.Read(fileChunk, 0, (int)length);
+
+                    // after that extract into frameList
+                    for (int i = 0; i < frames; i++)
+                    {
+                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
+                        Array.Copy(fileChunk, d.VIDFBlocks[i+startFrame].fileOffset - d.VIDFBlocks[startFrame].fileOffset + 32 + d.VIDFBlocks[i+startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
+                    }
+                    fileChunk = null;
+                }
+                else
+                {
+                    // if not in same file
+                    int firstIndexNextFileNo = (d.VIDFBlocks.FindIndex(x => x.fileNo == (d.VIDFBlocks[startFrame].fileNo + 1)) - startFrame); 
+                    int differenceFrames = firstIndexNextFileNo - startFrame;
+
+                    // first part
+
+                    length = d.VIDFBlocks[startFrame+firstIndexNextFileNo-1].fileOffset +32+d.VIDFBlocks[startFrame+firstIndexNextFileNo-1].EDMACoffset+d.data.metaData.stripByteCountReal - startOffset;
+                    byte[] fileChunk = new byte[length];
+
+                    fs.Position = (long)(startOffset);
+                    fs.Read(fileChunk, 0, (int)length);
+
+                    // extract into frameList
+                    for (int i = 0; i < (firstIndexNextFileNo); i++)
+                    {
+                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
+                        Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
+                    }
+                    fileChunk = null;
+
+                    fs.Close();
+                    
+                    // -- second part in next file --
+                    
+                    fi = new FileInfo(d.data.fileData.sourcePath + Path.DirectorySeparatorChar + d.data.fileData.fileNameOnly + "." + MLVFileEnding[d.VIDFBlocks[startFrame + firstIndexNextFileNo].fileNo]);
+                    fs = fi.OpenRead();
+
+                    startOffset = d.VIDFBlocks[startFrame+firstIndexNextFileNo].fileOffset;
+                    length = d.VIDFBlocks[startFrame+frames].fileOffset - startOffset;
+                    fileChunk = new byte[length];
+
+                    fs.Position = (long)(startOffset);
+                    fs.Read(fileChunk, 0, (int)length);
+
+                    // once again, extract into frameList
+                    for (int i = firstIndexNextFileNo; i < frames; i++)
+                    {
+                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
+                        Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[firstIndexNextFileNo+startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
+                    }
+                    fileChunk = null;
+                }
+                fs.Close();
+                fi = null;
+            }
+            else
+            {
+                // is RAW
+
+                FileInfo fi = new FileInfo(d.data.fileData.sourcePath + Path.DirectorySeparatorChar + d.data.fileData.fileNameOnly + "." + RAWFileEnding[d.RAWBlocks[startFrame].fileNo]);
+                FileStream fs = fi.OpenRead();
+
+                startOffset = d.RAWBlocks[startFrame].fileOffset;
+                length = d.data.metaData.stripByteCount * frames;
+                long diff = fi.Length - startOffset;
+
+                byte[] fileChunk = new byte[length];
+
+                if (diff < length)
+                {
+                    // read two files
+                
+                    fs.Position = (long)(startOffset);
+                    fs.Read(fileChunk, 0, (int)diff);
+                    fs.Close();
+                    fi = new FileInfo(d.data.fileData.sourcePath + Path.DirectorySeparatorChar + d.data.fileData.fileNameOnly + "." + RAWFileEnding[d.RAWBlocks[startFrame].fileNo + 1]);
+                    fs = fi.OpenRead();
+                    fs.Position = (long)(0);
+                    fs.Read(fileChunk, (int)diff, (int)(length - diff));
+                }
+                else
+                {
+                    // read only one file
+
+                    fs.Position = (long)(startOffset);
+                    fs.Read(fileChunk, 0, (int)length);
+                }
+                fs.Close();
+                fi = null;
+
+                // after that extract into frameList
+                for (int i = 0; i < frames; i++)
+                {
+                     byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
+                     Array.Copy(fileChunk, i*d.data.metaData.stripByteCount, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                     d.frameList.Add(new frameData { frame = tmpFrame, frameNo = i+startFrame });
+                }
+                fileChunk = null;
+            }
+            if (debugging.debugLogEnabled) debugging._saveDebug("[readChunk] reading frames done - "+startFrame+"-"+(startFrame+frames));
+
         }
 
         public static byte[] readMLV(data param)
@@ -839,6 +996,7 @@ namespace raw2cdng_v2
                 fs.Position = (long)param.fileData.RAWBlock.fileOffset;
                 fs.Read(param.rawData, 0, param.metaData.stripByteCountReal);
                 fs.Close();
+
             }
             else
             {
@@ -871,6 +1029,43 @@ namespace raw2cdng_v2
             return param.rawData;
         }
 
+        public static void setModellOnColorMatrix(raw rData)
+        {
+            int tmpMod = BitConverter.ToInt32(rData.data.metaData.colorMatrixA, 0);
+            switch (tmpMod)
+            {
+                case 6722:
+                    rData.data.metaData.modell = "Canon EOS 5D Mark III";
+                    break;
+                case 4716:
+                    rData.data.metaData.modell = "Canon EOS 5D Mark II";
+                    break;
+                case 6461:
+                    rData.data.metaData.modell = "Canon EOS 600D";
+                    break;
+                case 7034:
+                    rData.data.metaData.modell = "Canon EOS 6D";
+                    break;
+                case 4763:
+                    rData.data.metaData.modell = "Canon EOS 500D";
+                    break;
+                case 6719:
+                    rData.data.metaData.modell = "Canon EOS 60D";
+                    break;
+                case 4920:
+                    rData.data.metaData.modell = "Canon EOS 50D";
+                    break;
+                case 6602:
+                    rData.data.metaData.modell = "Canon EOS 700D"; // thats for 650D, 100D, EOSM as well
+                    break;
+                case 6444:
+                    rData.data.metaData.modell = "Canon EOS 1100D";
+                    break;
+                default:
+                    rData.data.metaData.modell = "Canon EOS 7D";
+                    break;
+            }
+        }
         public static WriteableBitmap showPicture(raw rawFile, quality quality)
         {
             if (debugging.debugLogEnabled) debugging._saveDebug("[showPicture] started");

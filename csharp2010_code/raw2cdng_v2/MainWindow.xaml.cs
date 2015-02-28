@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.6.5";
+        private string version = "1.7.0";
         public string Version
         {
             get
@@ -662,6 +662,8 @@ namespace raw2cdng_v2
                     if (settings.debugLogEnabled) debugging._saveDebug("[drop] -- file " + file + " will be analyzed now.");
                     raw importRaw = new raw();
                     data importData = new data();
+                    importRaw.frameList = new List<frameData>();
+                    
                     importData.metaData = new metadata();
                     importData.fileData = new filedata();
                     importData.fileData.tempPath = winIO.Path.GetTempPath();
@@ -762,7 +764,7 @@ namespace raw2cdng_v2
                                 importRaw.data.fileData.VIDFBlock = importRaw.VIDFBlocks[0];
                                 uint[] picSource = calc.to16(io.readMLV(importRaw.data), importRaw.data);
 
-                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff( calc.maximize(picSource, importRaw.data), importRaw);
+                                importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.maximize(picSource,importRaw.data), importRaw);
                                 //calc.findDeadSensels(picSource,importRaw.data);
 
                                 picSource = null;
@@ -771,7 +773,7 @@ namespace raw2cdng_v2
                             {
                                 importRaw.data.fileData.RAWBlock = importRaw.RAWBlocks[0];
                                 uint[] picSource = calc.to16(io.readRAW(importRaw.data), importRaw.data);
-                                
+
                                 importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.maximize(picSource, importRaw.data), importRaw);
                                 //calc.findDeadSensels(picSource, importRaw.data);
 
@@ -1031,76 +1033,83 @@ namespace raw2cdng_v2
 
                     // set dngheader
                     // dngheader is a fileresource (DNGtemplate20)
-                    if (file.data.convertData.PinkHighlight) file.data.metaData.whiteLevelNew = 46480;
+                    if (file.data.convertData.PinkHighlight)
+                    {
+                        if (file.data.metaData.bitsperSampleChanged == 16) file.data.metaData.whiteLevelNew = 46480;
+                        if (file.data.metaData.bitsperSampleChanged == 12) file.data.metaData.whiteLevelNew = 4095;
+                    }
+
                     file.data.metaData.DNGHeader = dng.setDNGHeader(file.data);
                     if (settings.debugLogEnabled) debugging._saveDebug("[doWork] took DNGtemplate and changed values");
 
                     // destinationPath as its used in the threads
                     file.data.fileData._changedPath = file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + winIO.Path.DirectorySeparatorChar;
 
-                    // init for multithreading
-                    int frameCount;
-                    frameCount = file.data.metaData.frames;
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
-
-                    int taskCount = frameCount;
-                    var cde = new CountdownEvent(taskCount);
-
                     // init strings for debugging
                     string debugString = "";
+                        
+                    // init for multithreading
+                    int frameCount;
+                    frameCount = file.data.metaData.frames-1;
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
 
                     // start frameconvert
-                    for (int f = 0; f < frameCount; f++)
+
+                    // toDo: 1.6.9
+                    // read a amount of frames (25?50?100?) as one block
+                    // and use them in the threads (jagged array ok? array[][]
+                    // assume: massively speeds up converting straight from cf card
+                    int frameChunks = 50;
+                    // we have to re-sort the VIDFBlocks
+                    if (file.data.metaData.isMLV)
                     {
-                        //multithread
-                        if (file.data.metaData.isMLV)
-                        {
-                            //its MLV
-                            file.data.fileData.VIDFBlock = file.VIDFBlocks[f];
-                            file.data.threadData.frame = file.data.fileData.VIDFBlock.MLVFrameNo;
-                            if (settings.debugLogEnabled)
-                            {
-                                debugString += "[" + f + "]";
-                                if (f % 25 == 0)
-                                {
-                                    debugging._saveDebug("[doWork][for] read/convert MLV VIDF: " + debugString);
-                                    debugString = "";
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // its RAW
-                            file.data.fileData.RAWBlock = file.RAWBlocks[f];
-                            file.data.threadData.frame = f;
-                            if (settings.debugLogEnabled)
-                            {
-                                debugString += "[" + f + "]";
-                                if (f % 25 == 0)
-                                {
-                                    debugging._saveDebug("[doWork][for] read/convert RAW: " + debugString);
-                                    debugString = "";
-                                }
-                            }
-                        }
-                        data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
-                        para.threadData.CDEvent = cde;
-
-                        // start convert thread here
-                        ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
-                        para = null;
-
+                        file.VIDFBlocks = file.VIDFBlocks.OrderBy(x => x.fileNo).ThenBy(x => x.fileOffset).ToList();
                     }
-                    // wait till all threads has ended
-                    cde.Wait();
+                    else
+                    {
+                        file.RAWBlocks = file.RAWBlocks.OrderBy(x => x.fileNo).ThenBy(x => x.fileOffset).ToList();
+                    }
 
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] convert Done");
+                    for (int f = 0; f < frameCount; f += frameChunks)
+                    {
+                        if (frameChunks > frameCount - f)
+                        {
+                            frameChunks = frameCount - f;
+                        }
+                        var cde = new CountdownEvent(frameChunks);
+
+                        // read bytes from file(s) with length [frameChunks]
+                        // save frames into frameList<>
+                        io.readChunk(file,f, frameChunks);
+
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read/convert frames " + f+" - "+(f+frameChunks));
+                                    
+                        for (int deltaf = 0; deltaf < frameChunks; deltaf++)
+                        {
+                            // since 1.6.9 instead of reading inside thread.
+                            file.data.threadData.frame = (int)file.frameList[deltaf].frameNo;
+                            file.data.rawData = file.frameList[deltaf].frame;
+
+                            data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
+                            para.threadData.CDEvent = cde;
+
+                            // start convert thread here
+                            ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
+                            //para = null;
+                        }
+                        // wait till all threads has ended
+                        cde.Wait();
+                        file.frameList.Clear();
+                    }
+
+
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] frameconvert Done");
 
                     // now audio if existent
                     if (file.data.audioData.hasAudio)
                     {
-                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork] hasAudio file -> " + file.data.fileData.destinationPath + ".wav");
                         io.saveAudio(file.data.fileData._changedPath + file.data.fileData.destinationPath + ".wav", file);
+                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork] audioconvert Done -> " + file.data.fileData.destinationPath + ".wav");
                     }
 
                     // proxy clicked and ffmpeg existent. ok. lets do.
@@ -1158,13 +1167,13 @@ namespace raw2cdng_v2
         {
             data param = (data)state;
 
-            if (param.metaData.isMLV) param.rawData = io.readMLV(param);
-            else param.rawData = io.readRAW(param);
-
+            //if (param.metaData.isMLV) param.rawData = io.readMLV(param);
+            //else param.rawData = io.readRAW(param);
+            
             uint[] rawDataChanged;
             // in use if 12bit
             byte[] fillUp = new byte[6];
-            for (int i=0; i < fillUp.Length; i++) fillUp[i] = 0;
+            //for (int i=0; i < fillUp.Length; i++) fillUp[i] = 0;
 
             // -- prepare DNG output
 
@@ -1174,22 +1183,6 @@ namespace raw2cdng_v2
             // write Timecode into dng
             int timestamp = param.threadData.frame + (int)calc.dateTime2Frame(param.fileData.modificationTime, (double)(param.metaData.fpsNom / param.metaData.fpsDen));
             param.metaData.DNGHeader = calc.changeTimeCode(param.metaData.DNGHeader, timestamp, 0x1dba, (int)Math.Round((double)(param.metaData.fpsNom / param.metaData.fpsDen)), param.metaData.dropFrame);
-
-            /*            // workaround for 12bit, because first module needs 16bit-data
-                        if (param.metaData.bitsperSampleChanged == 12)
-                        {
-                            param.metaData.bitsperSampleChanged = 16;
-                            param.metaData.bitsperSample = 14;
-                            param.metaData.blackLevelNew = param.metaData.blackLevelOld;
-                            param.metaData.whiteLevelNew = param.metaData.whiteLevelOld;
-                            if (param.metaData.maximize)
-                            {
-                                param.metaData.maximizer = 65535 / (param.metaData.whiteLevelOld - param.metaData.blackLevelOld);
-                                param.metaData.blackLevelNew = 0;
-                                param.metaData.whiteLevelNew = 65535;
-                            }
-                        }
-            */
 
             // -------------------------------------------------------
             // ------- here's the magic - converting the data --------
@@ -1202,7 +1195,7 @@ namespace raw2cdng_v2
             {
                 calc.chromaSmoothing(ref rawDataChanged, param);
             }
-
+            
             // now maximize the data
             if (param.convertData.Maximize) rawDataChanged = calc.maximize(rawDataChanged, param);
 
@@ -1212,7 +1205,7 @@ namespace raw2cdng_v2
                 //coeffs calculated once in [dowork]
                 rawDataChanged = calc.fixVerticalBanding(rawDataChanged, param);
             }
-            
+
             // if proxy jpeg
             if (param.convertData.ProxyKind > 0 && param.convertData.ProxyKind < 5)
             {
@@ -1649,6 +1642,10 @@ namespace raw2cdng_v2
                 this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        // ----------- Context menu ------------------------
+        private void doContext(object sender, RoutedEventArgs e)
+        {
+        }
         // ------- EOF ----------
     }
 }

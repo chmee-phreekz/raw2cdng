@@ -425,7 +425,7 @@ namespace raw2cdng_v2
             int xRes = r.data.metaData.xResolution;
             int yRes = r.data.metaData.yResolution;
 
-            double[] coeffs = new double[9];
+            double[] coeffs = new double[10];
             int[][] histogram = new int[8][];
             int column = 0;
             
@@ -450,9 +450,10 @@ namespace raw2cdng_v2
                 }
             }
 
+
             // calculate median per readout-channel (not rgb)
             int val = 0;
-            int[] median = new int[8];
+            long[] median = new long[8];
             double[] d_median = new double[8];
             for (int i = 0; i < 8; i++)
             {
@@ -465,6 +466,9 @@ namespace raw2cdng_v2
             // find most frequent Value
             // assuming this is the base value to be corrected to
             double frequentVal = d_median.GroupBy(item => item).OrderByDescending(g => g.Count()).Select(g => g.Key).First();
+
+            // save basevalue as ev in coeffs[9]
+            coeffs[9] = calc.doRaw2ev(frequentVal,0);
 
             // -- compute median correction factor
             // look for histogram difference
@@ -498,6 +502,19 @@ namespace raw2cdng_v2
             uint[] picOut = new uint[picIn.Length];
             int xRes = param.metaData.xResolution;
             int yRes = param.metaData.yResolution;
+            
+            // deltaBlack is to preserve dark levels and rounding errors (thx a1ex)
+            // and is used to differentiate between mximized and normal 16bit convert
+            int deltaBlack = param.metaData.blackLevelNew;
+            double maximizeFactor = ((double)param.metaData.whiteLevelNew - (double)param.metaData.blackLevelNew) / 16384;
+            if (param.metaData.maximize)
+            {
+                deltaBlack = 0;
+                maximizeFactor = 1;
+            }
+
+            // the median in EV
+            double EV = param.metaData.verticalBandingCoeffs[9];
 
             for (var x = 0; x < xRes; x+=2)
             {
@@ -510,16 +527,33 @@ namespace raw2cdng_v2
                     int rowRG = x + (y + 0) * xRes;
                     int rowGB = x + (y + 1) * xRes;
 
-                    int r1 = (int)((double)picIn[rowRG] / (double)coeffEven);
-                    int g1 = (int)((double)picIn[rowRG + 1] / (double)coeffOdd);
-                    int g2 = (int)((double)picIn[rowGB] / (double)coeffEven);
-                    int b1 = (int)((double)picIn[rowGB + 1] / (double)coeffOdd);
+                    int r1 = (int)picIn[rowRG];
+                    int g1 = (int)picIn[rowRG + 1];
+                    int g2 = (int)picIn[rowGB];
+                    int b1 = (int)picIn[rowGB+1];
 
-                    r1 = COERCE(ref r1,ref zero,ref full16);
-                    g1 = COERCE(ref g1,ref zero, ref full16);
-                    g2 = COERCE(ref g2,ref zero, ref full16);
-                    b1 = COERCE(ref b1,ref zero, ref full16);
-
+                    // only fix if 32 higher than deltaBlack
+                    if (r1 > deltaBlack + 32)
+                    {
+                        r1 = (int)((double)(r1 - deltaBlack) / (double)coeffEven * maximizeFactor) + deltaBlack;
+                        r1 = COERCE(ref r1, ref zero, ref full16);
+                    }
+                    if (g1 > deltaBlack + 32)
+                    {
+                        g1 = (int)((double)(g1 - deltaBlack) / (double)coeffOdd * maximizeFactor) + deltaBlack;
+                        g1 = COERCE(ref g1, ref zero, ref full16);
+                    }
+                    if (g2 > deltaBlack + 32)
+                    {
+                        g2 = (int)((double)(g2 - deltaBlack) / (double)coeffEven * maximizeFactor) + deltaBlack;
+                        g2 = COERCE(ref g2, ref zero, ref full16);
+                    }
+                    if (b1 > deltaBlack + 32)
+                    {
+                        b1 = (int)((double)(b1 - deltaBlack) / (double)coeffOdd * maximizeFactor) + deltaBlack;
+                        b1 = COERCE(ref b1, ref zero, ref full16);
+                    }
+                     
                     // back to array
                     picOut[rowRG] = (uint)r1;
                     picOut[rowRG + 1] = (uint)g1;
@@ -1498,6 +1532,29 @@ namespace raw2cdng_v2
             Buffer.BlockCopy(input, 0, output, 0, output.Length);
             return output;
         }
+
+        public static byte[] Combine(byte[] first, byte[] second)
+        {
+            byte[] ret = new byte[first.Length + second.Length];
+            Buffer.BlockCopy(first, 0, ret, 0, first.Length);
+            Buffer.BlockCopy(second, 0, ret, first.Length, second.Length);
+            return ret;
+        }
+
+        public static double doRaw2ev(double raw, int black)
+        {
+            return Math.Log(raw - black) / Math.Log(2);
+        }
+        
+        public static double doEv2raw(double ev, int black)
+        {
+            return Math.Pow(2, ev) + black;
+        }
+
+        /*public static double rawEvCorrector(double val, double corrector, double ev, int black)
+        {
+            return (val-black) * doEv2raw(ev,black) *  
+        }*/
 
         // ----- helper written by ml-community
         // ----- for chroma smoothing

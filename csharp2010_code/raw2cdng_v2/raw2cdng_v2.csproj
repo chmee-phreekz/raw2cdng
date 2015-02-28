@@ -27,8 +27,10 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>8</ApplicationRevision>
-    <ApplicationVersion>1.5.0.8</ApplicationVersion>
+    <ProductName>raw2cdng</ProductName>
+    <PublisherName>chmee phreekz</PublisherName>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.7.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -148,6 +150,7 @@
     <EmbeddedResource Include="RIFFtemplate.byte" />
     <EmbeddedResource Include="rifftemplate02.byte" />
     <EmbeddedResource Include="riffbwf_Template.byte" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
