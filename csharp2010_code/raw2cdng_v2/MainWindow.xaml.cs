@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.7.0";
+        private string version = "1.7.1";
         public string Version
         {
             get
@@ -553,6 +553,8 @@ namespace raw2cdng_v2
         public MainWindow()
         {
             InitializeComponent();
+
+            PreviewFrameData.Visibility = Visibility.Hidden;
 
             // calculate LUTs
             calc.calculateRec709LUT();
@@ -1084,10 +1086,11 @@ namespace raw2cdng_v2
 
                         if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read/convert frames " + f+" - "+(f+frameChunks));
                                     
-                        for (int deltaf = 0; deltaf < frameChunks; deltaf++)
+                        for(int deltaf = 0; deltaf < frameChunks; deltaf++)
                         {
                             // since 1.6.9 instead of reading inside thread.
                             file.data.threadData.frame = (int)file.frameList[deltaf].frameNo;
+                            
                             file.data.rawData = file.frameList[deltaf].frame;
 
                             data para = file.data.Copy(); // deep copy object from ObjectExtensions.cs
@@ -1306,6 +1309,7 @@ namespace raw2cdng_v2
         private void _preview_MouseEnter(object sender, MouseEventArgs e)
         {
             previewTimer.Start();
+            PreviewFrameData.Visibility = Visibility.Hidden;
         }
 
         private void _preview_MouseLeave(object sender, MouseEventArgs e)
@@ -1645,6 +1649,53 @@ namespace raw2cdng_v2
         // ----------- Context menu ------------------------
         private void doContext(object sender, RoutedEventArgs e)
         {
+        }
+
+
+        private void _debugFrameNo_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Handle only digits on input
+            if (e.Key < Key.D0 || e.Key > Key.D9) e.Handled = true;
+        }
+
+        private void _debugFrameNo_KeyUp(object sender, KeyEventArgs e)
+        {
+            int frame = 0;
+            if (_debugFrameNo.Text != "") frame = int.Parse(_debugFrameNo.Text);
+            if (frame > -1 && frame < this.selectedRawFile.data.metaData.frames)
+            {
+                goToPreviewFrame(frame);
+
+                PreviewFrameData.Visibility = Visibility.Visible;
+                string output = "manual Frame: " + (frame.ToString()) + " - Data from ";
+                output += (this.selectedRawFile.data.metaData.isMLV ? "MLV" : "RAW") + "-File\n\n";
+                if (this.selectedRawFile.data.metaData.isMLV)
+                {
+                    output += "fileoffset " + this.selectedRawFile.VIDFBlocks[frame].fileOffset + ": " + this.selectedRawFile.VIDFBlocks[frame].fileOffset.ToString("X4") + "\n";
+                    output += "fileNumber " + this.selectedRawFile.VIDFBlocks[frame].fileNo + "\n";
+                    output += "frame Number " + this.selectedRawFile.VIDFBlocks[frame].MLVFrameNo + "\n";
+                    output += "timestamp " + this.selectedRawFile.VIDFBlocks[frame].timestamp + "\n";
+                    output += "blockLength " + this.selectedRawFile.VIDFBlocks[frame].blockLength + "\n";
+                    output += "EDMACoffset " + this.selectedRawFile.VIDFBlocks[frame].EDMACoffset;
+                }
+                else
+                {
+                    output += "fileoffset " + this.selectedRawFile.RAWBlocks[frame].fileOffset + ": " + this.selectedRawFile.RAWBlocks[frame].fileOffset.ToString("X4") + "\n";
+                    output += "fileNumber " + this.selectedRawFile.RAWBlocks[frame].fileNo + "\n";
+                    output += "frame is splitted : " + (this.selectedRawFile.RAWBlocks[frame].splitted?"yes":"no") + "\n";
+                    output += "frame Number equals sequential increment";
+
+                }
+                if (settings.debugLogEnabled)
+                {
+                    debugging._saveDebug("+++ [manualFrameDebug] +++");
+                    debugging._saveDebug(output);
+                    debugging._saveDebug("+++ ------------------ +++");
+
+                }
+                PreviewFrameData.Content = output;
+            }
+
         }
         // ------- EOF ----------
     }

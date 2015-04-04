@@ -73,7 +73,16 @@ namespace raw2cdng_v2
             });
             colormatrices.Add(new colormatrix()
             {
-                modell =     "Canon EOS 550D",
+                // extracted from 500D-dng
+                modell =     "Canon EOS 500D",
+                colormatrixA = new int[] { 5660, 10000, -436, 10000, -88, 10000, -5034, 10000, 12093, 10000, 3347, 10000, -926, 10000, 2289, 10000, 6588, 10000 },
+                colormatrixB = new int[] { 4763, 10000, 712, 10000, -646, 10000, -6821, 10000, 14399, 10000, 2640, 10000, -1921, 10000, 3276, 10000, 6561, 10000 },
+                forwardmatrixA = new int[] { 9474, 10000, -1386, 10000, 1555, 10000, 4367, 10000, 7419, 10000, -1786, 10000, 398, 10000, -3048, 10000, 10901, 10000 },
+                forwardmatrixB = new int[] { 9474, 10000, -1386, 10000, 1555, 10000, 4367, 10000, 7419, 10000, -1786, 10000, 398, 10000, -3048, 10000, 10901, 10000 }
+            });
+            colormatrices.Add(new colormatrix()
+            {
+                modell = "Canon EOS 550D",
                 colormatrixA = new int[] { 7755, 10000, -2449, 10000, -349, 10000, -3106, 10000, 10222, 10000, 3362, 10000, -156, 10000, 986, 10000, 6409, 10000 },
                 colormatrixB = new int[] { 6941, 10000, -1164, 10000, -857, 10000, -3825, 10000, 11597, 10000, 2534, 10000, -416, 10000, 1540, 10000, 6039, 10000 },
                 forwardmatrixA = new int[] { 7163, 10000, 1301, 10000, 1179, 10000, 1926, 10000, 9543, 10000, -1469, 10000, -278, 10000, -3830, 10000, 12359, 10000 },
@@ -908,6 +917,7 @@ namespace raw2cdng_v2
                     {
                         byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
                         Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[firstIndexNextFileNo+startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                        //int VIDFframeNo = 0;
                         d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
                     }
                     fileChunk = null;
