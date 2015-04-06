@@ -13,12 +13,30 @@ namespace raw2cdng_v2
 {
     class io
     {
-        public static string[] RAWFileEnding = new string[] { "RAW", "R00", "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20" };
-        public static string[] MLVFileEnding = new string[] { "MLV", "M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18", "M19", "M20" };
+        public static string[] RAWFileEnding = new string[101];// { "RAW", "R00", "R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08", "R09", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20" };
+        public static string[] MLVFileEnding = new string[101];// { "MLV", "M00", "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18", "M19", "M20" };
         public static string blocknames = "RAWIMLVIWBALIDNTVIDFRTCILENSEXPOWAVIAUDFINFONULLXREFMARKDISOELVLSTYLBKUP";
         // old classic short header : public static byte[] RIFFheader = Properties.Resources.RIFFtemplate;
         public static byte[] riffHeader = Properties.Resources.riffbwf_Template;
         public static List<colormatrix> colormatrices = new List<colormatrix>();
+
+        public static void fillupEndingLists()
+        {
+            
+            for (int i = -1; i < 100; i++)
+            {
+                if (i == -1)
+                {
+                    RAWFileEnding[0] = "RAW";
+                    MLVFileEnding[0] = "MLV";
+                }
+                else
+                {
+                    RAWFileEnding[i+1] = "R" + i.ToString("00") ;
+                    MLVFileEnding[i+1] = "M" + i.ToString("00");
+                }
+            }
+        }
 
         public static void setMatrices()
         {
@@ -50,6 +68,14 @@ namespace raw2cdng_v2
             colormatrices.Add(new colormatrix()
             {
                 modell =     "Canon EOS 6D",
+                colormatrixA = new int[] { 7546, 10000, -1435, 10000, -929, 10000, -3846, 10000, 11488, 10000, 2692, 10000, -332, 10000, 1209, 10000, 6370, 10000 },
+                colormatrixB = new int[] { 7034, 10000, -804, 10000, -1014, 10000, -4420, 10000, 12564, 10000, 2058, 10000, -851, 10000, 1994, 10000, 5758, 10000 },
+                forwardmatrixA = new int[] { 7763, 10000, 65, 10000, 1815, 10000, 2364, 10000, 8351, 10000, -715, 10000, -59, 10000, -4228, 10000, 12538, 10000 },
+                forwardmatrixB = new int[] { 7464, 10000, 1044, 10000, 1135, 10000, 2648, 10000, 9173, 10000, -1820, 10000, 113, 10000, -2154, 10000, 10292, 10000 }
+            });
+            colormatrices.Add(new colormatrix()
+            {
+                modell = "Canon EOS 70D",
                 colormatrixA = new int[] { 7546, 10000, -1435, 10000, -929, 10000, -3846, 10000, 11488, 10000, 2692, 10000, -332, 10000, 1209, 10000, 6370, 10000 },
                 colormatrixB = new int[] { 7034, 10000, -804, 10000, -1014, 10000, -4420, 10000, 12564, 10000, 2058, 10000, -851, 10000, 1994, 10000, 5758, 10000 },
                 forwardmatrixA = new int[] { 7763, 10000, 65, 10000, 1815, 10000, 2364, 10000, 8351, 10000, -715, 10000, -59, 10000, -4228, 10000, 12538, 10000 },
@@ -274,6 +300,11 @@ namespace raw2cdng_v2
             string errorString = "";
             return errorString;
 
+        }
+        
+        public static bool isFRSP(Blocks.mlvBlock mlvBlock)
+        {
+            return (mlvBlock.blockLength > 5242880) ? true:false;
         }
 
         public static string readVIDFBlockData(raw raw)
@@ -624,7 +655,7 @@ namespace raw2cdng_v2
             mData.data.lensData.shutter = shutterD[1].ToString()+"/"+shutterD[0].ToString()+"s";
 
 
-            // exposure data from EXPO
+            // exposure data from LENS
             if (debugging.debugLogEnabled) debugging._saveDebug("[getMLVAttrib] reading LENS-Block");
             var LENS = bList.FirstOrDefault(x => x.blockTag == "LENS");
             if (LENS == null)

@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.7.1";
+        private string version = "1.7.2";
         public string Version
         {
             get
@@ -560,7 +560,9 @@ namespace raw2cdng_v2
             calc.calculateRec709LUT();
             // set colormatrices
             io.setMatrices();
-            
+            // creating Ending Lists
+            io.fillupEndingLists();
+
             allFramesCount = 0;
             
             // -- init _preview Tick and small frameProgressLine
@@ -1061,7 +1063,7 @@ namespace raw2cdng_v2
                     // read a amount of frames (25?50?100?) as one block
                     // and use them in the threads (jagged array ok? array[][]
                     // assume: massively speeds up converting straight from cf card
-                    int frameChunks = 50;
+                    
                     // we have to re-sort the VIDFBlocks
                     if (file.data.metaData.isMLV)
                     {
@@ -1072,6 +1074,10 @@ namespace raw2cdng_v2
                         file.RAWBlocks = file.RAWBlocks.OrderBy(x => x.fileNo).ThenBy(x => x.fileOffset).ToList();
                     }
 
+                    // ask if FRSP or not
+                    int frameChunks = 50;
+                    if (io.isFRSP(file.VIDFBlocks[0])) frameChunks = 4;
+                    
                     for (int f = 0; f < frameCount; f += frameChunks)
                     {
                         if (frameChunks > frameCount - f)
@@ -1671,8 +1677,8 @@ namespace raw2cdng_v2
                 output += (this.selectedRawFile.data.metaData.isMLV ? "MLV" : "RAW") + "-File\n\n";
                 if (this.selectedRawFile.data.metaData.isMLV)
                 {
+                    output += "subFile " + io.MLVFileEnding[this.selectedRawFile.VIDFBlocks[frame].fileNo] + "\n";
                     output += "fileoffset " + this.selectedRawFile.VIDFBlocks[frame].fileOffset + ": " + this.selectedRawFile.VIDFBlocks[frame].fileOffset.ToString("X4") + "\n";
-                    output += "fileNumber " + this.selectedRawFile.VIDFBlocks[frame].fileNo + "\n";
                     output += "frame Number " + this.selectedRawFile.VIDFBlocks[frame].MLVFrameNo + "\n";
                     output += "timestamp " + this.selectedRawFile.VIDFBlocks[frame].timestamp + "\n";
                     output += "blockLength " + this.selectedRawFile.VIDFBlocks[frame].blockLength + "\n";
@@ -1680,9 +1686,9 @@ namespace raw2cdng_v2
                 }
                 else
                 {
+                    output += "subFile " + io.RAWFileEnding[this.selectedRawFile.RAWBlocks[frame].fileNo] + "\n";
                     output += "fileoffset " + this.selectedRawFile.RAWBlocks[frame].fileOffset + ": " + this.selectedRawFile.RAWBlocks[frame].fileOffset.ToString("X4") + "\n";
-                    output += "fileNumber " + this.selectedRawFile.RAWBlocks[frame].fileNo + "\n";
-                    output += "frame is splitted : " + (this.selectedRawFile.RAWBlocks[frame].splitted?"yes":"no") + "\n";
+                    output += "frame is splitted : " + (this.selectedRawFile.RAWBlocks[frame].splitted ? "yes" : "no") + "\n";
                     output += "frame Number equals sequential increment";
 
                 }

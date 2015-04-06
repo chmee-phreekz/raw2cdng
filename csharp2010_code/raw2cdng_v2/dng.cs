@@ -172,45 +172,35 @@ namespace raw2cdng_v2
 
                 // R
                 Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1cb2, 8);
-//                Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1c9a, 8);
 
                 // G
                 Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1cba, 8);
-//                Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1ca2, 8);
 
                 // B
                 Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1cc2, 8);
-//                Array.Copy(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, 0, DNGtemplate, 0x1caa, 8);
 
                 // now set new Values
 
                 // R
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[0]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cb2, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1c9a, 2);
 
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[1]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cb6, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1c9e, 2);
 
                 // G
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[2]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cba, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1ca2, 2);
 
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[3]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cbe, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1ca6, 2);
 
                 // B
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[4]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cc2, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1caa, 2);
 
                 tmp_bytes = BitConverter.GetBytes(Data.metaData.RGBfraction[5]);
                 Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cc6, 2);
-//                Array.Copy(tmp_bytes, 0, DNGtemplate, 0x1cae, 2);
-
             }
             if (Data.metaData.photoRAW == true)
             {

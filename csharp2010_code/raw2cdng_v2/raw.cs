@@ -130,6 +130,7 @@ namespace raw2cdng_v2
         public string errorString { get; set; }
 
         public bool isMLV { get; set; }
+        public bool isFRSP { get; set; }
 
         public byte[] DNGHeader { get; set; }
         public string version { get; set; }

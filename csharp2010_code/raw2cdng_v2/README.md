@@ -1,5 +1,10 @@
 ﻿#raw2cdng - changelog
 ***
+**1.7.2**  
+- Code for FRSP optimized   
+- 70D colormatrix added - thx danne    
+- splifiles until m99.
+***
 **1.7.1**  
 - framedrop-bug (hopefully) solved   
 - 500D added - colormatrix extracted from dng    

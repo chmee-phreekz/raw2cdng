@@ -119,7 +119,9 @@ namespace raw2cdng_v2
                 // do min/max
                 dest[pos] = (uint)COERCE(ref sensel,ref zero,ref full16);
             }
-            return dest;
+            source = dest;
+            dest = null;
+            return source;
         }
 
         public static byte[] from16to12(uint[] source, data rData)
