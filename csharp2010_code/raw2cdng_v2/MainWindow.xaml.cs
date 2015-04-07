@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.7.2";
+        private string version = "1.7.3";
         public string Version
         {
             get

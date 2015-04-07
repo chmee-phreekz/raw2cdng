@@ -1,5 +1,8 @@
 ﻿#raw2cdng - changelog
 ***
+**1.7.3**  
+- postbuild-commmand for larger ram-usage editbin /largeaddressaware   
+***
 **1.7.2**  
 - Code for FRSP optimized   
 - 70D colormatrix added - thx danne    
