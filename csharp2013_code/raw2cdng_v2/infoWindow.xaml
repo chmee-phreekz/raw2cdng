@@ -1,0 +1,38 @@
+﻿<Window x:Class="raw2cdng_v2.infoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="infoWindow" Height="200" Width="279" ResizeMode="NoResize" WindowStyle="None" BorderBrush="#FFC8C8C8" BorderThickness="1" ShowInTaskbar="False" MouseLeftButtonDown="Window_MouseLeftButtonDown" WindowStartupLocation="CenterScreen" >
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="CommonResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>        
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <Grid Grid.Row="0" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                <Button Style="{StaticResource chmeeButtonStyle}" Content="phreekz blog" Click="button2_Click" />
+                <Button Style="{StaticResource chmeeButtonStyle}" Content="ml forum" Click="button3_Click" Margin="0,5,0,0" />
+            </StackPanel>
+            
+            <Image Grid.Column="1" Height="64" Stretch="Fill" Source="/raw2cdng_v2;component/appicon.ico" Margin="20,0"  />
+            <Button Grid.Column="2" Style="{StaticResource chmeeButtonStyle}" Content="close" Click="close_Click" Padding="20,2" />
+            
+        </Grid>
+                
+        <TextBlock Grid.Row="1" Text="thanks to the magiclantern-community, thanks to all testers around the world. thanks to all of you, using this tool to produce 5 minutes of fun, love, feelings - telling stories. hold up your magic, to be able showing your sight on this world. this lantern shines for you. regards chmee" TextAlignment="Justify" TextWrapping="WrapWithOverflow" Margin="0,10,0,0" />
+    </Grid>
+</Window>
