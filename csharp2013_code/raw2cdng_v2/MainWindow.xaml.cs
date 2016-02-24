@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.7.4";
+        private string version = "1.7.5";
         public string Version
         {
             get
@@ -550,6 +550,7 @@ namespace raw2cdng_v2
             }
         }
         
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -717,8 +718,10 @@ namespace raw2cdng_v2
                         importRaw.data.metaData.errorString += io.readVIDFBlockData(importRaw);
                         if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blockdata read and created.");
                         // correct frameCount
+                        
+                        if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blocks. Frames by MLV_metadata: " + importRaw.data.metaData.frames + " versus counted:" + importRaw.VIDFBlocks.Count);
                         importRaw.data.metaData.frames = importRaw.VIDFBlocks.Count;
-
+                        
                         importRaw.convert = true;
                     }
                     if (io.isRAW(file))
@@ -1031,7 +1034,7 @@ namespace raw2cdng_v2
                         debugging._saveDebug("[doWork] outputFilename  -> " + file.data.fileData.outputFilename);
                     }
 
-                    // check/make destination path
+                    // check/create destination path
                     winIO.Directory.CreateDirectory(file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath);
                     if (settings.debugLogEnabled) debugging._saveDebug("[doWork] Directory " + file.data.fileData.basePath + winIO.Path.DirectorySeparatorChar + file.data.fileData.destinationPath + " created");
 
@@ -1053,9 +1056,7 @@ namespace raw2cdng_v2
                     string debugString = "";
                         
                     // init for multithreading
-                    int frameCount;
-                    frameCount = file.data.metaData.frames-1;
-                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * init frameCount for multithreaded Convert");
+                    if (settings.debugLogEnabled) debugging._saveDebug("[doWork] * prepare frameChunks for multithreaded Convert");
 
                     // start frameconvert
 
@@ -1063,37 +1064,43 @@ namespace raw2cdng_v2
                     // read a amount of frames (25?50?100?) as one block
                     // and use them in the threads (jagged array ok? array[][]
                     // assume: massively speeds up converting straight from cf card
+                    // 1.7.5
+                    // had to re-code the vidf-chunklist.
 
-                    // ask if FRSP or not
+                    // amount of pictures in one read operation.
                     int frameChunks = 50;
+                    // ask if there are less than 50 pics in file
+                    if (file.data.metaData.frames < 50) frameChunks = file.data.metaData.frames;
                     
                     // we have to re-sort the VIDFBlocks
                     if (file.data.metaData.isMLV)
                     {
                         file.VIDFBlocks = file.VIDFBlocks.OrderBy(x => x.fileNo).ThenBy(x => x.fileOffset).ToList();
+                        // because of frsp large pictures, lower amount
                         if (io.isFRSP(file.VIDFBlocks[0])) frameChunks = 4;
+
+                        // create list of chunks
+                        file.chunkList = Blocks.createframeChunks(frameChunks, file.VIDFBlocks);
                     }
                     else
                     {
                         file.RAWBlocks = file.RAWBlocks.OrderBy(x => x.fileNo).ThenBy(x => x.fileOffset).ToList();
+                        // create list of chunks
+                        file.chunkList = Blocks.createframeChunksRaw(frameChunks, file.RAWBlocks);
                     }
 
-                    
-                    for (int f = 0; f < frameCount; f += frameChunks)
+
+                    foreach (Blocks.frameChunk f in file.chunkList)
                     {
-                        if (frameChunks > frameCount - f)
-                        {
-                            frameChunks = frameCount - f;
-                        }
-                        var cde = new CountdownEvent(frameChunks);
+                        var cde = new CountdownEvent(f.l);
 
                         // read bytes from file(s) with length [frameChunks]
-                        // save frames into frameList<>
-                        io.readChunk(file,f, frameChunks);
+                        // save frame-metadata into frameList<>
+                        io.readChunk(file,f.start, f.l -1);
 
-                        if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read/convert frames " + f+" - "+(f+frameChunks));
+                        //if (settings.debugLogEnabled) debugging._saveDebug("[doWork][for] read/convert frames " + f.start+" - "+f.end);
                                     
-                        for(int deltaf = 0; deltaf < frameChunks; deltaf++)
+                        for(int deltaf = 0; deltaf < f.l; deltaf++)
                         {
                             // since 1.6.9 instead of reading inside thread.
                             file.data.threadData.frame = (int)file.frameList[deltaf].frameNo;
@@ -1107,7 +1114,7 @@ namespace raw2cdng_v2
                             ThreadPool.QueueUserWorkItem(new WaitCallback(doFrame_Thread), para);
                             //para = null;
                         }
-                        // wait till all threads has ended
+                        // wait until all threads have ended
                         cde.Wait();
                         file.frameList.Clear();
                     }
@@ -1206,7 +1213,7 @@ namespace raw2cdng_v2
                 calc.chromaSmoothing(ref rawDataChanged, param);
             }
             
-            // now maximize the data
+            // maximize the latitude
             if (param.convertData.Maximize) rawDataChanged = calc.maximize(rawDataChanged, param);
 
             // if verticalBanding (and if its needed. delta >0.01)
@@ -1252,7 +1259,7 @@ namespace raw2cdng_v2
                     // convert uint to Bytes and save
                     stream.Write(calc.toBytes(rawDataChanged, param), 0, rawDataChanged.Length*2);
                 }
-                // write the versionstring at EOF of dng
+                // write the raw2cdng versionstring at EOF of dng
                 stream.Write(param.metaData.versionString, 0, param.metaData.versionString.Length);
             }
 

@@ -60,6 +60,7 @@ namespace raw2cdng_v2
         public List<Blocks.mlvBlock> VIDFBlocks { get; set; }
         public List<Blocks.mlvBlock> AUDFBlocks { get; set; }
         public List<frameData> frameList { get; set; }
+        public List<Blocks.frameChunk> chunkList { get; set; }
     }
     
     public class frameData
@@ -450,6 +451,75 @@ namespace raw2cdng_v2
             public bool splitted { get; set; }
         }
         public static List<rawBlock> rawBlockList = new List<rawBlock>();
+
+        public class frameChunk
+        {
+            public int start { get; set; }
+            public int end { get; set; }
+            public int l {get;set;}
+        }
+        public List<frameChunk> chunkList = new List<frameChunk>();
+
+        public static List<frameChunk> createframeChunks(int chunkLength, List<Blocks.mlvBlock> vidf)
+        {
+            List<frameChunk> cL = new List<frameChunk>();
+            int n = 0;
+            int c = n;
+            do
+            {
+                cL.Add(new frameChunk());
+                cL.Last().start = n;
+                c = n;
+                do
+                {
+                    if (n == vidf.Count()) break;
+                    if (n - c == chunkLength) break;
+                    if (vidf[c].fileNo != vidf[n].fileNo) break;
+                    n++;
+                } while (true);
+                cL.Last().end = n-1;
+                cL.Last().l = cL.Last().end - cL.Last().start +1;
+            } while (n != vidf.Count());
+
+            if (debugging.debugLogEnabled)
+            {
+                for (int z = 0; z < cL.Count();z++ )
+                { 
+                    debugging._saveDebug("[createFrameChunk] list " + z + " : " + cL[z].start + " to " +cL[z].end+" in file "+vidf[cL[z].end].fileNo);
+                }
+            }
+            return cL;
+        }
+        public static List<frameChunk> createframeChunksRaw(int chunkLength, List<Blocks.rawBlock> rawblocks)
+        {
+            List<frameChunk> cL = new List<frameChunk>();
+            int n = 0;
+            int c = n;
+            do
+            {
+                cL.Add(new frameChunk());
+                cL.Last().start = n;
+                c = n;
+                do
+                {
+
+                    if (n == rawblocks.Count()) break;
+                    if (n - c == chunkLength) break;
+                    n++;
+                } while (true);
+                cL.Last().end = n - 1;
+                cL.Last().l = cL.Last().end - cL.Last().start +1;
+            } while (n != rawblocks.Count());
+
+            if (debugging.debugLogEnabled)
+            {
+                for (int z = 0; z < cL.Count(); z++)
+                {
+                    debugging._saveDebug("[createFrameChunkRaw] list " + z + " : " + cL[z].start + " to " + cL[z].end + " in file " + rawblocks[cL[z].end].fileNo);
+                }
+            }
+            return cL;
+        }
     }
 
 }

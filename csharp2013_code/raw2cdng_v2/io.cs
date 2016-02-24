@@ -264,7 +264,7 @@ namespace raw2cdng_v2
                 FileInfo fi = new FileInfo(fn);
                 FileStream fs = fi.OpenRead();
                 long fl = fs.Length;
-                while ( ((fl - offset) > 0) && (offset>=0) && (bl>=0) )
+                while ( ((fl - offset) >= 0) && (offset>=0) && (bl>=0) )
                 {
                     try
                     {
@@ -328,12 +328,7 @@ namespace raw2cdng_v2
                 fs.Close();
                 if (debugging.debugLogEnabled)
                 {
-                debugString += "[" + (framecount++) + "]";
-                if (framecount % 25 == 0)
-                    {
-                        debugging._saveDebug("[readVIDFBlockData] done: " + debugString);
-                        debugString = "";
-                    }
+                       debugging._saveDebug("[readVIDFBlockData] : " + VIDFBlock.MLVFrameNo + " at "+raw.data.fileData.fileNameOnly+"."+MLVFileEnding[VIDFBlock.fileNo] + " - "+VIDFBlock.fileOffset);
                 }
             }
             return errorString;
@@ -876,6 +871,7 @@ namespace raw2cdng_v2
         public static void readChunk(raw d, int startFrame, int frames)
         {
             long startOffset = 0;
+            long endOffset = 0;
             long length = 1;
 
             if (d.data.metaData.isMLV)
@@ -886,73 +882,28 @@ namespace raw2cdng_v2
                 FileStream fs = fi.OpenRead();
                 
                 startOffset = d.VIDFBlocks[startFrame].fileOffset;
+                endOffset = d.VIDFBlocks[startFrame + frames].fileOffset + 32 + d.VIDFBlocks[startFrame + frames].EDMACoffset + d.data.metaData.stripByteCountReal;
                 
-                if (d.VIDFBlocks[startFrame].fileNo == d.VIDFBlocks[startFrame + frames].fileNo)
-                {
-                    // if all chunks are in same file
+                // all chunks are in same file (raw.cs/createFrameChunks)
                     
-                    length = d.VIDFBlocks[startFrame + frames].fileOffset - startOffset;
-                    byte[] fileChunk = new byte[length];
+                length = endOffset - startOffset;
+                byte[] fileChunk = new byte[length];
             
-                    fs.Position = (long)(startOffset);
-                    fs.Read(fileChunk, 0, (int)length);
+                fs.Position = (long)(startOffset);
+                fs.Read(fileChunk, 0, (int)length);
 
-                    // after that extract into frameList
-                    for (int i = 0; i < frames; i++)
-                    {
-                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
-                        Array.Copy(fileChunk, d.VIDFBlocks[i+startFrame].fileOffset - d.VIDFBlocks[startFrame].fileOffset + 32 + d.VIDFBlocks[i+startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
-                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
-                    }
-                    fileChunk = null;
-                }
-                else
+                // after that extract into frameList
+                for (int i = 0; i < (1+frames); i++)
                 {
-                    // if not in same file
-                    int firstIndexNextFileNo = (d.VIDFBlocks.FindIndex(x => x.fileNo == (d.VIDFBlocks[startFrame].fileNo + 1)) - startFrame); 
-                    int differenceFrames = firstIndexNextFileNo - startFrame;
-
-                    // first part
-
-                    length = d.VIDFBlocks[startFrame+firstIndexNextFileNo-1].fileOffset +32+d.VIDFBlocks[startFrame+firstIndexNextFileNo-1].EDMACoffset+d.data.metaData.stripByteCountReal - startOffset;
-                    byte[] fileChunk = new byte[length];
-
-                    fs.Position = (long)(startOffset);
-                    fs.Read(fileChunk, 0, (int)length);
-
-                    // extract into frameList
-                    for (int i = 0; i < (firstIndexNextFileNo); i++)
+                    byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
+                    if (debugging.debugLogEnabled)
                     {
-                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
-                        Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
-                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
+                        debugging._saveDebug("[readChunk] frame "+i+" : "+d.VIDFBlocks[i + startFrame].MLVFrameNo + " from " + d.data.fileData.fileNameOnly + "." + MLVFileEnding[d.VIDFBlocks[startFrame+i].fileNo]);
                     }
-                    fileChunk = null;
-
-                    fs.Close();
-                    
-                    // -- second part in next file --
-                    
-                    fi = new FileInfo(d.data.fileData.sourcePath + Path.DirectorySeparatorChar + d.data.fileData.fileNameOnly + "." + MLVFileEnding[d.VIDFBlocks[startFrame + firstIndexNextFileNo].fileNo]);
-                    fs = fi.OpenRead();
-
-                    startOffset = d.VIDFBlocks[startFrame+firstIndexNextFileNo].fileOffset;
-                    length = d.VIDFBlocks[startFrame+frames].fileOffset - startOffset;
-                    fileChunk = new byte[length];
-
-                    fs.Position = (long)(startOffset);
-                    fs.Read(fileChunk, 0, (int)length);
-
-                    // once again, extract into frameList
-                    for (int i = firstIndexNextFileNo; i < frames; i++)
-                    {
-                        byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
-                        Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[firstIndexNextFileNo+startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
-                        //int VIDFframeNo = 0;
-                        d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
-                    }
-                    fileChunk = null;
+                    Array.Copy(fileChunk, d.VIDFBlocks[i + startFrame].fileOffset - d.VIDFBlocks[startFrame].fileOffset + 32 + d.VIDFBlocks[i + startFrame].EDMACoffset, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                    d.frameList.Add(new frameData { frame = tmpFrame, frameNo = d.VIDFBlocks[i + startFrame].MLVFrameNo });
                 }
+                fileChunk = null;
                 fs.Close();
                 fi = null;
             }
@@ -964,7 +915,7 @@ namespace raw2cdng_v2
                 FileStream fs = fi.OpenRead();
 
                 startOffset = d.RAWBlocks[startFrame].fileOffset;
-                length = d.data.metaData.stripByteCount * frames;
+                length = d.data.metaData.stripByteCount * (1+frames);
                 long diff = fi.Length - startOffset;
 
                 byte[] fileChunk = new byte[length];
@@ -992,16 +943,15 @@ namespace raw2cdng_v2
                 fi = null;
 
                 // after that extract into frameList
-                for (int i = 0; i < frames; i++)
+                for (int i = 0; i < (1+frames); i++)
                 {
                      byte[] tmpFrame = new byte[d.data.metaData.stripByteCountReal];
-                     Array.Copy(fileChunk, i*d.data.metaData.stripByteCount, tmpFrame, 0, d.data.metaData.stripByteCountReal);
+                     Array.Copy(fileChunk, i * d.data.metaData.stripByteCount, tmpFrame, 0, d.data.metaData.stripByteCountReal);
                      d.frameList.Add(new frameData { frame = tmpFrame, frameNo = i+startFrame });
                 }
                 fileChunk = null;
             }
             if (debugging.debugLogEnabled) debugging._saveDebug("[readChunk] reading frames done - "+startFrame+"-"+(startFrame+frames));
-
         }
 
         public static byte[] readMLV(data param)
