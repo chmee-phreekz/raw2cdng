@@ -426,7 +426,7 @@ namespace raw2cdng_v2
                 mData.data.metaData.blackLevelNew = mData.data.metaData.blackLevelOld;
                 mData.data.metaData.whiteLevelNew = mData.data.metaData.whiteLevelOld;
 
-                mData.data.metaData.bitsperSample = 14;// RAWIArray[56];
+                mData.data.metaData.bitsperSample = RAWIArray[44]; // middle of 2016 ml found 10 and 12bit inside body. great.
                 mData.data.metaData.maximizer = Math.Pow(2, 16) / (mData.data.metaData.whiteLevelOld - mData.data.metaData.blackLevelOld);
                 mData.data.metaData.maximize = true;
 
@@ -1073,8 +1073,24 @@ namespace raw2cdng_v2
                 rawFile.data.fileData.RAWBlock = rawFile.RAWBlocks[rawFile.data.threadData.frame];
                 imageArray = io.readRAW(rawFile.data);
             }
+            uint[] picSource = null;
+            switch (rawFile.data.metaData.bitsperSample)
+            {
+                case 14:
+                    picSource = calc.maximize(calc.from14to16(imageArray, rawFile.data), rawFile.data);
+                    break;
+                case 12:
+                    picSource = calc.maximize(calc.from12to16(imageArray, rawFile.data), rawFile.data);
+                    break;
+                case 10:
+                    picSource = calc.maximize(calc.from10to16(imageArray, rawFile.data), rawFile.data);
+                    break;
+                default:
+                    picSource = calc.maximize(calc.from14to16(imageArray, rawFile.data), rawFile.data);
+                    break;
+            }
 
-            uint[] picSource = calc.maximize(calc.to16(imageArray, rawFile.data),rawFile.data);
+            
 
             switch (quality)
             {

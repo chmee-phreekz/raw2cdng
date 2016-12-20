@@ -108,7 +108,7 @@ namespace raw2cdng_v2
             }
         }
 
-        private string version = "1.7.5";
+        private string version = "1.7.8";
         public string Version
         {
             get
@@ -769,7 +769,10 @@ namespace raw2cdng_v2
                             if (importRaw.data.metaData.isMLV)
                             {
                                 importRaw.data.fileData.VIDFBlock = importRaw.VIDFBlocks[0];
-                                uint[] picSource = calc.to16(io.readMLV(importRaw.data), importRaw.data);
+                                uint[] picSource = null;
+                                if (importData.metaData.bitsperSample == 14) picSource = calc.from14to16(io.readMLV(importRaw.data), importRaw.data);
+                                if (importData.metaData.bitsperSample == 12) picSource = calc.from12to16(io.readMLV(importRaw.data), importRaw.data);
+                                if (importData.metaData.bitsperSample == 10) picSource = calc.from10to16(io.readMLV(importRaw.data), importRaw.data);
 
                                 importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.maximize(picSource,importRaw.data), importRaw);
                                 //calc.findDeadSensels(picSource,importRaw.data);
@@ -779,7 +782,7 @@ namespace raw2cdng_v2
                             else
                             {
                                 importRaw.data.fileData.RAWBlock = importRaw.RAWBlocks[0];
-                                uint[] picSource = calc.to16(io.readRAW(importRaw.data), importRaw.data);
+                                uint[] picSource = calc.from14to16(io.readRAW(importRaw.data), importRaw.data);
 
                                 importRaw.data.metaData.verticalBandingCoeffs = calc.calcVerticalBandingCoeff(calc.maximize(picSource, importRaw.data), importRaw);
                                 //calc.findDeadSensels(picSource, importRaw.data);
@@ -1166,16 +1169,17 @@ namespace raw2cdng_v2
             this.Dispatcher.Invoke((Action)(() =>
             {
                 rawFiles.Clear();
-                this.PreviewSource = null;
-                this.currentAction = "";
-                this.FramesProgressed = 0;
-                this.FramesToProgress = 1;
-                this.TotalFramesProgressed = 0;
-                this.TotalFramesToProgress = 1;
-                _convert.IsEnabled = false;                
+                PreviewSource = null;
+                currentAction = "";
+                FramesProgressed = 0;
+                FramesToProgress = 1;
+                TotalFramesProgressed = 0;
+                TotalFramesToProgress = 1;
+                _convert.IsEnabled = false;
+                _convert.Content = "convert";
 
-                this.BatchListIsEnabled = true;
-                this.ConvertingInProgress = false;
+                BatchListIsEnabled = true;
+                ConvertingInProgress = false;
 
             }));
         }
@@ -1204,9 +1208,21 @@ namespace raw2cdng_v2
             // -------------------------------------------------------
             // ------- here's the magic - converting the data --------
             // -------------------------------------------------------
+            rawDataChanged = null;
+            switch(param.metaData.bitsperSample)
+            {
+                case 14:
+                    rawDataChanged = calc.from14to16(param.rawData, param);
+                    break;
+                case 12:
+                    rawDataChanged = calc.from12to16(param.rawData, param);
+                    break;
+                case 10:
+                    rawDataChanged = calc.from10to16(param.rawData, param);
+                    break;
 
-            rawDataChanged = calc.to16(param.rawData, param);
-
+            }
+            
             // if chroma Smoothing
             if (param.convertData.ChromaSmoothing)
             {
@@ -1427,7 +1443,7 @@ namespace raw2cdng_v2
             r.data.metaData.maximize = true;
             r.data.metaData.previewFrame = r.data.metaData.previewFrame % r.data.metaData.frames;
             Task.Factory.StartNew(() => previewBackground(r));
-            if (settings.debugLogEnabled) debugging._saveDebug("[previewTimer_Tick] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
+            if (settings.debugLogEnabled) debugging._saveDebug("[goToPrevieFrame] show previewframe " + r.data.metaData.previewFrame + " from " + r.data.fileData.fileNameOnly);
         }
 
         private void previewTimer_Tick(object sender, EventArgs e)

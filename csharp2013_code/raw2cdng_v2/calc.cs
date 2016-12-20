@@ -21,8 +21,10 @@ namespace raw2cdng_v2
         public static int[] ev2raw = new int[24 * EV_RESOLUTION];
         public static int[] raw2ev = new int[EV_RESOLUTION];
         public static int zero = 0;
-        public static int full14 = 16383;
-        public static int full16 = 65535;
+        public static int full10 = 1023; // 2^10-1
+        public static int full12 = 4095; // 2^12-1
+        public static int full14 = 16383; // 2^14-1
+        public static int full16 = 65535; // 2^16-1
 
         public static void calcRAWEV_Arrays(int black, int white)
         {
@@ -52,7 +54,42 @@ namespace raw2cdng_v2
         // 16bit - 8192-60.000 - maximized 0-65535
         // 12bit - 512-3750 = ~3.200 - maximized 0-4095 (
 
-        public static uint[] to16(byte[] source, data rData)
+        public static uint[] from14to16(byte[] source, data rData)
+        {
+            // preparing variables
+            int resx = rData.metaData.xResolution;
+            int resy = rData.metaData.yResolution;
+            uint bl = (uint)rData.metaData.blackLevelOld;
+
+            // ------------- and go ----
+            int chunks = resx * resy * 14 / 8;
+            uint[] Dest = new uint[resx*resy];
+            UInt32 tt = 0;
+            uint val1, val2, val3, val4, val5, val6, val7;
+            for (var t = 0; t < chunks; t += 14)
+            {
+                // merge bytes to uints
+                val1 = (uint)((uint)source[t+1] << 8 | (uint)source[t]);
+                val2 = (uint)((uint)source[t+3] << 8 | (uint)source[t + 2]);
+                val3 = (uint)((uint)source[t+5] << 8 | (uint)source[t + 4]);
+                val4 = (uint)((uint)source[t+7] << 8 | (uint)source[t + 6]);
+                val5 = (uint)((uint)source[t+9] << 8 | (uint)source[t + 8]);
+                val6 = (uint)((uint)source[t+11] << 8 | (uint)source[t + 10]);
+                val7 = (uint)((uint)source[t+13] << 8 | (uint)source[t + 12]);
+                // merge to senselvalues
+                Dest[tt++] = val1>>2;                           // a in raw.h
+                Dest[tt++] = (val1 & 0x0003)<<12 | val2>>4;     // b
+                Dest[tt++] = (val2 & 0x000f) <<10 | val3>>6;    // c
+                Dest[tt++] = (val3 & 0x003f) <<8 | val4>>8;     // d
+                Dest[tt++] = (val4 & 0x00ff)<<6 | val5 >> 10;   // e
+                Dest[tt++] = (val5 & 0x03ff)<<4 | val6 >> 12;   // f
+                Dest[tt++] = (val6 & 0xfff)<<2 | val7 >> 14;   // g
+                Dest[tt++] = val7 & 0x3fff;                     // h
+            }
+            return Dest;
+        }
+
+        public static uint[] from12to16(byte[] source, data rData)
         {
             // preparing variables
             int resx = rData.metaData.xResolution;
@@ -62,31 +99,52 @@ namespace raw2cdng_v2
             double maximizer = rData.metaData.maximizer;
 
             // ------------- and go ----
-            int chunks = resx * resy * 14 / 8;
-            uint[] Dest = new uint[resx*resy];
+            int chunks = resx * resy * 12 / 8;
+            uint[] Dest = new uint[resx * resy];
             UInt32 tt = 0;
-            uint senselA, senselB, senselC, senselD, senselE, senselF, senselG, senselH;
-            for (var t = 0; t < chunks; t += 14)
+            uint val1, val2, val3;
+            for (var t = 0; t < chunks; t += 6)
             {
-                // no maximizing
-                senselA = (uint)((source[t] >> 2) | (source[t + 1] << 6));
-                senselB = (uint)(((source[t] & 0x3) << 12) | (source[t + 3] << 4) | (source[t + 2] >> 4));
-                senselC = (uint)(((source[t + 2] & 0x0f) << 10) | (source[t + 5] << 2) | (source[t + 4] >> 6));
-                senselD = (uint)(((source[t + 4] & 0x3f) << 8) | (source[t + 7]));
-                senselE = (uint)((source[t + 9] >> 2) | (source[t + 6] << 6));
-                senselF = (uint)(((source[t + 9] & 0x3) << 12) | (source[t + 8] << 4) | (source[t + 11] >> 4));
-                senselG = (uint)(((source[t + 11] & 0x0f) << 10) | (source[t + 10] << 2) | (source[t + 13] >> 6));
-                senselH = (uint)(((source[t + 13] & 0x3f) << 8) | (source[t + 12]));
+                val1 = (uint)((uint)source[t + 1] << 8 | (uint)source[t]);
+                val2 = (uint)((uint)source[t + 3] << 8 | (uint)source[t + 2]);
+                val3 = (uint)((uint)source[t + 5] << 8 | (uint)source[t + 4]);
+                Dest[tt++] = val1>>4;
+                Dest[tt++] = (val1 & 0x000f) << 8 | val2 >> 8;
+                Dest[tt++] = (val2 & 0x00ff) << 4 | val3 >> 12;
+                Dest[tt++] = (val3 & 0x0fff);
+            }
+            return Dest;
+        }
 
-                Dest[tt++] = senselA;
-                Dest[tt++] = senselB;
-                Dest[tt++] = senselC;
-                Dest[tt++] = senselD;
-                Dest[tt++] = senselE;
-                Dest[tt++] = senselF;
-                Dest[tt++] = senselG;
-                Dest[tt++] = senselH;
+        public static uint[] from10to16(byte[] source, data rData)
+        {
+            // preparing variables
+            int resx = rData.metaData.xResolution;
+            int resy = rData.metaData.yResolution;
+            uint bl = (uint)rData.metaData.blackLevelOld;
+            bool maximize = rData.metaData.maximize;
+            double maximizer = rData.metaData.maximizer;
 
+            // ------------- and go ----
+            int chunks = resx * resy * 10 / 8;
+            uint[] Dest = new uint[resx * resy];
+            UInt32 tt = 0;
+            uint val1, val2, val3, val4, val5;
+            for (var t = 0; t < chunks; t += 10)
+            {
+                val1 = (uint)((uint)source[t + 1] << 8 | (uint)source[t]);
+                val2 = (uint)((uint)source[t + 3] << 8 | (uint)source[t + 2]);
+                val3 = (uint)((uint)source[t + 5] << 8 | (uint)source[t + 4]);
+                val4 = (uint)((uint)source[t + 7] << 8 | (uint)source[t + 6]);
+                val5 = (uint)((uint)source[t + 9] << 8 | (uint)source[t + 8]);
+                Dest[tt++] = val1>>6;
+                Dest[tt++] = (val1 & 0x003f) << 4 | val2 >> 12;
+                Dest[tt++] = (val2 >> 2) & 0x03ff;
+                Dest[tt++] = (val2 & 0x0003) << 8 | val3 >> 8;
+                Dest[tt++] = (val3 & 0x00ff) <<2 | val4 >> 14;
+                Dest[tt++] = (val4 >>4) & 0x03ff ;
+                Dest[tt++] = (val4 & 0x000f)<<6 | val5>>10 ;
+                Dest[tt++] = (val5 & 0x03ff);
             }
             return Dest;
         }
@@ -1450,8 +1508,8 @@ namespace raw2cdng_v2
 
         public static void setListviewStrings(raw r)
         {
-            r.ListviewTitle = r.data.fileData.parentSourcePath + " / "+r.data.fileData.fileNameOnly+" - "+r.data.metaData.duration+(r.data.audioData.hasAudio?" (with Audio)":"");
-            r.ListviewPropA = r.data.metaData.modell + " | " + r.data.metaData.xResolution + "x" + r.data.metaData.yResolution + "px @ " + r.data.metaData.fpsString + "fps";
+            r.ListviewTitle = r.data.fileData.parentSourcePath + " / "+r.data.fileData.fileNameOnly+" - "+r.data.metaData.duration+(r.data.audioData.hasAudio?" with Audio":"");
+            r.ListviewPropA = r.data.metaData.modell + " | " + r.data.metaData.xResolution + "x" + r.data.metaData.yResolution + "px " + r.data.metaData.bitsperSample + "Bit @ " + r.data.metaData.fpsString + "fps";
             r.ListviewPropB = r.data.metaData.whiteBalance.ToString() + "°K | "+dng.WBpreset[r.data.metaData.whiteBalanceMode] +" - " + r.data.metaData.frames.ToString() + " frames in " + r.data.metaData.splitCount + (r.data.metaData.isMLV ? " mlv" : " raw") + (r.data.metaData.splitCount > 1 ? "-files" : "-file");
             r.ListviewPropC = "recorded " +r.data.fileData.modificationTime +" - TC "+ calc.frameToTC_s((int)calc.dateTime2Frame(r.data.fileData.modificationTime, r.data.metaData.fpsNom / r.data.metaData.fpsDen), (r.data.metaData.fpsNom / r.data.metaData.fpsDen)); 
         }
