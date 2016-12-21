@@ -130,4 +130,7 @@
   <data name="rifftemplate02" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\rifftemplate02.byte;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="dngtemplate21" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\dngtemplate21.dng;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
 </root>

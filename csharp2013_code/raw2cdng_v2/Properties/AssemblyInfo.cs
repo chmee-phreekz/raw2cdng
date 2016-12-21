@@ -8,7 +8,7 @@ using System.Windows;
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die mit einer Assembly verknüpft sind.
 [assembly: AssemblyTitle("raw2cdng")]
-[assembly: AssemblyDescription("converter for magiclantern-videofiles")]
+[assembly: AssemblyDescription("player/converter for magiclantern-videofiles")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("phreekz chmee")]
 [assembly: AssemblyProduct("raw2cdng")]
@@ -51,5 +51,5 @@ using System.Windows;
 // Sie können alle Werte angeben oder die standardmäßigen Build- und Revisionsnummern 
 // übernehmen, indem Sie "*" eingeben:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.7.5.0")]
-[assembly: AssemblyFileVersion("1.67.0.0")]
+[assembly: AssemblyVersion("1.7.9.0")]
+[assembly: AssemblyFileVersion("1.7.9.0")]

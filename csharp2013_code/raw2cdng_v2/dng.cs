@@ -7,7 +7,7 @@ namespace raw2cdng_v2
 {
     class dng
     {
-        public static byte[] DNGtemplate = Properties.Resources.dngtemplate20;
+        public static byte[] DNGtemplate = Properties.Resources.dngtemplate21;
 
         // strings to the WB-presets
         public static string[] WBpreset = new string[] { "AWB", "Daylight", "Cloudy", "Tungsten", "Fluorescent", "Flash", "Manual WB", "", "Shade", "Manual °K" };

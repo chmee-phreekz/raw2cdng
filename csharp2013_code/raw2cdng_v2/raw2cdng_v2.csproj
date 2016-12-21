@@ -30,7 +30,7 @@
     <ProductName>raw2cdng</ProductName>
     <PublisherName>chmee phreekz</PublisherName>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.7.4.0</ApplicationVersion>
+    <ApplicationVersion>1.7.9.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -96,6 +96,7 @@
     <Compile Include="ObjectsExtensions.cs" />
     <Compile Include="raw.cs" />
     <Compile Include="settings.cs" />
+    <Compile Include="Settings1.cs" />
     <Compile Include="SimpleCommand.cs" />
     <Page Include="CommonResources.xaml">
       <SubType>Designer</SubType>
@@ -155,7 +156,7 @@
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
       <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
+      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 und x64%29</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -176,6 +177,9 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="appicon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="dngtemplate21.dng" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Diagnostics;
 
+
 namespace raw2cdng_v2
 {
     /// <summary>
@@ -53,11 +54,13 @@ namespace raw2cdng_v2
             playbackTimer.Tick += new EventHandler(playbackTimer_Tick);
             playbackTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
 
+            // -- endingList
+            io.fillupEndingLists();
         }
 
         public mlvplay(String file): this()
         {
-
+            //Console.WriteLine(winIO.File.Exists(file) ? "File exists." : "File does not exist.");
             //
             if (io.isMLV(file) || io.isRAW(file))
             {
@@ -77,25 +80,19 @@ namespace raw2cdng_v2
 
                 if (io.isMLV(file))
                 {
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] is MLV ");
                     importRaw.data.metaData.isMLV = true;
                     importRaw.data.metaData.errorString += io.setFileinfoData(file, importRaw.data.fileData);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
                     importRaw.data.metaData.errorString += io.createMLVBlockList(file, importRaw);
                     Blocks.mlvBlockList = Blocks.mlvBlockList.OrderBy(x => x.timestamp).ToList();
                     importRaw.data.metaData.errorString += io.getMLVAttributes(file, Blocks.mlvBlockList, importRaw);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] MLV Attributes and Blocklist created and sorted. Blocks: "+Blocks.mlvBlockList.Count);
                     importRaw.AUDFBlocks = null;
                     if (importRaw.data.audioData.hasAudio)
                     {
                         importRaw.AUDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "AUDF").ToList();
-                        //if (settings.debugLogEnabled) debugging._saveDebug("[drop] hasAudio. AUDF-List created. Blocks: " + importRaw.AUDFBlocks.Count);
                     }
                     importRaw.VIDFBlocks = null;
                     importRaw.VIDFBlocks = Blocks.mlvBlockList.Where(x => x.blockTag == "VIDF").ToList();
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-List created. Blocks: " + importRaw.VIDFBlocks.Count);
                     importRaw.data.metaData.errorString += io.readVIDFBlockData(importRaw);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] VIDF-Blockdata read and created.");
                     // correct frameCount
                     importRaw.data.metaData.frames = importRaw.VIDFBlocks.Count;
 
@@ -103,16 +100,12 @@ namespace raw2cdng_v2
                 }
                 if (io.isRAW(file))
                 {
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] is RAW ");
                     importRaw.data.metaData.isMLV = false;
                     importRaw.data.audioData.hasAudio = false;
                     importRaw.RAWBlocks = null;
                     io.setFileinfoData(file, importRaw.data.fileData);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] FileinfoData set");
                     io.getRAWAttributes(file, importRaw);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Attributes read and set.");
                     io.createRAWBlockList(file, importRaw);
-                    //if (settings.debugLogEnabled) debugging._saveDebug("[drop] RAW Blocklist created and sorted. Blocks: " + importRaw.RAWBlocks.Count);
 
                     // then Framelist
                     importRaw.convert = true;
@@ -123,7 +116,7 @@ namespace raw2cdng_v2
                 originalWBText = "(filedata) " + originalWB + "°K | " + dng.WBpreset[importRaw.data.metaData.whiteBalanceMode];
 
                 // save all Properties as String
-                importRaw.data.metaData.propertiesString = importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px || " + importRaw.data.lensData.isoValue + "ISO | " + importRaw.data.lensData.shutter + " | " + importRaw.data.metaData.fpsString + "fps";
+                importRaw.data.metaData.propertiesString = importRaw.data.metaData.xResolution + "x" + importRaw.data.metaData.yResolution + "px "+importRaw.data.metaData.bitsperSample+"bit || " + importRaw.data.lensData.isoValue + "ISO | " + importRaw.data.lensData.shutter + " | " + importRaw.data.metaData.fpsString + "fps";
 
                 // set properties of the window
                 this.Width = importRaw.data.metaData.xResolution+48;
